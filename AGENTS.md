@@ -53,35 +53,39 @@ tree.
 | `npm run dev` | Vite dev server on port **5173** | Inner loop |
 | `npm run typecheck` | `tsc --noEmit`, strict | Every code change |
 | `npm test` | Vitest; pure audio/WAV/export tests | Every code change |
-| `npm run verify` | typecheck → tests → `dist/` → `dist-single/` | Before commit for risky work, and **always before a push** |
+| `npm run test:browser` | Headless Chrome smoke against the existing `dist-single/` build | UI, audio, export or CSP changes |
+| `npm run verify:browser` | `build:single` → browser smoke | Re-run just the browser gate |
+| `npm run verify` | typecheck → tests → `dist/` → `dist-single/` → browser smoke | Before commit for risky work, and **always before a push** |
 | `npm run build` | Standard static build in `dist/` | Build-sensitive changes |
 | `npm run build:single` | Self-contained `dist-single/index.html` | Before itch packaging |
 
-**Before every commit:** `npm run typecheck && npm test`.
+**Before every commit:** `npm run typecheck && npm test`. Add
+`npm run verify:browser` when touching UI, audio, exports, CSP or the
+single-file build.
 
-**Before every push:** `npm run verify`.
+**Before every push:** `npm run verify` (including the browser smoke).
 
-Use `npm run verify` for a commit too when touching synthesis, exports, the Vite
-config, CSP, the single-file build or anything user-visible that you cannot
-reasonably prove with the fast gate.
+### Browser smoke
 
-### Browser checks
+`scripts/browser-smoke.mjs` uses `playwright-core` to drive the system Chrome
+against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 
-There is currently no committed Playwright suite. Browser behaviour was verified
-during initial delivery with headless Chrome and must be exercised manually when
-the change can affect it:
+- the single-file UI renders and no network requests leave the page;
+- the first gesture arms audio; the trigger button, Spacebar and scope click
+  each play the Dice preset and drive the live scope;
+- WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
+- the batch download contains exactly the ten correctly named valid WAVs;
+- the 1440 px and 390 px layouts have no horizontal overflow;
+- there are no console errors or page errors.
 
-- audio still arms on the first gesture and plays via the trigger button, the
-  scope and Spacebar;
-- there are no console errors or external network requests;
-- WAV downloads are valid RIFF/PCM, 44.1 kHz, 16-bit, stereo;
-- batch downloads contain exactly 10 valid WAVs and use the documented names;
-- `dist-single/index.html` still works when opened directly from `file://`;
-- layouts remain usable at 390 px and 1440 px with no horizontal overflow.
+Chrome is located through `CHROME_PATH`, then the normal system install paths,
+then a Playwright-managed Chromium path. A missing browser is a hard failure, not
+a skipped test. The smoke test cannot judge subjective sound design; audition
+material changes to the synthesis models yourself and say so when reporting.
 
-Do not claim a browser or audio verification that was not actually performed.
-If browser regression coverage becomes worth the setup, add a committed script
-and wire it into `npm run verify` in the same change; update this file then.
+Before pushing, always run the full `npm run verify`; do not claim a browser
+check that was not executed. If the browser harness itself changes, update it and
+this file in the same commit.
 
 ### Project-specific test expectations
 
@@ -163,6 +167,9 @@ asked. A GitHub push is not an itch.io deployment.
   config has `credential.helper=!gh auth git-credential`, so a normal
   `git -c safe.directory="$PWD" push` works once an explicit push is requested.
   Never write tokens into the repository or a remote URL.
+- The browser smoke needs Google Chrome or a Chromium binary. Set
+  `CHROME_PATH=/path/to/chrome` when it is not in a standard location. The
+  `playwright-core` package deliberately does not download a browser.
 - npm's default cache directory is read-only in this environment. If dependency
   installation is needed, use a writable cache:
   ```bash
@@ -177,7 +184,8 @@ A task is done only when:
 
 - the requested change is implemented;
 - `npm run typecheck && npm test` pass, plus `npm run verify` when appropriate;
-- relevant browser/manual checks have been run or the limitation is stated;
+- the browser smoke has run (`npm run verify:browser`) whenever UI, audio,
+  exports, CSP or the single-file build changed;
 - docs are updated if behaviour or workflow changed;
 - only task-related files are staged;
 - a Conventional Commit exists;

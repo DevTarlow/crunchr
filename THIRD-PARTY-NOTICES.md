@@ -36,8 +36,13 @@ Source: <https://github.com/tailwindlabs/tailwindcss> — MIT License.
   contributors, <https://github.com/vitest-dev/vitest>, MIT.
 - **@tailwindcss/vite** — Copyright (c) Tailwind Labs, Inc., MIT.
 
-TypeScript is a development dependency licensed under Apache-2.0:
-<https://github.com/microsoft/TypeScript>.
+## Other development tooling
+
+- **Playwright Core** — Copyright (c) Microsoft Corporation,
+  <https://github.com/microsoft/playwright>, Apache-2.0. Used only by the
+  headless Chrome smoke test; it is not included in the app bundle.
+- **TypeScript** — Copyright (c) Microsoft Corporation,
+  <https://github.com/microsoft/TypeScript>, Apache-2.0. Development dependency.
 
 ## MIT License text
 

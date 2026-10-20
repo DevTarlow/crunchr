@@ -127,6 +127,8 @@ src/
   lib/format.ts     display formatting
   App.tsx           instrument state and interactions
   styles.css        design tokens, hardware styling, responsive rules
+scripts/
+  browser-smoke.mjs headless Chrome smoke of the single-file artifact
 ```
 
 ### Why a deterministic DSP kernel?
@@ -172,19 +174,22 @@ development server uses a separate policy that permits HMR.
 ### Verify
 
 ```bash
-npm run typecheck
-npm test
-npm run build
-npm run build:single
-# or all of the above:
-npm run verify
+npm run verify         # typecheck + unit tests + builds + headless Chrome smoke
+npm run test:browser   # browser smoke against the existing dist-single build
+npm run verify:browser # rebuild the single file, then run the browser smoke
 ```
 
 Unit tests cover WAV header/sample encoding, deterministic synthesis for all
 eleven models, range clamping at parameter extremes, humanize drift bounds,
-mutation bounds, and ZIP contents. Browser QA was run against current headless
-Chrome for trigger/space/scope playback, WAV and ZIP downloads, console errors,
-external-request absence, and 390 px/1440 px responsive layouts.
+mutation bounds, and ZIP contents.
+
+The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
+`dist-single/index.html` artifact directly from disk and checks the first-gesture
+audio arm, trigger/Space/scope playback, live scope, WAV and 10× ZIP downloads,
+no network egress or console errors, and overflow-free layouts at 1440 px and
+390 px. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
+standard location. A missing browser fails the gate rather than silently skipping
+it.
 
 ## Browser support
 
@@ -201,7 +206,7 @@ browser until you download a file.
 
 ## Dependencies
 
-React, JSZip, Vite, TypeScript, Tailwind CSS and Vitest. See
+React, JSZip, Vite, TypeScript, Tailwind CSS, Vitest and Playwright Core. See
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for licenses. Pink-noise
 filtering follows the widely published Paul Kellet approximation; all other DSP
 code in this repository is original.
