@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     title: 'Play it.',
-    body: 'Click the big orange Play button, or press Space. Click the sound wave to play it again. Point at the sound wave to see the time and loudness at that spot.',
+    body: 'Click the big gold Play button, or press Space. Click the sound wave to play it again. Point at the sound wave to see the time and loudness at that spot.',
   },
   {
     title: 'Shape it.',

@@ -139,7 +139,7 @@ export function ScopeCanvas({
       context.stroke()
     }
     context.setLineDash([])
-    context.strokeStyle = 'rgba(255, 132, 0, 0.18)'
+    context.strokeStyle = 'rgba(255, 209, 102, 0.18)'
     context.beginPath()
     context.moveTo(0, midY)
     context.lineTo(cssWidth, midY)
@@ -151,9 +151,9 @@ export function ScopeCanvas({
 
     if (liveData && liveData.length > 0) {
       context.save()
-      context.strokeStyle = '#ff8400'
+      context.strokeStyle = '#ffd166'
       context.lineWidth = 1.7
-      context.shadowColor = 'rgba(255, 132, 0, 0.7)'
+      context.shadowColor = 'rgba(255, 209, 102, 0.7)'
       context.shadowBlur = 12
       context.beginPath()
       const analyserStep = liveData.length / Math.max(1, cssWidth)
@@ -197,9 +197,9 @@ export function ScopeCanvas({
         context.lineTo(x, envelope.bottom[column])
       }
       context.closePath()
-      context.fillStyle = 'rgba(255, 132, 0, 0.085)'
+      context.fillStyle = 'rgba(255, 209, 102, 0.085)'
       context.fill()
-      context.strokeStyle = 'rgba(255, 140, 18, 0.72)'
+      context.strokeStyle = 'rgba(255, 209, 102, 0.72)'
       context.lineWidth = 1.3
       context.stroke()
       context.restore()
@@ -207,7 +207,7 @@ export function ScopeCanvas({
       // Highlight the hottest transient in the one-shot.
       const peakX = envelope.peakX
       context.save()
-      context.strokeStyle = 'rgba(255, 178, 90, 0.28)'
+      context.strokeStyle = 'rgba(255, 227, 160, 0.28)'
       context.setLineDash([2, 4])
       context.beginPath()
       context.moveTo(peakX, cssHeight * 0.15)
@@ -224,13 +224,13 @@ export function ScopeCanvas({
       )
       const x = progress * cssWidth
       context.save()
-      context.strokeStyle = 'rgba(255, 178, 90, 0.56)'
+      context.strokeStyle = 'rgba(255, 227, 160, 0.56)'
       context.lineWidth = 1
       context.beginPath()
       context.moveTo(x, cssHeight * 0.1)
       context.lineTo(x, cssHeight * 0.9)
       context.stroke()
-      context.fillStyle = '#ff8400'
+      context.fillStyle = '#ffd166'
       context.beginPath()
       context.arc(x, cssHeight * 0.1, 2.5, 0, Math.PI * 2)
       context.fill()

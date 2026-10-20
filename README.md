@@ -21,8 +21,9 @@ the browser. There are zero audio samples, zero network calls and no backend.
 - **Batch preview**: hear all ten versions in a row, with an adjustable space
   between each sound and a clear note that the spacing is only an example.
   Click any numbered button to audition one version and save it on its own.
-- **A tuned, tactile interface**: charcoal hardware panels, a single neon-amber
-  accent, readable type at every size, proper empty/error/disabled states.
+- **A tuned, tactile interface**: deep-teal hardware panels, a royal-gold
+  primary accent with emerald, pink and ocean state colours, readable type at
+  every size, proper empty/error/disabled states.
 - **Audition as you go**: picking a sound, re-rolling it, nudging, surprising or
   resetting plays the result immediately.
 - **Per-sound memory**: each sound remembers its sliders, version and random
