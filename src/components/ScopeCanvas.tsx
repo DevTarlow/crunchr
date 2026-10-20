@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { RenderedSound } from '../audio/types'
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { formatElapsedMs } from '../lib/format'
 
 interface ScopeCanvasProps {
@@ -15,6 +16,60 @@ interface ScopeCanvasProps {
 interface HoverInfo {
   timeMs: number
   amplitude: number
+}
+
+interface ScopeEnvelope {
+  sound: RenderedSound
+  width: number
+  height: number
+  top: Float32Array
+  bottom: Float32Array
+  peakX: number
+}
+
+/**
+ * Downsample the complete one-shot into a min/max envelope. The result is cached
+ * per sound and canvas size so hovering does not rescan the whole buffer.
+ */
+function buildEnvelope(sound: RenderedSound, width: number, height: number): ScopeEnvelope {
+  const left = sound.channels[0]
+  const right = sound.channels[1]
+  const length = left.length
+  const columns = Math.max(2, Math.ceil(width))
+  const top = new Float32Array(columns)
+  const bottom = new Float32Array(columns)
+  const midY = height * 0.52
+  const plotHeight = height * 0.68
+  let peakIndex = 0
+  let peakValue = 0
+
+  for (let column = 0; column < columns; column += 1) {
+    const start = Math.min(length - 1, Math.floor((column / columns) * length))
+    const end = Math.max(start + 1, Math.floor(((column + 1) / columns) * length))
+    const stride = Math.max(1, Math.floor((end - start) / 32))
+    let localMax = -1
+    let localMin = 1
+    for (let i = start; i < Math.min(length, end); i += stride) {
+      const value = (left[i] + right[i]) * 0.5
+      if (value > localMax) localMax = value
+      if (value < localMin) localMin = value
+      if (Math.abs(value) > peakValue) {
+        peakValue = Math.abs(value)
+        peakIndex = i
+      }
+    }
+    top[column] = midY - localMax * plotHeight
+    bottom[column] = midY - localMin * plotHeight
+  }
+
+  return {
+    sound,
+    width,
+    height,
+    top,
+    bottom,
+    peakX: (peakIndex / Math.max(1, length - 1)) * width,
+  }
 }
 
 /**
@@ -34,8 +89,12 @@ export function ScopeCanvas({
   const screenRef = useRef<HTMLDivElement>(null)
   const hoverXRef = useRef<number | null>(null)
   const startTimeRef = useRef(0)
-  const rafRef = useRef<number | null>(null)
+  const paintRef = useRef<() => void>(() => {})
+  const envelopeRef = useRef<ScopeEnvelope | null>(null)
+  const hoverFrameRef = useRef<number | null>(null)
+  const pendingHoverRef = useRef<HoverInfo | null>(null)
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null)
+  const reducedMotion = usePrefersReducedMotion()
 
   const paint = useCallback(() => {
     const canvas = canvasRef.current
@@ -113,47 +172,29 @@ export function ScopeCanvas({
       context.restore()
     } else {
       // Downsample the complete one-shot into a min/max envelope so a 800 ms
-      // granular sound remains legible on a 600 px scope.
-      const left = sound.channels[0]
-      const right = sound.channels[1]
-      const length = left.length
-      const columns = Math.max(2, Math.ceil(cssWidth))
-      const topPoints = new Float32Array(columns)
-      const bottomPoints = new Float32Array(columns)
-      let peakIndex = 0
-      let peakValue = 0
-
-      // Draw a min/max envelope mirrored around zero. A single-sided peak trace
-      // loses the bipolar nature of an oscilloscope and reads as a filled shape.
-      for (let column = 0; column < columns; column += 1) {
-        const start = Math.min(length - 1, Math.floor((column / columns) * length))
-        const end = Math.max(start + 1, Math.floor(((column + 1) / columns) * length))
-        const stride = Math.max(1, Math.floor((end - start) / 32))
-        let localMax = -1
-        let localMin = 1
-        for (let i = start; i < Math.min(length, end); i += stride) {
-          const value = (left[i] + right[i]) * 0.5
-          if (value > localMax) localMax = value
-          if (value < localMin) localMin = value
-          if (Math.abs(value) > peakValue) {
-            peakValue = Math.abs(value)
-            peakIndex = i
-          }
-        }
-        topPoints[column] = midY - localMax * plotHeight
-        bottomPoints[column] = midY - localMin * plotHeight
+      // granular sound remains legible on a 600 px scope. Hovering reuses the
+      // cached envelope instead of rescanning the buffer on every pointer move.
+      let envelope = envelopeRef.current
+      if (
+        !envelope ||
+        envelope.sound !== sound ||
+        envelope.width !== cssWidth ||
+        envelope.height !== cssHeight
+      ) {
+        envelope = buildEnvelope(sound, cssWidth, cssHeight)
+        envelopeRef.current = envelope
       }
 
       context.save()
       context.beginPath()
-      for (let column = 0; column < columns; column += 1) {
-        const x = (column / (columns - 1)) * cssWidth
-        if (column === 0) context.moveTo(x, topPoints[column])
-        else context.lineTo(x, topPoints[column])
+      for (let column = 0; column < envelope.top.length; column += 1) {
+        const x = (column / (envelope.top.length - 1)) * cssWidth
+        if (column === 0) context.moveTo(x, envelope.top[column])
+        else context.lineTo(x, envelope.top[column])
       }
-      for (let column = columns - 1; column >= 0; column -= 1) {
-        const x = (column / (columns - 1)) * cssWidth
-        context.lineTo(x, bottomPoints[column])
+      for (let column = envelope.bottom.length - 1; column >= 0; column -= 1) {
+        const x = (column / (envelope.bottom.length - 1)) * cssWidth
+        context.lineTo(x, envelope.bottom[column])
       }
       context.closePath()
       context.fillStyle = 'rgba(255, 132, 0, 0.085)'
@@ -164,7 +205,7 @@ export function ScopeCanvas({
       context.restore()
 
       // Highlight the hottest transient in the one-shot.
-      const peakX = (peakIndex / Math.max(1, length - 1)) * cssWidth
+      const peakX = envelope.peakX
       context.save()
       context.strokeStyle = 'rgba(255, 178, 90, 0.28)'
       context.setLineDash([2, 4])
@@ -221,46 +262,46 @@ export function ScopeCanvas({
   }, [getWaveform, isPlaying, sound])
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    const screen = screenRef.current
-    if (!canvas || !screen) return undefined
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect()
-      const dpr = Math.min(2, window.devicePixelRatio || 1)
-      const width = Math.max(1, Math.round(rect.width * dpr))
-      const height = Math.max(1, Math.round(rect.height * dpr))
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width
-        canvas.height = height
-      }
-      paint()
-    }
-    const observer = new ResizeObserver(resize)
-    observer.observe(screen)
-    resize()
-    return () => observer.disconnect()
+    paintRef.current = paint
   }, [paint])
 
   useEffect(() => {
-    if (!isPlaying) {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
-      paint()
-      return undefined
-    }
-
-    startTimeRef.current = performance.now()
-    const loop = () => {
-      paint()
-      rafRef.current = requestAnimationFrame(loop)
-    }
-    loop()
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
-    }
+    if (!isPlaying) paintRef.current()
   }, [isPlaying, paint])
+
+  useEffect(() => {
+    if (!isPlaying) return undefined
+    startTimeRef.current = performance.now()
+    let frame: number | null = null
+    let lastPaint = 0
+    const interval = reducedMotion ? 1000 / 15 : 0
+    const loop = (time: number) => {
+      if (!reducedMotion || time - lastPaint >= interval) {
+        paintRef.current()
+        lastPaint = time
+      }
+      frame = requestAnimationFrame(loop)
+    }
+    frame = requestAnimationFrame(loop)
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame)
+    }
+  }, [isPlaying, reducedMotion])
+
+  useEffect(() => {
+    const screen = screenRef.current
+    if (!screen) return undefined
+    const observer = new ResizeObserver(() => paintRef.current())
+    observer.observe(screen)
+    paintRef.current()
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (hoverFrameRef.current !== null) cancelAnimationFrame(hoverFrameRef.current)
+    }
+  }, [])
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const canvas = canvasRef.current
@@ -272,17 +313,28 @@ export function ScopeCanvas({
     const length = sound.channels[0].length
     const index = Math.min(length - 1, Math.max(0, Math.round(normalized * (length - 1))))
     const amplitude = (sound.channels[0][index] + sound.channels[1][index]) * 0.5
-    setHoverInfo({
+    pendingHoverRef.current = {
       timeMs: (index / sound.sampleRate) * 1000,
       amplitude,
-    })
-    paint()
+    }
+    if (hoverFrameRef.current === null) {
+      hoverFrameRef.current = requestAnimationFrame(() => {
+        hoverFrameRef.current = null
+        if (pendingHoverRef.current) setHoverInfo(pendingHoverRef.current)
+        paintRef.current()
+      })
+    }
   }
 
   const handlePointerLeave = () => {
     hoverXRef.current = null
+    pendingHoverRef.current = null
+    if (hoverFrameRef.current !== null) {
+      cancelAnimationFrame(hoverFrameRef.current)
+      hoverFrameRef.current = null
+    }
     setHoverInfo(null)
-    paint()
+    paintRef.current()
   }
 
   return (

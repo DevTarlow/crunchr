@@ -228,11 +228,11 @@ audio arm, selecting a sound auditions it, Play/Space/sound-wave playback, live
 scope, per-sound slider memory and Reset, re-rolling without losing the sliders,
 the active category being a no-op, session restore after reload, native Space
 activation on action buttons, WAV and 10× ZIP downloads, single-version audition
-and Save vNN, the help modal and its Escape close, the batch preview, Save
-format/size, touch-target sizes, and overflow-free layouts at 1440, 390 and
-320 px. It also checks the 390 px help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
-standard location. A missing browser fails the gate rather than silently
-skipping it.
+and Save vNN, the help modal and its Escape close, the batch preview, reduced
+motion, Save format/size, touch-target sizes, and overflow-free layouts at 1440,
+390 and 320 px. It also checks the 390 px help layout. It requires system
+Chrome; set `CHROME_PATH` if Chrome is not in a standard location. A missing
+browser fails the gate rather than silently skipping it.
 
 ## Browser support
 

@@ -88,6 +88,7 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
   valid WAV that appears in the ZIP;
 - the help manual opens as a modal and closes on Escape;
 - the batch preview plays all ten versions and stops on its own;
+- the sound wave still renders and plays with `prefers-reduced-motion`;
 - body, control-label and helper type stay at readable sizes;
 - the 1440 px, 390 px and 320 px layouts have no horizontal overflow, and the
   help manual fits the 390 px layout;

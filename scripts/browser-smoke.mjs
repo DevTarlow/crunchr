@@ -613,6 +613,25 @@ async function main() {
     assert.deepEqual(mobile.externalRequests, [], 'Mobile external requests')
     pass('390 px mobile layout is overflow-free and can trigger audio')
 
+    const reducedContext = await browser.newContext({
+      viewport: { width: 1280, height: 900 },
+      reducedMotion: 'reduce',
+    })
+    const reducedPage = await reducedContext.newPage()
+    const reduced = attachDiagnostics(reducedPage)
+    await loadApp(reducedPage)
+    assert.equal(
+      await reducedPage.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches),
+      true,
+    )
+    await reducedPage.locator('.trigger-button').click()
+    await waitForPlayback(reducedPage, true)
+    await waitForPlayback(reducedPage, false)
+    assert.deepEqual(reduced.consoleErrors, [], 'Reduced-motion console errors')
+    assert.deepEqual(reduced.pageErrors, [], 'Reduced-motion page errors')
+    pass('the sound wave still renders and plays with reduced motion')
+    await reducedContext.close()
+
     await mobileContext.close()
     await desktopContext.close()
   } catch (error) {
