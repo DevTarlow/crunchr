@@ -9,11 +9,11 @@ interface HelpDialogProps {
 const STEPS = [
   {
     title: 'Pick a sound.',
-    body: 'There are four groups at the top: clicks, footsteps, items and crunches. Click a sound to load it. The picture shows the shape of the sound.',
+    body: 'There are four groups at the top: clicks, footsteps, items and crunches. Click a sound to load it and hear it right away. The picture shows the shape of the sound.',
   },
   {
     title: 'Click it again for a new version.',
-    body: 'The sound you picked stays selected. Click it again to make a new version with random changes. The version number under the Play button shows which one you are hearing. The sliders go back to their starting point.',
+    body: 'The sound you picked stays selected. Click it again to make a new version with random changes. Your slider settings stay where they are, and the version number under Play shows which one you are hearing. Use Reset in the Shape section to go back to the preset starting point.',
     reroll: true,
   },
   {
@@ -22,7 +22,7 @@ const STEPS = [
   },
   {
     title: 'Shape it.',
-    body: 'Six sliders change the length, pitch, punch, body, roughness and fade. The sound changes as you drag. Nudge 10% moves all six at once. Surprise me picks a random sound.',
+    body: 'Six sliders change the length, pitch, punch, body, roughness and fade. The sound changes as you drag. Nudge 10% moves all six at once. Surprise me picks a random sound. Reset puts the sliders back to the preset defaults.',
   },
   {
     title: 'Listen to 10 versions.',
@@ -30,7 +30,7 @@ const STEPS = [
   },
   {
     title: 'Download it.',
-    body: 'Download WAV saves the sound you just heard. Download 10 versions gives you a ZIP file with 10 separate sounds. They are standard WAV files that work in games and editors. Everything is saved on your device.',
+    body: 'Download WAV saves the sound on your sliders. Download 10 versions gives you a ZIP file with 10 separate sounds. They are standard WAV files that work in games and editors. Everything is saved on your device.',
   },
 ]
 
@@ -129,8 +129,8 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
             <p id={descriptionId}>
               Crunchr makes small sounds for games. Everything is made in your browser.
               Nothing is uploaded, and you don't need an account. Your browser needs one tap
-              before it can play sound, so press any button to start. Then pick a sound,
-              change it, and download it.
+              before it can play sound, so press any button to start. Then pick a sound
+              to hear it, change it, and download it.
             </p>
           </div>
           <button

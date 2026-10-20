@@ -8,7 +8,16 @@ import {
   getPresetById,
   getPresetsByCategory,
 } from './audio/presets'
-import { DEFAULT_HUMANIZE, isModifiedPreset, sanitizeHumanize, sanitizeParam } from './audio/params'
+import {
+  BATCH_GAP_DEFAULT,
+  BATCH_GAP_MAX,
+  BATCH_GAP_STEP,
+  BATCH_PREVIEW_COUNT,
+  DEFAULT_HUMANIZE,
+  isModifiedPreset,
+  sanitizeHumanize,
+  sanitizeParam,
+} from './audio/params'
 import { createRng, createSeed } from './audio/random'
 import { buildVariations, jitterParameters, mutateParameters } from './audio/variations'
 import { synthesize } from './audio/synthesis'
@@ -26,38 +35,46 @@ import { ParameterPanel } from './components/ParameterPanel'
 import { PerformancePanel } from './components/PerformancePanel'
 import { ExportDock, type ExportKind } from './components/ExportDock'
 import { HelpDialog } from './components/HelpDialog'
-import {
-  BATCH_GAP_DEFAULT,
-  BATCH_GAP_MAX,
-  BATCH_GAP_STEP,
-  BATCH_PREVIEW_COUNT,
-} from './components/BatchPreview'
 import { Toast, type ToastMessage, type ToastTone } from './components/Toast'
 import { AlertIcon, CrunchMark, SpeakerIcon } from './components/Icons'
+import {
+  SESSION_VERSION,
+  readSession,
+  writeSession,
+  type SessionSnapshot,
+  type SoundDraft,
+} from './lib/session'
 
 function messageFromError(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback
 }
 
 export default function App() {
-  const initialPreset = getPresetById(DEFAULT_PRESET_ID)
+  const [initialSession] = useState(readSession)
+  const initialPreset = getPresetById(initialSession?.activePresetId ?? DEFAULT_PRESET_ID)
+  const initialDraft = initialSession?.drafts[initialPreset.id]
   const [activePresetId, setActivePresetId] = useState(initialPreset.id)
-  const [params, setParams] = useState<SynthParams>(() => clonePresetDefaults(initialPreset))
-  const [humanize, setHumanize] = useState(DEFAULT_HUMANIZE)
-  const [seed, setSeed] = useState(() => createSeed())
-  const [take, setTake] = useState(1)
+  const [params, setParams] = useState<SynthParams>(
+    () => initialDraft?.params ?? clonePresetDefaults(initialPreset),
+  )
+  const [humanize, setHumanize] = useState(initialSession?.humanize ?? DEFAULT_HUMANIZE)
+  const [seed, setSeed] = useState(() => initialDraft?.seed ?? createSeed())
+  const [take, setTake] = useState(initialDraft?.take ?? 1)
   const [helpOpen, setHelpOpen] = useState(false)
   const [triggerNonce, setTriggerNonce] = useState(0)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const [exportKind, setExportKind] = useState<ExportKind | null>(null)
   const [batchProgress, setBatchProgress] = useState(0)
-  const [batchGapMs, setBatchGapMs] = useState(BATCH_GAP_DEFAULT)
+  const [batchGapMs, setBatchGapMs] = useState(initialSession?.batchGapMs ?? BATCH_GAP_DEFAULT)
   const [batchPreviewPlaying, setBatchPreviewPlaying] = useState(false)
   const [batchPreviewStep, setBatchPreviewStep] = useState(0)
 
   const toastTimerRef = useRef<number | null>(null)
   const exportBusyRef = useRef(false)
   const batchPreviewActiveRef = useRef(false)
+  const sessionSaveTimerRef = useRef<number | null>(null)
+  const latestSessionRef = useRef<SessionSnapshot | null>(null)
+  const draftsRef = useRef<Record<string, SoundDraft>>(initialSession?.drafts ?? {})
 
   const activePreset = getPresetById(activePresetId)
   const sound = useRenderedSound(activePreset, params, seed)
@@ -94,38 +111,6 @@ export default function App() {
     }
   }, [])
 
-  const choosePreset = useCallback(
-    (preset: Preset) => {
-      const reroll = preset.id === activePresetId
-      const nextTake = reroll ? take + 1 : 1
-      setTake(nextTake)
-      setActivePresetId(preset.id)
-      setParams(clonePresetDefaults(preset))
-      setSeed(createSeed())
-      setTriggerNonce(0)
-      if (reroll) {
-        showToast(`New version ${nextTake}. Same sound, new changes.`)
-      }
-    },
-    [activePresetId, showToast, take],
-  )
-
-  const chooseCategory = useCallback(
-    (category: CategoryId) => {
-      const first = getPresetsByCategory(category)[0]
-      if (first) choosePreset(first)
-    },
-    [choosePreset],
-  )
-
-  const handleParamChange = useCallback((key: ParamKey, value: number) => {
-    setParams((previous) => ({ ...previous, [key]: sanitizeParam(key, value) }))
-  }, [])
-
-  const handleHumanizeChange = useCallback((value: number) => {
-    setHumanize(sanitizeHumanize(value))
-  }, [])
-
   const stopBatchPreview = useCallback(() => {
     if (!batchPreviewActiveRef.current) return
     batchPreviewActiveRef.current = false
@@ -133,6 +118,107 @@ export default function App() {
     setBatchPreviewStep(0)
     stop()
   }, [stop])
+
+  /**
+   * Every sound-changing action auditions its result. This runs inside the
+   * original click/key event, so the autoplay gesture still applies. A blocked
+   * engine is reported by the status warning and the explicit Play path; an
+   * automatic audition should never throw a toast in the user's face.
+   */
+  const audition = useCallback(
+    (preset: Preset, nextParams: SynthParams, nextSeed: number) => {
+      if (status === 'unsupported') return
+      stopBatchPreview()
+      setTriggerNonce((value) => value + 1)
+      const nextSound = synthesize(preset.model, nextParams, nextSeed)
+      void play(nextSound).catch(() => {
+        // The status warning and the manual Play path explain a blocked engine.
+      })
+    },
+    [play, status, stopBatchPreview],
+  )
+
+  const choosePreset = useCallback(
+    (preset: Preset) => {
+      const reroll = preset.id === activePresetId
+      // Capture the outgoing draft synchronously so a quick click never loses
+      // the latest slider movement, even if the debounced save has not fired.
+      draftsRef.current[activePresetId] = { params, seed, take }
+      const savedDraft = draftsRef.current[preset.id]
+      const nextTake = reroll ? take + 1 : savedDraft?.take ?? 1
+      const nextParams = reroll ? params : savedDraft?.params ?? clonePresetDefaults(preset)
+      const nextSeed = reroll ? createSeed() : savedDraft?.seed ?? createSeed()
+
+      if (!reroll) dismissToast()
+      setActivePresetId(preset.id)
+      setParams(nextParams)
+      setSeed(nextSeed)
+      setTake(nextTake)
+      audition(preset, nextParams, nextSeed)
+      if (reroll) {
+        showToast(`New version ${nextTake}. Same sound, new changes.`)
+      }
+    },
+    [activePresetId, audition, dismissToast, params, seed, showToast, take],
+  )
+
+  const chooseCategory = useCallback(
+    (category: CategoryId) => {
+      // Clicking the active category is a no-op, not a hidden re-roll.
+      if (category === activePreset.category) return
+      const first = getPresetsByCategory(category)[0]
+      if (first) choosePreset(first)
+    },
+    [activePreset.category, choosePreset],
+  )
+
+  const handleParamChange = useCallback((key: ParamKey, value: number) => {
+    setParams((previous) => ({ ...previous, [key]: sanitizeParam(key, value, false) }))
+  }, [])
+
+  const handleHumanizeChange = useCallback((value: number) => {
+    setHumanize(sanitizeHumanize(value))
+  }, [])
+
+  const persistSession = useCallback((snapshot: SessionSnapshot) => {
+    latestSessionRef.current = snapshot
+    if (sessionSaveTimerRef.current !== null) {
+      window.clearTimeout(sessionSaveTimerRef.current)
+    }
+    sessionSaveTimerRef.current = window.setTimeout(() => {
+      sessionSaveTimerRef.current = null
+      writeSession(snapshot)
+    }, 300)
+  }, [])
+
+  // Keep the draft map and the debounced browser snapshot in sync. The ref is
+  // updated synchronously on every render so preset switches always see the
+  // newest values.
+  useEffect(() => {
+    draftsRef.current[activePresetId] = { params, seed, take }
+    persistSession({
+      version: SESSION_VERSION,
+      activePresetId,
+      drafts: { ...draftsRef.current },
+      humanize,
+      batchGapMs,
+    })
+  }, [activePresetId, batchGapMs, humanize, params, persistSession, seed, take])
+
+  useEffect(() => {
+    const flush = () => {
+      if (latestSessionRef.current) writeSession(latestSessionRef.current)
+    }
+    window.addEventListener('pagehide', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      if (sessionSaveTimerRef.current !== null) {
+        window.clearTimeout(sessionSaveTimerRef.current)
+        sessionSaveTimerRef.current = null
+      }
+      flush()
+    }
+  }, [])
 
   const batchSignature = `${activePreset.id}|${seed}|${humanize}|${params.durationMs}|${params.pitchHz}|${params.punch}|${params.resonance}|${params.grit}|${params.decay}`
 
@@ -199,21 +285,34 @@ export default function App() {
   ])
 
   const handleSurprise = useCallback(() => {
+    draftsRef.current[activePresetId] = { params, seed, take }
     const nextSeed = createSeed()
     const rng = createRng(nextSeed)
     const preset = PRESETS[Math.floor(rng() * PRESETS.length)] ?? PRESETS[0]
+    const nextParams = jitterParameters(clonePresetDefaults(preset), 0.15, rng)
+
+    dismissToast()
     setActivePresetId(preset.id)
-    setParams(jitterParameters(clonePresetDefaults(preset), 0.15, rng))
+    setParams(nextParams)
     setSeed(nextSeed)
     setTake(1)
-    setTriggerNonce(0)
-  }, [])
+    audition(preset, nextParams, nextSeed)
+    showToast(`Surprise: ${preset.name}.`)
+  }, [activePresetId, audition, dismissToast, params, seed, showToast, take])
 
   const handleMutate = useCallback(() => {
     const next = mutateParameters(params, humanize, createRng(createSeed()))
     setParams(next.params)
     setHumanize(next.humanize)
-  }, [humanize, params])
+    audition(activePreset, next.params, seed)
+  }, [activePreset, audition, humanize, params, seed])
+
+  const handleReset = useCallback(() => {
+    const nextParams = clonePresetDefaults(activePreset)
+    setParams(nextParams)
+    audition(activePreset, nextParams, seed)
+    showToast('Sliders reset to the preset defaults.')
+  }, [activePreset, audition, seed, showToast])
 
   const trigger = useCallback(() => {
     stopBatchPreview()
@@ -352,8 +451,10 @@ export default function App() {
             <ParameterPanel
               params={params}
               humanize={humanize}
+              modified={modified}
               onParamChange={handleParamChange}
               onHumanizeChange={handleHumanizeChange}
+              onReset={handleReset}
             />
             <PerformancePanel
               preset={activePreset}

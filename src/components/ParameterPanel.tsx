@@ -2,19 +2,24 @@ import type { ParamKey, SynthParams } from '../audio/types'
 import { HUMANIZE_MAX, PARAM_RANGES } from '../audio/params'
 import { readoutForHumanize, readoutForParam } from '../lib/format'
 import { HardwareSlider } from './Slider'
+import { RerollIcon } from './Icons'
 
 interface ParameterPanelProps {
   params: SynthParams
   humanize: number
+  modified: boolean
   onParamChange: (key: ParamKey, value: number) => void
   onHumanizeChange: (value: number) => void
+  onReset: () => void
 }
 
 export function ParameterPanel({
   params,
   humanize,
+  modified,
   onParamChange,
   onHumanizeChange,
+  onReset,
 }: ParameterPanelProps) {
   return (
     <section className="panel parameter-panel" aria-labelledby="parameters-title">
@@ -28,9 +33,22 @@ export function ParameterPanel({
             </h2>
           </div>
         </div>
-        <div className="live-controls-badge">
-          <span className="tiny-led" aria-hidden="true" />
-          Changes live
+        <div className="panel-head-actions">
+          <button
+            type="button"
+            className="reset-button"
+            onClick={onReset}
+            disabled={!modified}
+            aria-label="Reset sliders to the preset defaults"
+            title="Reset sliders to the preset defaults"
+          >
+            <RerollIcon className="reset-icon" />
+            <span>Reset</span>
+          </button>
+          <div className="live-controls-badge">
+            <span className="tiny-led" aria-hidden="true" />
+            Changes live
+          </div>
         </div>
       </div>
 

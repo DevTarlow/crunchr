@@ -22,6 +22,12 @@ export class CrunchrAudioEngine {
   private progressTimers = new Set<number>()
   private silentUnlockDone = false
   private disposed = false
+  /**
+   * Incremented by every new play/sequence and by stop(). A pending start whose
+   * token is stale must not schedule audio or flip the UI back to "playing"
+   * after the user already stopped or retriggered.
+   */
+  private playToken = 0
   private cachedSound: RenderedSound | null = null
   private cachedBuffer: AudioBuffer | null = null
   private status: EngineStatus = 'standby'
@@ -164,7 +170,9 @@ export class CrunchrAudioEngine {
 
   async play(sound: RenderedSound, onEnded?: () => void): Promise<void> {
     if (this.disposed) throw new Error('The sound player is closed.')
+    const token = ++this.playToken
     const context = await this.ensureRunning()
+    if (token !== this.playToken) return
     const master = this.master
     if (!master) throw new Error('Sound could not start. Press Play again.')
 
@@ -203,7 +211,9 @@ export class CrunchrAudioEngine {
     if (this.disposed) throw new Error('The sound player is closed.')
     if (sounds.length === 0) return
 
+    const token = ++this.playToken
     const context = await this.ensureRunning()
+    if (token !== this.playToken) return
     const master = this.master
     if (!master) throw new Error('Sound could not start. Press Play again.')
 
@@ -245,6 +255,7 @@ export class CrunchrAudioEngine {
 
   /** Stop whatever is playing, including a scheduled batch preview. */
   stop(): void {
+    this.playToken += 1
     this.fadeOutVoices()
     if (this.context?.state === 'running') this.setStatus('armed')
   }
@@ -262,6 +273,7 @@ export class CrunchrAudioEngine {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
+    this.playToken += 1
     this.fadeOutVoices(0)
     try {
       void this.context?.close()

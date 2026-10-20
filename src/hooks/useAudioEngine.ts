@@ -8,6 +8,7 @@ import type { EngineStatus, RenderedSound } from '../audio/types'
  */
 export function useAudioEngine() {
   const engineRef = useRef<CrunchrAudioEngine | null>(null)
+  const playTokenRef = useRef(0)
   const [status, setStatus] = useState<EngineStatus>('standby')
   const [isPlaying, setIsPlaying] = useState(false)
 
@@ -23,11 +24,14 @@ export function useAudioEngine() {
   const play = useCallback(
     async (sound: RenderedSound): Promise<void> => {
       const engine = getEngine()
+      const token = ++playTokenRef.current
       setIsPlaying(false)
       await engine.play(sound, () => {
-        setIsPlaying(false)
+        if (token === playTokenRef.current) setIsPlaying(false)
       })
-      setIsPlaying(true)
+      // A stop or a newer trigger while the context was unlocking must not
+      // resurrect the playing state for a source that never scheduled.
+      if (token === playTokenRef.current) setIsPlaying(true)
     },
     [getEngine],
   )
@@ -40,6 +44,7 @@ export function useAudioEngine() {
       onEnded?: () => void,
     ): Promise<void> => {
       const engine = getEngine()
+      playTokenRef.current += 1
       setIsPlaying(false)
       await engine.playSequence(sounds, gapMs, onStep, onEnded)
     },
@@ -47,6 +52,7 @@ export function useAudioEngine() {
   )
 
   const stop = useCallback((): void => {
+    playTokenRef.current += 1
     engineRef.current?.stop()
     setIsPlaying(false)
   }, [])

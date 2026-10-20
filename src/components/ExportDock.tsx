@@ -44,7 +44,7 @@ export function ExportDock({
           </div>
         </div>
         <p>
-          Download the sound you just heard, or 10 versions with small changes. They are
+          Download the sound on your sliders, or 10 versions with small changes. They are
           handy for footsteps and clicks that should not repeat the same way.
         </p>
         <div className="export-specs" aria-label="Download format">
@@ -67,7 +67,7 @@ export function ExportDock({
           </span>
           <span className="export-button-copy">
             <strong>{exportKind === 'single' ? 'SAVING…' : 'DOWNLOAD WAV'}</strong>
-            <span>The sound you just heard</span>
+            <span>The sound on your sliders</span>
           </span>
           <span className="export-extension">.WAV</span>
         </button>
@@ -106,7 +106,7 @@ export function ExportDock({
           <span className="tiny-led batch-led" aria-hidden="true" />
           Variation {Math.round(humanize)}%
         </span>
-        <span>Works in your browser. Nothing is uploaded.</span>
+        <span>Settings stay in this browser. Nothing is uploaded.</span>
       </div>
     </section>
   )

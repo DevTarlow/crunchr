@@ -1,10 +1,6 @@
 import type { CSSProperties } from 'react'
+import { BATCH_GAP_MAX, BATCH_GAP_STEP, BATCH_PREVIEW_COUNT } from '../audio/params'
 import { PlayIcon, StopIcon } from './Icons'
-
-export const BATCH_PREVIEW_COUNT = 10
-export const BATCH_GAP_DEFAULT = 120
-export const BATCH_GAP_MAX = 600
-export const BATCH_GAP_STEP = 20
 
 interface BatchPreviewProps {
   playing: boolean

@@ -22,8 +22,12 @@ the browser. There are zero audio samples, zero network calls and no backend.
   between each sound and a clear note that the spacing is only an example.
 - **A tuned, tactile interface**: charcoal hardware panels, a single neon-amber
   accent, readable type at every size, proper empty/error/disabled states.
+- **Audition as you go**: picking a sound, re-rolling it, nudging, surprising or
+  resetting plays the result immediately.
+- **Per-sound memory**: each sound remembers its sliders, version and random
+  seed in this browser, and reloading restores your last session.
 - **Re-rollable versions**: tap the sound you already selected to make a new
-  version with fresh random details.
+  version with fresh random details without losing your slider settings.
 - **An in-app manual**: the info button in the top right explains the whole
   instrument, keyboard keys included.
 - **Desktop and mobile friendly**, with a global Spacebar performance shortcut.
@@ -37,14 +41,16 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (by default <http://localhost:5173>). Click any sound or
-press **Space** to play. Audio is unlocked on your first gesture; the header LED
-changes from **Tap to start** to **Ready**.
+Open the URL Vite prints (by default <http://localhost:5173>). Click any sound to
+hear it immediately; **Space** replays the current sound. Audio is unlocked on
+your first gesture; the header LED changes from **Tap to start** to **Ready**.
 
 Tap the sound you already selected and Crunchr makes a new version with a fresh
-random seed. The version number under the Play button tells you which one you are
-hearing. In the Save section, **Play all 10** auditions the whole batch set. The
-**Help** button in the top right opens a short manual for the rest.
+random seed. Your sliders stay where you set them, and the version number under
+the Play button tells you which one you are hearing. **Reset** in the Shape
+section returns the sliders to the preset defaults. In the Save section, **Play
+all 10** auditions the whole batch set. The **Help** button in the top right opens
+a short manual for the rest.
 
 ![Crunchr help manual](docs/crunchr-help.png)
 
@@ -56,6 +62,7 @@ hearing. In the Save section, **Play all 10** auditions the whole batch set. The
 | Activate a focused control | **Enter** |
 | Replay | Click the sound wave or the large **Play** button |
 | Make a new version | Click the active sound chip again |
+| Reset the sliders | Click **Reset** in the Shape section |
 | Tune a control | Drag or use arrow keys on any slider |
 | Select a sound | Click a group, then a sound chip |
 | Preview the 10 versions | **Play all 10** in the Save section |
@@ -148,6 +155,7 @@ src/
   components/       hardware UI, scope, presets, export dock, toasts
   hooks/            audio engine lifecycle, memoized rendering
   lib/format.ts     display formatting
+  lib/session.ts    browser-local session memory (per-sound drafts)
   App.tsx           instrument state and interactions
   styles.css        design tokens, hardware styling, responsive rules
 scripts/
@@ -204,16 +212,18 @@ npm run verify:browser # rebuild the single file, then run the browser smoke
 
 Unit tests cover WAV header/sample encoding, deterministic synthesis for all
 eleven models, range clamping at parameter extremes, humanize drift bounds,
-mutation bounds, and ZIP contents.
+mutation bounds, session parsing/storage and ZIP contents.
 
 The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 `dist-single/index.html` artifact directly from disk and checks the first-gesture
-audio arm, Play/Space/sound-wave playback, live scope, WAV and 10× ZIP downloads,
-the help modal and its Escape close, re-rolling the active sound, the batch
-preview, readable type sizes, and overflow-free layouts at 1440 px and 390 px. It
-also checks the 390 px help layout. It requires system Chrome; set `CHROME_PATH`
-if Chrome is not in a standard location. A missing browser fails the gate rather
-than silently skipping it.
+audio arm, selecting a sound auditions it, Play/Space/sound-wave playback, live
+scope, per-sound slider memory and Reset, re-rolling without losing the sliders,
+the active category being a no-op, session restore after reload, WAV and 10× ZIP
+downloads, the help modal and its Escape close, the batch preview, readable type
+sizes, and overflow-free layouts at 1440 px and 390 px. It also checks the 390 px
+help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
+standard location. A missing browser fails the gate rather than silently
+skipping it.
 
 ## Browser support
 
@@ -226,7 +236,10 @@ required by browser autoplay policy.
 
 No accounts, analytics, telemetry, network requests or asset uploads. The
 instrument is fully static and works offline. All generated audio stays in your
-browser until you download a file.
+browser until you download a file. Your last session (active sound, per-sound
+sliders, seed, version, variation amount and preview gap) is kept in browser
+local storage on this device and is never uploaded; clearing site data removes
+it.
 
 ## Dependencies
 

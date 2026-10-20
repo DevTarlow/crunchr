@@ -13,6 +13,12 @@ export const HUMANIZE_MIN = 0
 export const HUMANIZE_MAX = 50
 export const DEFAULT_HUMANIZE = 20
 
+/** Batch preview and export sizes. The ZIP always contains this many files. */
+export const BATCH_PREVIEW_COUNT = 10
+export const BATCH_GAP_DEFAULT = 120
+export const BATCH_GAP_MAX = 600
+export const BATCH_GAP_STEP = 20
+
 export const PARAM_RANGES: readonly ParamRange[] = [
   {
     key: 'durationMs',
@@ -102,10 +108,20 @@ export function sanitizeParams(params: SynthParams): SynthParams {
   }
 }
 
-export function sanitizeParam(key: ParamKey, value: number): number {
+/**
+ * Clamp a single control. The slider uses continuous positions while a range
+ * input is being dragged or stepped, so rounding is optional: rendering still
+ * goes through sanitizeParams(), but keeping the raw position lets keyboard
+ * arrows accumulate at short durations instead of snapping back to the nearest
+ * whole millisecond.
+ */
+export function sanitizeParam(key: ParamKey, value: number, round = true): number {
   const limits = PARAM_LIMITS[key]
+  if (!Number.isFinite(value)) return limits.min
+  const clamped = clamp(value, limits.min, limits.max)
+  if (!round) return clamped
   const step = key === 'resonance' ? 0.1 : 1
-  return sanitizeNumber(value, limits.min, limits.max, step, limits.min)
+  return roundTo(clamped, step)
 }
 
 export function sanitizeHumanize(value: number): number {

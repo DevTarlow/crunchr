@@ -199,6 +199,63 @@ async function main() {
     assert.equal(await page.locator('.app-root').getAttribute('data-audio-state'), 'armed')
     pass('first user gesture arms the audio engine')
 
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    pass('selecting a sound auditions it')
+
+    const defaultLengthPosition = await page.locator('#param-durationMs').inputValue()
+    const versionAfterSelect = await page.locator('.version-readout').innerText()
+    await page.locator('#param-durationMs').focus()
+    for (let i = 0; i < 15; i += 1) await page.keyboard.press('ArrowRight')
+    const editedLengthPosition = await page.locator('#param-durationMs').inputValue()
+    assert.notEqual(
+      editedLengthPosition,
+      defaultLengthPosition,
+      'Arrow keys must move the length slider',
+    )
+
+    await page.locator('.category-button').filter({ hasText: 'Clicks' }).click()
+    await page.waitForFunction(
+      () => document.querySelector('.preset-title-row h3')?.textContent === 'Mechanical Click',
+    )
+    await page.locator('.category-button').filter({ hasText: 'Items' }).click()
+    await page.waitForFunction(
+      () => document.querySelector('.preset-title-row h3')?.textContent === 'Dice Roll / Bounce',
+    )
+    assert.equal(
+      await page.locator('#param-durationMs').inputValue(),
+      editedLengthPosition,
+      'Each sound must remember its slider settings',
+    )
+    assert.equal(
+      await page.locator('.version-readout').innerText(),
+      versionAfterSelect,
+      'Restoring a draft must keep its version number',
+    )
+    await waitForPlayback(page, false)
+
+    await page.locator('.reset-button').click()
+    await page.waitForFunction(
+      () => document.querySelectorAll('.modified-label').length === 0,
+    )
+    assert.equal(
+      await page.locator('#param-durationMs').inputValue(),
+      defaultLengthPosition,
+      'Reset must return the sliders to the preset defaults',
+    )
+    await waitForPlayback(page, false)
+    pass('per-sound memory and Reset preserve and restore slider settings')
+
+    const versionBeforeCategoryClick = await page.locator('.version-readout').innerText()
+    await page.locator('.category-button').filter({ hasText: 'Items' }).click()
+    await page.waitForTimeout(150)
+    assert.equal(
+      await page.locator('.version-readout').innerText(),
+      versionBeforeCategoryClick,
+      'Clicking the active category must not re-roll the sound',
+    )
+    pass('the active category is a no-op rather than a hidden re-roll')
+
     await page.locator('.help-button').click()
     await page.locator('.help-dialog').waitFor({ state: 'visible' })
     assert.equal(await page.locator('.help-dialog').getAttribute('role'), 'dialog')
@@ -208,6 +265,9 @@ async function main() {
     await page.locator('.help-dialog').waitFor({ state: 'detached' })
     pass('the help manual opens as a modal and Escape closes it')
 
+    await page.locator('#param-durationMs').focus()
+    for (let i = 0; i < 12; i += 1) await page.keyboard.press('ArrowRight')
+    const rerollLengthPosition = await page.locator('#param-durationMs').inputValue()
     const versionBeforeReroll = await page.locator('.version-readout').innerText()
     await page.locator('.preset-chip.is-active').click()
     await page.waitForFunction(
@@ -221,12 +281,18 @@ async function main() {
       versionNumber(versionBeforeReroll) + 1,
       'Re-rolling must advance the version number',
     )
+    assert.equal(
+      await page.locator('#param-durationMs').inputValue(),
+      rerollLengthPosition,
+      'Re-rolling must keep the current slider settings',
+    )
     await page.waitForFunction(() =>
       /New version [0-9]+\. Same sound/.test(
         document.querySelector('.toast-message')?.textContent ?? '',
       ),
     )
-    pass('tapping the active sound rolls a new version')
+    await waitForPlayback(page, false)
+    pass('tapping the active sound rolls a new version without losing the sliders')
 
     await page.locator('.trigger-button').click()
     await waitForPlayback(page, true)
@@ -310,6 +376,48 @@ async function main() {
     assert.deepEqual(desktop.pageErrors, [], 'Desktop page errors')
     assert.deepEqual(desktop.externalRequests, [], 'Desktop external requests')
     pass('desktop layout has no horizontal overflow and no console errors or network egress')
+
+    const memoryContext = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    const memoryPage = await memoryContext.newPage()
+    const memory = attachDiagnostics(memoryPage)
+    await loadApp(memoryPage)
+    await selectLongPreset(memoryPage)
+    await waitForPlayback(memoryPage, false)
+    await memoryPage.locator('#param-durationMs').focus()
+    for (let i = 0; i < 20; i += 1) await memoryPage.keyboard.press('ArrowRight')
+    const persistedDuration = await memoryPage
+      .locator('#param-durationMs')
+      .getAttribute('aria-valuetext')
+    const persistedVersion = await memoryPage.locator('.version-readout').innerText()
+    await memoryPage.waitForTimeout(500)
+    await memoryPage.reload({ waitUntil: 'load' })
+    await memoryPage.locator('.app-root').waitFor({ state: 'visible' })
+    await memoryPage.waitForFunction(() => document.querySelectorAll('.hardware-range').length === 7)
+    assert.equal(
+      await memoryPage.locator('.preset-title-row h3').innerText(),
+      'Dice Roll / Bounce',
+      'The active preset must survive a reload',
+    )
+    assert.equal(
+      await memoryPage.locator('#param-durationMs').getAttribute('aria-valuetext'),
+      persistedDuration,
+      'Slider settings must survive a reload',
+    )
+    assert.equal(
+      await memoryPage.locator('.version-readout').innerText(),
+      persistedVersion,
+      'The version number must survive a reload',
+    )
+    assert.equal(
+      await memoryPage.locator('.app-root').getAttribute('data-audio-state'),
+      'standby',
+      'Restoring a session must not create the AudioContext',
+    )
+    assert.deepEqual(memory.consoleErrors, [], 'Session console errors')
+    assert.deepEqual(memory.pageErrors, [], 'Session page errors')
+    assert.deepEqual(memory.externalRequests, [], 'Session external requests')
+    pass('the last session restores after a reload without autoplaying')
+    await memoryContext.close()
 
     const mobileContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
