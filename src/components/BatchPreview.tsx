@@ -105,6 +105,7 @@ export function BatchPreview({
             value={gapMs}
             disabled={disabled}
             style={style}
+            aria-valuetext={`${gapMs} milliseconds`}
             onChange={(event) => onGapChange(Number(event.target.value))}
           />
           <div className="batch-preview-scale" aria-hidden="true">

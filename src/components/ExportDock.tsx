@@ -1,3 +1,4 @@
+import { formatBytes } from '../lib/format'
 import { ArchiveIcon, DownloadIcon } from './Icons'
 import { BatchPreview } from './BatchPreview'
 
@@ -11,6 +12,8 @@ interface ExportDockProps {
   batchPreviewStep: number
   selectedVariation: number | null
   batchGapMs: number
+  singleDurationMs: number
+  singleBytes: number
   onBatchGapChange: (value: number) => void
   onToggleBatchPreview: () => void
   onAuditionVariation: (index: number) => void
@@ -27,6 +30,8 @@ export function ExportDock({
   batchPreviewStep,
   selectedVariation,
   batchGapMs,
+  singleDurationMs,
+  singleBytes,
   onBatchGapChange,
   onToggleBatchPreview,
   onAuditionVariation,
@@ -55,6 +60,8 @@ export function ExportDock({
         </p>
         <div className="export-specs" aria-label="Download format">
           <span>WAV</span>
+          <span>44.1 kHz</span>
+          <span>16-bit</span>
           <span>Stereo</span>
           <span>Stays on your device</span>
         </div>
@@ -73,7 +80,9 @@ export function ExportDock({
           </span>
           <span className="export-button-copy">
             <strong>{exportKind === 'single' ? 'SAVING…' : 'DOWNLOAD WAV'}</strong>
-            <span>The sound on your sliders</span>
+            <span>
+              {Math.round(singleDurationMs)} ms · {formatBytes(singleBytes)}
+            </span>
           </span>
           <span className="export-extension">.WAV</span>
         </button>

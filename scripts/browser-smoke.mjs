@@ -265,6 +265,18 @@ async function main() {
     await page.locator('.help-dialog').waitFor({ state: 'detached' })
     pass('the help manual opens as a modal and Escape closes it')
 
+    await page.locator('.help-button').focus()
+    await page.keyboard.press('Space')
+    await page.locator('.help-dialog').waitFor({ state: 'visible' })
+    assert.equal(
+      await page.locator('.app-root').getAttribute('data-playing'),
+      'false',
+      'Space on Help must not start audio',
+    )
+    await page.keyboard.press('Escape')
+    await page.locator('.help-dialog').waitFor({ state: 'detached' })
+    pass('Space on the focused Help button opens the manual instead of playing')
+
     await page.locator('#param-durationMs').focus()
     for (let i = 0; i < 12; i += 1) await page.keyboard.press('ArrowRight')
     const rerollLengthPosition = await page.locator('#param-durationMs').inputValue()
@@ -315,6 +327,14 @@ async function main() {
     await waitForPlayback(page, false)
     pass('clicking the scope replays the current preset')
 
+    const singleMeta = await page.locator('.export-single .export-button-copy span').textContent()
+    assert.match(singleMeta ?? '', /^\d+ ms · .+$/, 'The WAV button must show duration and size')
+    const exportSpecs = await page.locator('.export-specs').textContent()
+    assert.match(exportSpecs ?? '', /44\.1 kHz/)
+    assert.match(exportSpecs ?? '', /16-bit/)
+    assert.match(exportSpecs ?? '', /Stereo/)
+    pass('the Save section shows full WAV format, duration and file size')
+
     const wavDownloadPromise = page.waitForEvent('download', { timeout: 15_000 })
     await page.getByRole('button', { name: /DOWNLOAD WAV/ }).click()
     const wavDownload = await wavDownloadPromise
@@ -322,6 +342,12 @@ async function main() {
     const wavPath = path.join(downloadsDir, wavDownload.suggestedFilename())
     await wavDownload.saveAs(wavPath)
     const wavInfo = readWav(readFileSync(wavPath))
+    const wavToast = await page.locator('.toast-message').textContent()
+    assert.match(wavToast ?? '', /\(\d+(\.\d+)? (B|KB|MB)\)/, 'The toast must include the file size')
+    const toastCloseHeight = await page
+      .locator('.toast-close')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(toastCloseHeight >= 28, `The toast close target is too small (${toastCloseHeight}px)`)
     pass(`WAV export is valid 44.1 kHz / 16-bit stereo (${wavInfo.dataBytes} data bytes, peak ${wavInfo.peak})`)
 
     const zipDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
@@ -405,6 +431,36 @@ async function main() {
     )
     pass('the batch preview plays all ten versions and stops on its own')
 
+    await page.locator('.category-button').filter({ hasText: 'Items' }).click()
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    await page.locator('.preset-chip').filter({ hasText: 'Cloth / Backpack Rustle' }).focus()
+    await page.keyboard.press('Space')
+    await page.waitForFunction(
+      () => document.querySelector('.preset-title-row h3')?.textContent === 'Cloth / Backpack Rustle',
+    )
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    pass('Space selects a focused non-active sound chip')
+
+    const versionBeforeChipSpace = await page.locator('.version-readout').innerText()
+    await page.locator('.preset-chip.is-active').focus()
+    await page.keyboard.press('Space')
+    await waitForPlayback(page, true)
+    assert.equal(
+      await page.locator('.version-readout').innerText(),
+      versionBeforeChipSpace,
+      'Space on the active chip must replay, not re-roll',
+    )
+    await waitForPlayback(page, false)
+    pass('Space on the active sound chip replays without re-rolling')
+
+    await page.locator('#param-durationMs').focus()
+    await page.keyboard.press('Space')
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    pass('Space from a slider still plays the current sound')
+
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true)
     assert.deepEqual(desktop.consoleErrors, [], 'Desktop console errors')
     assert.deepEqual(desktop.pageErrors, [], 'Desktop page errors')
@@ -466,9 +522,40 @@ async function main() {
     assert.equal(await mobilePage.locator('.hardware-range').count(), 7)
 
     await selectLongPreset(mobilePage)
+    const mobileGapHeight = await mobilePage
+      .locator('#batch-gap')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(mobileGapHeight >= 40, `The mobile gap slider is too short (${mobileGapHeight}px)`)
+    const mobileBatchButtonHeight = await mobilePage
+      .locator('.batch-preview-button')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(
+      mobileBatchButtonHeight >= 44,
+      `The mobile batch button is too short (${mobileBatchButtonHeight}px)`,
+    )
+    const mobileResetHeight = await mobilePage
+      .locator('.reset-button')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(mobileResetHeight >= 44, `The mobile Reset button is too short (${mobileResetHeight}px)`)
+    const mobileToastCloseHeight = await mobilePage
+      .locator('.toast-close')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(
+      mobileToastCloseHeight >= 28,
+      `The mobile toast close target is too small (${mobileToastCloseHeight}px)`,
+    )
+    pass('mobile touch targets meet the minimum sizes')
+
     await mobilePage.locator('.trigger-button').click()
     await waitForPlayback(mobilePage, true)
     await waitForPlayback(mobilePage, false)
+    await mobilePage.locator('.batch-preview-dot').nth(2).click()
+    await waitForPlayback(mobilePage, true)
+    await waitForPlayback(mobilePage, false)
+    const mobileSaveHeight = await mobilePage
+      .locator('.batch-save-button')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(mobileSaveHeight >= 44, `The mobile Save vNN button is too short (${mobileSaveHeight}px)`)
     assert.equal(await mobilePage.locator('.batch-preview-dot').count(), 10)
     const mobileDotMetrics = await mobilePage.locator('.batch-preview-dot').evaluateAll((nodes) =>
       nodes.map((element) => {
@@ -512,7 +599,14 @@ async function main() {
       Math.min(...narrowDotMetrics) >= 24,
       'Version buttons must stay at least 24 px tall at 320 px',
     )
-    pass('320 px layout is overflow-free with usable version buttons')
+    const narrowSaveHeight = await mobilePage
+      .locator('.batch-save-button')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(
+      narrowSaveHeight >= 44,
+      `The 320 px Save vNN button is too short (${narrowSaveHeight}px)`,
+    )
+    pass('320 px layout is overflow-free with usable version and save buttons')
 
     assert.deepEqual(mobile.consoleErrors, [], 'Mobile console errors')
     assert.deepEqual(mobile.pageErrors, [], 'Mobile page errors')

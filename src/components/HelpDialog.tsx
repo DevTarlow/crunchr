@@ -13,7 +13,7 @@ const STEPS = [
   },
   {
     title: 'Click it again for a new version.',
-    body: 'The sound you picked stays selected. Click it again to make a new version with random changes. Your slider settings stay where they are, and the version number under Play shows which one you are hearing. Use Reset in the Shape section to go back to the preset starting point.',
+    body: 'Click it again for a new version with random changes. Your sliders stay put; Reset in Shape restores the preset starting point.',
     reroll: true,
   },
   {
@@ -22,15 +22,15 @@ const STEPS = [
   },
   {
     title: 'Shape it.',
-    body: 'Six sliders change the length, pitch, punch, body, roughness and fade. The sound changes as you drag. Nudge 10% moves all six at once. Surprise me picks a random sound. Reset puts the sliders back to the preset defaults.',
+    body: 'Six sliders shape the sound as you drag. Nudge 10% moves all six; Surprise me picks a random sound. Reset restores the preset defaults.',
   },
   {
     title: 'Listen to 10 versions.',
-    body: 'The Variation slider changes each of the 10 downloaded sounds a little. Use Play all 10 in the Save section to hear them in a row, or click a numbered button to hear one version. Save vNN downloads just that version. Set the space between sounds and press play; the spacing is only an example, because your game sets it for the ten separate files.',
+    body: 'The Variation slider changes each of the 10 downloaded sounds. Play all 10 hears them in a row; click a number to hear one, then Save vNN to download it. The spacing is only a preview; your game sets it for the ten files.',
   },
   {
     title: 'Download it.',
-    body: 'Download WAV saves the sound on your sliders. Download 10 versions gives you a ZIP file with 10 separate sounds, and Save vNN saves one version on its own. They are standard WAV files that work in games and editors. Everything is saved on your device.',
+    body: 'Download WAV saves the sound on your sliders. Download 10 versions gives you a ZIP with 10 separate sounds; Save vNN saves one. They are standard WAV files for games and editors.',
   },
 ]
 
@@ -178,6 +178,10 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
                 </div>
               ))}
             </dl>
+            <p className="help-keys-note">
+              Space plays from the sound area. On a focused button it presses that
+              button instead; Enter always does.
+            </p>
           </section>
         </div>
 

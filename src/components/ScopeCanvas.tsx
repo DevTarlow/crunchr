@@ -306,7 +306,7 @@ export function ScopeCanvas({
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') {
+          if (event.key === 'Enter' || event.code === 'Space') {
             event.preventDefault()
             onTrigger()
           }

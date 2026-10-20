@@ -36,7 +36,7 @@ export function Header({ engineStatus, isPlaying, helpOpen, onOpenHelp }: Header
       </div>
 
       <div className="header-actions">
-        <div className="header-instruments" aria-label="Sound status">
+        <div className="header-instruments" role="group" aria-label="Sound status">
           <div className="status-module">
             <div className="status-line">
               <span

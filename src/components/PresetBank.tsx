@@ -40,11 +40,21 @@ export function PresetBank({
           </span>
         </div>
         <div className="bank-actions">
-          <button type="button" className="button button-ghost" onClick={onSurprise}>
+          <button
+            type="button"
+            className="button button-ghost"
+            onClick={onSurprise}
+            title="Pick a random sound"
+          >
             <SparkIcon className="button-icon" />
             <span>Surprise me</span>
           </button>
-          <button type="button" className="button button-ghost" onClick={onMutate}>
+          <button
+            type="button"
+            className="button button-ghost"
+            onClick={onMutate}
+            title="Move every slider by up to 10%"
+          >
             <MutateIcon className="button-icon" />
             <span>Nudge 10%</span>
           </button>
@@ -62,14 +72,17 @@ export function PresetBank({
                 type="button"
                 className={`category-button ${selected ? 'is-active' : ''}`}
                 aria-pressed={selected}
+                aria-label={`${category.label}, ${count} ${count === 1 ? 'sound' : 'sounds'} — ${category.blurb}`}
                 title={category.blurb}
                 onClick={() => onSelectCategory(category.id)}
               >
-                <span className="category-number">
+                <span className="category-number" aria-hidden="true">
                   {String(CATEGORIES.findIndex((item) => item.id === category.id) + 1).padStart(2, '0')}
                 </span>
                 <span className="category-label">{category.label}</span>
-                <span className="category-count">{String(count).padStart(2, '0')}</span>
+                <span className="category-count" aria-hidden="true">
+                  {String(count).padStart(2, '0')}
+                </span>
               </button>
             )
           })}
@@ -88,13 +101,15 @@ export function PresetBank({
                 type="button"
                 className={`preset-chip ${selected ? 'is-active' : ''}`}
                 aria-pressed={selected}
-                aria-label={
-                  selected ? `${preset.name}. Tap again for a new version.` : undefined
-                }
+                aria-label={`${preset.name}. ${preset.description}${
+                  selected && modified ? ' Changed.' : ''
+                }${selected ? ' Tap again for a new version.' : ''}`}
                 title={selected ? 'Tap again for a new version' : preset.description}
                 onClick={() => onSelectPreset(preset)}
               >
-                <span className="preset-chip-index">{String(index + 1).padStart(2, '0')}</span>
+                <span className="preset-chip-index" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
                 <span className="preset-chip-copy">
                   <strong>{preset.name}</strong>
                   <span>{preset.tags.join(' / ')}</span>

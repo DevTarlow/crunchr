@@ -60,7 +60,7 @@ right opens a short manual for the rest.
 
 | Action | Control |
 | --- | --- |
-| Play the current sound | **Space** (outside text-editing controls) |
+| Play the current sound | **Space** (from the page, scope, slider or active sound chip) |
 | Activate a focused control | **Enter** |
 | Replay | Click the sound wave or the large **Play** button |
 | Make a new version | Click the active sound chip again |
@@ -71,11 +71,13 @@ right opens a short manual for the rest.
 | Change the preview spacing | Drag **Space between sounds** |
 | Open the manual | Click the **Help** button in the top right |
 
-Space is intercepted globally as a performance key, including while a sound
-button is focused. This is intentional: after picking a sound you can play it
-without clicking elsewhere. Use **Enter** for ordinary button activation. The
-Spacebar does not fire while a text field, select or contenteditable element has
-focus.
+Space stays a performance key where it matters: from the page, a slider, the
+scope or the active sound chip, it plays the current sound. After picking a
+sound the chip keeps focus, so Space replays it without another click. When any
+other button is focused, Space activates that button natively — Help opens,
+downloads start, Reset resets, and a non-active sound chip is selected. **Enter**
+always activates the focused control. Space does not fire while a text field,
+select or contenteditable element has focus.
 
 ## Controls
 
@@ -224,10 +226,11 @@ The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 `dist-single/index.html` artifact directly from disk and checks the first-gesture
 audio arm, selecting a sound auditions it, Play/Space/sound-wave playback, live
 scope, per-sound slider memory and Reset, re-rolling without losing the sliders,
-the active category being a no-op, session restore after reload, WAV and 10× ZIP
-downloads, single-version audition and Save vNN, the help modal and its Escape
-close, the batch preview, readable type sizes, and overflow-free layouts at
-1440 px and 390 px. It also checks the 390 px help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
+the active category being a no-op, session restore after reload, native Space
+activation on action buttons, WAV and 10× ZIP downloads, single-version audition
+and Save vNN, the help modal and its Escape close, the batch preview, Save
+format/size, touch-target sizes, and overflow-free layouts at 1440, 390 and
+320 px. It also checks the 390 px help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
 standard location. A missing browser fails the gate rather than silently
 skipping it.
 

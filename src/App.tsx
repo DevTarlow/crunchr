@@ -94,6 +94,8 @@ export default function App() {
   const sound = useRenderedSound(activePreset, params, seed)
   const modified = isModifiedPreset(params, activePreset)
   const activeCategory = activePreset.category
+  // RIFF header + stereo 16-bit frames.
+  const singleWavBytes = 44 + sound.channels[0].length * 4
 
   const { status, isPlaying, play, playSequence, stop, getWaveform } = useAudioEngine()
 
@@ -387,8 +389,9 @@ export default function App() {
     })
   }, [play, showToast, sound, stopBatchPreview])
 
-  // Spacebar is the performance key. Ignore editable fields, let the trigger
-  // button use its native space activation, and prevent the page from scrolling.
+  // Spacebar is the performance key from the page, a slider, the scope and the
+  // active sound chip. Any other focused button keeps native Space activation,
+  // so Help, downloads, Reset and non-active sound chips behave as expected.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (
@@ -402,13 +405,19 @@ export default function App() {
         return
       }
       const target = event.target instanceof Element ? event.target : null
-      if (target?.closest('.trigger-button')) return
       if (
         target?.closest(
           'textarea, select, input:not([type="range"]), [contenteditable="true"], [contenteditable=""]',
         )
       ) {
         return
+      }
+      const interactive = target?.closest('button, a, [role="button"]')
+      if (interactive) {
+        const isActiveChip =
+          interactive.classList.contains('preset-chip') &&
+          interactive.classList.contains('is-active')
+        if (!isActiveChip) return
       }
       event.preventDefault()
       trigger()
@@ -428,7 +437,7 @@ export default function App() {
     try {
       const { blob, filename } = singleWavFor(presetSnapshot, soundSnapshot)
       downloadBlob(blob, filename)
-      showToast(`Saved ${filename}.`)
+      showToast(`Saved ${filename} (${formatBytes(blob.size)}).`)
     } catch (error) {
       showToast(messageFromError(error, 'The WAV file could not be made.'), 'error')
     } finally {
@@ -457,7 +466,9 @@ export default function App() {
         onProgress: (completed) => setBatchProgress(completed),
       })
       downloadBytes(result.bytes, result.filename, 'application/zip')
-      showToast(`Saved 10 sounds in ${result.filename}.`)
+      showToast(
+        `Saved 10 sounds in ${result.filename} (${formatBytes(result.bytes.length)}).`,
+      )
     } catch (error) {
       showToast(messageFromError(error, 'The ZIP file could not be made.'), 'error')
     } finally {
@@ -536,6 +547,8 @@ export default function App() {
             batchPreviewStep={batchPreviewStep}
             selectedVariation={selectedVariation}
             batchGapMs={batchGapMs}
+            singleDurationMs={sound.durationMs}
+            singleBytes={singleWavBytes}
             onBatchGapChange={handleBatchGapChange}
             onToggleBatchPreview={handleToggleBatchPreview}
             onAuditionVariation={handleAuditionVariation}

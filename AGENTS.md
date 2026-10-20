@@ -78,15 +78,19 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
   to the preset defaults; clicking the active category does not re-roll;
 - tapping the active sound rolls a new version without losing the sliders;
 - a reload restores the last session without creating the AudioContext;
+- Space on Help opens the manual instead of playing, a non-active chip is
+  selected with Space, and the active chip/slider still replay the sound;
 - WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
+- the Save section shows duration/size and the mobile controls meet their touch
+  target sizes;
 - the batch download contains exactly the ten correctly named valid WAVs;
 - clicking a numbered version auditions it, and Save vNN downloads the same
   valid WAV that appears in the ZIP;
 - the help manual opens as a modal and closes on Escape;
 - the batch preview plays all ten versions and stops on its own;
 - body, control-label and helper type stay at readable sizes;
-- the 1440 px and 390 px layouts have no horizontal overflow, and the help
-  manual fits the 390 px layout;
+- the 1440 px, 390 px and 320 px layouts have no horizontal overflow, and the
+  help manual fits the 390 px layout;
 - there are no console errors or page errors.
 
 Chrome is located through `CHROME_PATH`, then the normal system install paths,
