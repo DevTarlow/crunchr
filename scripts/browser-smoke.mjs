@@ -181,9 +181,53 @@ async function main() {
     assert.equal(await page.locator('.app-root').getAttribute('data-audio-state'), 'standby')
     pass('single-file UI, preset bank, seven controls and scope render from file://')
 
+    const bodyFontSize = await page.locator('body').evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize),
+    )
+    const labelFontSize = await page.locator('.param-label').first().evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize),
+    )
+    const helperFontSize = await page.locator('.param-helper').first().evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize),
+    )
+    assert.ok(bodyFontSize >= 16, `Body text must be at least 16 px (got ${bodyFontSize})`)
+    assert.ok(labelFontSize >= 12, `Control labels must be at least 12 px (got ${labelFontSize})`)
+    assert.ok(helperFontSize >= 12, `Control helpers must be at least 12 px (got ${helperFontSize})`)
+    pass(`type scale stays readable (body ${bodyFontSize}px, labels ${labelFontSize}px, helpers ${helperFontSize}px)`)
+
     await selectLongPreset(page)
     assert.equal(await page.locator('.app-root').getAttribute('data-audio-state'), 'armed')
     pass('first user gesture arms the audio engine')
+
+    await page.locator('.help-button').click()
+    await page.locator('.help-dialog').waitFor({ state: 'visible' })
+    assert.equal(await page.locator('.help-dialog').getAttribute('role'), 'dialog')
+    assert.equal(await page.locator('.help-dialog').getAttribute('aria-modal'), 'true')
+    assert.equal(await page.locator('.help-steps li').count(), 6)
+    await page.keyboard.press('Escape')
+    await page.locator('.help-dialog').waitFor({ state: 'detached' })
+    pass('the help manual opens as a modal and Escape closes it')
+
+    const seedBeforeReroll = await page.locator('.seed-readout').innerText()
+    const takeBeforeReroll = await page.locator('.take-readout').innerText()
+    await page.locator('.preset-chip.is-active').click()
+    await page.waitForFunction(
+      (previous) => document.querySelector('.seed-readout')?.textContent !== previous,
+      seedBeforeReroll,
+    )
+    const takeAfterReroll = await page.locator('.take-readout').innerText()
+    const takeNumber = (label) => Number.parseInt(label.replace(/[^0-9]/g, ''), 10)
+    assert.equal(
+      takeNumber(takeAfterReroll),
+      takeNumber(takeBeforeReroll) + 1,
+      'Re-rolling must advance the take counter',
+    )
+    await page.waitForFunction(() =>
+      /New take [0-9]+\. Same material/.test(
+        document.querySelector('.toast-message')?.textContent ?? '',
+      ),
+    )
+    pass('tapping the active material rolls a new take and seed')
 
     await page.locator('.trigger-button').click()
     await waitForPlayback(page, true)
@@ -262,6 +306,16 @@ async function main() {
     await mobilePage.locator('.trigger-button').click()
     await waitForPlayback(mobilePage, true)
     await waitForPlayback(mobilePage, false)
+
+    await mobilePage.locator('.help-button').click()
+    await mobilePage.locator('.help-dialog').waitFor({ state: 'visible' })
+    assert.equal(
+      await mobilePage.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      true,
+    )
+    await mobilePage.keyboard.press('Escape')
+    await mobilePage.locator('.help-dialog').waitFor({ state: 'detached' })
+    pass('the help manual fits the 390 px layout')
 
     assert.deepEqual(mobile.consoleErrors, [], 'Mobile console errors')
     assert.deepEqual(mobile.pageErrors, [], 'Mobile page errors')

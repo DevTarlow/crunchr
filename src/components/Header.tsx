@@ -1,9 +1,11 @@
 import type { EngineStatus } from '../audio/types'
-import { CrunchMark } from './Icons'
+import { CrunchMark, InfoIcon } from './Icons'
 
 interface HeaderProps {
   engineStatus: EngineStatus
   isPlaying: boolean
+  helpOpen: boolean
+  onOpenHelp: () => void
 }
 
 const STATUS_LABEL: Record<EngineStatus, string> = {
@@ -12,7 +14,7 @@ const STATUS_LABEL: Record<EngineStatus, string> = {
   unsupported: 'Unavailable',
 }
 
-export function Header({ engineStatus, isPlaying }: HeaderProps) {
+export function Header({ engineStatus, isPlaying, helpOpen, onOpenHelp }: HeaderProps) {
   const live = engineStatus === 'armed'
   const statusLabel = isPlaying && live ? 'Playing' : STATUS_LABEL[engineStatus]
 
@@ -33,22 +35,37 @@ export function Header({ engineStatus, isPlaying }: HeaderProps) {
         </div>
       </div>
 
-      <div className="header-instruments" aria-label="Instrument status">
-        <div className="status-module">
-          <div className="status-line">
-            <span
-              className={`status-led ${engineStatus} ${isPlaying ? 'playing' : ''}`}
-              aria-hidden="true"
-            />
-            <span className="micro-label">Audio engine</span>
+      <div className="header-actions">
+        <div className="header-instruments" aria-label="Instrument status">
+          <div className="status-module">
+            <div className="status-line">
+              <span
+                className={`status-led ${engineStatus} ${isPlaying ? 'playing' : ''}`}
+                aria-hidden="true"
+              />
+              <span className="micro-label">Audio engine</span>
+            </div>
+            <strong className="status-value">{statusLabel}</strong>
           </div>
-          <strong className="status-value">{statusLabel}</strong>
+          <div className="status-divider" aria-hidden="true" />
+          <div className="spec-module">
+            <span className="micro-label">Output</span>
+            <span className="spec-value">44.1 kHz / 16-bit / Stereo</span>
+          </div>
         </div>
-        <div className="status-divider" aria-hidden="true" />
-        <div className="spec-module">
-          <span className="micro-label">Output</span>
-          <span className="spec-value">44.1 kHz / 16-bit / Stereo</span>
-        </div>
+
+        <button
+          type="button"
+          className="help-button"
+          onClick={onOpenHelp}
+          aria-label="How to use Crunchr"
+          aria-haspopup="dialog"
+          aria-expanded={helpOpen}
+          title="How to use Crunchr"
+        >
+          <InfoIcon className="help-button-icon" />
+          <span className="help-button-label">Help</span>
+        </button>
       </div>
     </header>
   )

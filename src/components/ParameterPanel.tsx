@@ -22,7 +22,7 @@ export function ParameterPanel({
         <div className="section-heading">
           <span className="section-index">02</span>
           <div>
-            <div className="section-kicker">SHAPE</div>
+            <div className="section-kicker">Shape</div>
             <h2 id="parameters-title" className="section-title">
               Dial in the texture<span className="title-dot">.</span>
             </h2>
@@ -66,15 +66,15 @@ export function ParameterPanel({
             </div>
           </div>
           <p>
-            Drifts pitch, timing, filter body and texture across batch takes so repeated
-            footsteps never fall into a machine-gun groove.
+            Drifts timing, pitch, body and texture across the 10 batch takes. A row of
+            footsteps stops sounding like one footstep.
           </p>
         </div>
         <div className="humanize-slider">
           <HardwareSlider
             id="param-humanize"
             label="Batch drift"
-            helper="0% = no parameter drift; every take still gets fresh noise."
+            helper="0% keeps the sliders put. Every take still gets fresh noise."
             min={0}
             max={HUMANIZE_MAX}
             step={1}

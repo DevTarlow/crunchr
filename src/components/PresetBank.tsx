@@ -1,10 +1,11 @@
 import type { CategoryId, Preset } from '../audio/types'
 import { CATEGORIES, getPresetsByCategory, PRESETS } from '../audio/presets'
-import { MutateIcon, SparkIcon, SlidersIcon } from './Icons'
+import { MutateIcon, RerollIcon, SparkIcon, SlidersIcon } from './Icons'
 
 interface PresetBankProps {
   activePreset: Preset
   modified: boolean
+  take: number
   onSelectCategory: (category: CategoryId) => void
   onSelectPreset: (preset: Preset) => void
   onSurprise: () => void
@@ -14,6 +15,7 @@ interface PresetBankProps {
 export function PresetBank({
   activePreset,
   modified,
+  take,
   onSelectCategory,
   onSelectPreset,
   onSurprise,
@@ -28,7 +30,7 @@ export function PresetBank({
         <div className="section-heading">
           <span className="section-index">01</span>
           <div>
-            <div className="section-kicker">SOUND BANK</div>
+            <div className="section-kicker">Sound bank</div>
             <h2 id="sound-bank-title" className="section-title">
               Pick a material<span className="title-dot">.</span>
             </h2>
@@ -82,6 +84,12 @@ export function PresetBank({
                 type="button"
                 className={`preset-chip ${selected ? 'is-active' : ''}`}
                 aria-pressed={selected}
+                aria-label={
+                  selected
+                    ? `${preset.name}. Activate again for a new take.`
+                    : undefined
+                }
+                title={selected ? 'Tap again for a fresh take' : preset.description}
                 onClick={() => onSelectPreset(preset)}
               >
                 <span className="preset-chip-index">{String(index + 1).padStart(2, '0')}</span>
@@ -89,21 +97,38 @@ export function PresetBank({
                   <strong>{preset.name}</strong>
                   <span>{preset.tags.join(' / ')}</span>
                 </span>
-                {selected && modified ? <span className="modified-badge">MOD</span> : null}
+                {selected ? (
+                  <span key={take} className="preset-chip-reroll" aria-hidden="true">
+                    <RerollIcon />
+                    <span>Reroll</span>
+                  </span>
+                ) : null}
+                {selected && modified ? <span className="modified-badge">Mod</span> : null}
               </button>
             )
           })}
         </div>
       </div>
 
-      <div className="bank-footnote">
-        <span className="footnote-icon" aria-hidden="true">
-          <SlidersIcon />
-        </span>
-        <span>
-          Every sound is generated from oscillators, filters and seeded noise. No audio
-          files, no downloads, no samples.
-        </span>
+      <div className="bank-footnotes">
+        <div className="bank-footnote">
+          <span className="footnote-icon" aria-hidden="true">
+            <SlidersIcon />
+          </span>
+          <span>
+            Every sound is built from oscillators, filters and seeded noise. Nothing is
+            loaded from a file.
+          </span>
+        </div>
+        <div className="bank-footnote bank-tip">
+          <span className="footnote-icon" aria-hidden="true">
+            <RerollIcon />
+          </span>
+          <span>
+            The glowing material is still live. Tap it again for a fresh take: same
+            material, new seed.
+          </span>
+        </div>
       </div>
     </section>
   )

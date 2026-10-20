@@ -19,7 +19,11 @@ the browser. There are zero audio samples, zero network calls and no backend.
 - **Single-take WAV export** and **10× humanized ZIP batches**, both generated
   entirely on the client.
 - **A tuned, tactile interface**: charcoal hardware panels, a single neon-amber
-  accent, mono measurement labels, proper empty/error/disabled states.
+  accent, readable type at every size, proper empty/error/disabled states.
+- **Re-rollable takes**: tap the material you already selected to roll a fresh
+  random seed, with a take counter and seed to keep score.
+- **An in-app manual**: the info button in the top right explains the whole
+  instrument, keyboard keys included.
 - **Desktop and mobile friendly**, with a global Spacebar performance shortcut.
 - **Deterministic synthesis**: the waveform you see, the sound you hear and every
   exported file come from the same seeded renderer.
@@ -35,6 +39,13 @@ Open the URL Vite prints (by default <http://localhost:5173>). Click any
 category/preset or press **Space** to play. Audio is unlocked on your first
 gesture; the header LED changes from **Standby** to **Armed**.
 
+Tap the preset you already have selected and Crunchr rolls a fresh seed for the
+same material. The take counter and seed under the trigger tell you which one
+you are hearing. The **Help** button in the top right opens a short manual for
+the rest.
+
+![Crunchr help manual](docs/crunchr-help.png)
+
 ### Keyboard & mouse
 
 | Action | Control |
@@ -42,8 +53,10 @@ gesture; the header LED changes from **Standby** to **Armed**.
 | Trigger the current preset | **Space** (outside text-editing controls) |
 | Activate a focused control | **Enter** |
 | Replay | Click the scope or the large **Trigger** button |
+| Roll a new take | Click the active preset chip again |
 | Tune a control | Drag or use arrow keys on any slider |
 | Select a preset | Click a category, then a preset chip |
+| Open the manual | Click the **Help** button in the top right |
 
 Space is intercepted globally as a performance key, including while a preset
 button is focused. This is intentional: after picking a sound you can audition
@@ -186,10 +199,11 @@ mutation bounds, and ZIP contents.
 The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 `dist-single/index.html` artifact directly from disk and checks the first-gesture
 audio arm, trigger/Space/scope playback, live scope, WAV and 10× ZIP downloads,
-no network egress or console errors, and overflow-free layouts at 1440 px and
-390 px. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
-standard location. A missing browser fails the gate rather than silently skipping
-it.
+the help modal and its Escape close, re-rolling the active material, readable
+type sizes, and overflow-free layouts at 1440 px and 390 px. It also checks the
+390 px help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not
+in a standard location. A missing browser fails the gate rather than silently
+skipping it.
 
 ## Browser support
 

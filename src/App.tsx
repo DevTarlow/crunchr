@@ -23,6 +23,7 @@ import { PresetBank } from './components/PresetBank'
 import { ParameterPanel } from './components/ParameterPanel'
 import { PerformancePanel } from './components/PerformancePanel'
 import { ExportDock, type ExportKind } from './components/ExportDock'
+import { HelpDialog } from './components/HelpDialog'
 import { Toast, type ToastMessage, type ToastTone } from './components/Toast'
 import { AlertIcon, CrunchMark, SpeakerIcon } from './components/Icons'
 
@@ -36,6 +37,8 @@ export default function App() {
   const [params, setParams] = useState<SynthParams>(() => clonePresetDefaults(initialPreset))
   const [humanize, setHumanize] = useState(DEFAULT_HUMANIZE)
   const [seed, setSeed] = useState(() => createSeed())
+  const [take, setTake] = useState(1)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [triggerNonce, setTriggerNonce] = useState(0)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const [exportKind, setExportKind] = useState<ExportKind | null>(null)
@@ -50,6 +53,8 @@ export default function App() {
   const activeCategory = activePreset.category
 
   const { status, isPlaying, play, getWaveform } = useAudioEngine()
+
+  const closeHelp = useCallback(() => setHelpOpen(false), [])
 
   const dismissToast = useCallback(() => {
     if (toastTimerRef.current !== null) {
@@ -77,12 +82,21 @@ export default function App() {
     }
   }, [])
 
-  const choosePreset = useCallback((preset: Preset) => {
-    setActivePresetId(preset.id)
-    setParams(clonePresetDefaults(preset))
-    setSeed(createSeed())
-    setTriggerNonce(0)
-  }, [])
+  const choosePreset = useCallback(
+    (preset: Preset) => {
+      const reroll = preset.id === activePresetId
+      const nextTake = reroll ? take + 1 : 1
+      setTake(nextTake)
+      setActivePresetId(preset.id)
+      setParams(clonePresetDefaults(preset))
+      setSeed(createSeed())
+      setTriggerNonce(0)
+      if (reroll) {
+        showToast(`New take ${nextTake}. Same material, fresh seed.`)
+      }
+    },
+    [activePresetId, showToast, take],
+  )
 
   const chooseCategory = useCallback(
     (category: CategoryId) => {
@@ -107,6 +121,7 @@ export default function App() {
     setActivePresetId(preset.id)
     setParams(jitterParameters(clonePresetDefaults(preset), 0.15, rng))
     setSeed(nextSeed)
+    setTake(1)
     setTriggerNonce(0)
   }, [])
 
@@ -133,6 +148,7 @@ export default function App() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (
+        helpOpen ||
         event.code !== 'Space' ||
         event.repeat ||
         event.metaKey ||
@@ -156,7 +172,7 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [trigger])
+  }, [helpOpen, trigger])
 
   const handleExportSingle = useCallback(() => {
     if (exportBusyRef.current) return
@@ -214,7 +230,12 @@ export default function App() {
     >
       <div className="app-atmosphere" aria-hidden="true" />
       <div className="app-shell">
-        <Header engineStatus={status} isPlaying={isPlaying} />
+        <Header
+          engineStatus={status}
+          isPlaying={isPlaying}
+          helpOpen={helpOpen}
+          onOpenHelp={() => setHelpOpen(true)}
+        />
 
         <main className="app-main">
           <PresetBank
@@ -224,6 +245,7 @@ export default function App() {
             onSelectPreset={choosePreset}
             onSurprise={handleSurprise}
             onMutate={handleMutate}
+            take={take}
           />
 
           {status === 'unsupported' ? (
@@ -255,6 +277,7 @@ export default function App() {
               triggerNonce={triggerNonce}
               getWaveform={getWaveform}
               onTrigger={trigger}
+              take={take}
             />
           </div>
 
@@ -279,7 +302,8 @@ export default function App() {
           </div>
           <p className="footer-manifesto">
             <SpeakerIcon aria-hidden="true" />
-            No samples. No servers. No telemetry. Just math, noise, and microseconds.
+            Every sound here is math and noise, made inside your browser. Nothing leaves the
+            page.
           </p>
           <p className="footer-made">
             Built for game feel
@@ -289,6 +313,7 @@ export default function App() {
         </footer>
       </div>
 
+      <HelpDialog open={helpOpen} onClose={closeHelp} />
       <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   )

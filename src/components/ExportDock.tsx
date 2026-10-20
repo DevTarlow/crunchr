@@ -26,14 +26,14 @@ export function ExportDock({
         <div className="section-heading">
           <span className="section-index">04</span>
           <div>
-            <div className="section-kicker">OUTPUT</div>
+            <div className="section-kicker">Output</div>
             <h2 id="export-title" className="section-title">
               Bake it into the game<span className="title-dot">.</span>
             </h2>
           </div>
         </div>
         <p>
-          Print the exact take you just heard, or export ten seeded variations for
+          Save the exact take you just heard, or export ten seeded variations for
           footsteps and clicks that never repeat mechanically.
         </p>
         <div className="export-specs" aria-label="Export format">

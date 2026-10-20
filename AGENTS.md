@@ -75,7 +75,11 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
   each play the Dice preset and drive the live scope;
 - WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
 - the batch download contains exactly the ten correctly named valid WAVs;
-- the 1440 px and 390 px layouts have no horizontal overflow;
+- the help manual opens as a modal and closes on Escape;
+- tapping the active preset rolls a new take and seed;
+- body, control-label and helper type stay at readable sizes;
+- the 1440 px and 390 px layouts have no horizontal overflow, and the help
+  manual fits the 390 px layout;
 - there are no console errors or page errors.
 
 Chrome is located through `CHROME_PATH`, then the normal system install paths,

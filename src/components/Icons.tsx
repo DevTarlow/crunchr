@@ -129,3 +129,22 @@ export function SpeakerIcon(props: IconProps) {
     </IconBase>
   )
 }
+
+export function InfoIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 21.5a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19Z" />
+      <path d="M12 10.8v6.1" />
+      <path d="M12 7.2h.01" />
+    </IconBase>
+  )
+}
+
+export function RerollIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M20 11.2a8 8 0 1 0-2.4 7" />
+      <path d="M20 4.5v6.7h-6.7" />
+    </IconBase>
+  )
+}

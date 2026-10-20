@@ -11,6 +11,7 @@ interface PerformancePanelProps {
   modified: boolean
   isPlaying: boolean
   triggerNonce: number
+  take: number
   getWaveform: () => Float32Array | null
   onTrigger: () => void
 }
@@ -22,6 +23,7 @@ export function PerformancePanel({
   modified,
   isPlaying,
   triggerNonce,
+  take,
   getWaveform,
   onTrigger,
 }: PerformancePanelProps) {
@@ -33,7 +35,7 @@ export function PerformancePanel({
         <div className="section-heading">
           <span className="section-index">03</span>
           <div>
-            <div className="section-kicker">GAME FEEL</div>
+            <div className="section-kicker">Game feel</div>
             <h2 id="performance-title" className="section-title">
               Audition the take<span className="title-dot">.</span>
             </h2>
@@ -90,7 +92,10 @@ export function PerformancePanel({
           <span>
             Click the scope or hit <kbd>space</kbd> to audition
           </span>
-          <span className="seed-readout">SEED {formatSeed(seed)}</span>
+          <span className="take-meta">
+            <span className="take-readout">Take {String(take).padStart(2, '0')}</span>
+            <span className="seed-readout">Seed {formatSeed(seed)}</span>
+          </span>
         </div>
       </div>
 
