@@ -20,6 +20,7 @@ the browser. There are zero audio samples, zero network calls and no backend.
   entirely on the client.
 - **Batch preview**: hear all ten versions in a row, with an adjustable space
   between each sound and a clear note that the spacing is only an example.
+  Click any numbered button to audition one version and save it on its own.
 - **A tuned, tactile interface**: charcoal hardware panels, a single neon-amber
   accent, readable type at every size, proper empty/error/disabled states.
 - **Audition as you go**: picking a sound, re-rolling it, nudging, surprising or
@@ -49,8 +50,9 @@ Tap the sound you already selected and Crunchr makes a new version with a fresh
 random seed. Your sliders stay where you set them, and the version number under
 the Play button tells you which one you are hearing. **Reset** in the Shape
 section returns the sliders to the preset defaults. In the Save section, **Play
-all 10** auditions the whole batch set. The **Help** button in the top right opens
-a short manual for the rest.
+all 10** auditions the whole batch set; click a numbered button to hear one
+version, then **Save vNN** to keep that one file. The **Help** button in the top
+right opens a short manual for the rest.
 
 ![Crunchr help manual](docs/crunchr-help.png)
 
@@ -120,8 +122,10 @@ and ±20%. Every batch is generated from a snapshot taken at click time, so
 changing a slider mid-export cannot corrupt the package.
 
 **Play all 10** in the Save section renders the same ten versions and plays them
-back to back on the AudioContext clock. The **Space between sounds** slider sets
-a preview-only gap from 0 to 600 ms. Changing the gap while a preview is playing
+back to back on the AudioContext clock. Click one of the ten numbered buttons to
+audition that version on its own; **Save vNN** downloads just that file as
+`crunchr_<preset_slug>_vNN.wav`. The **Space between sounds** slider sets a
+preview-only gap from 0 to 600 ms. Changing the gap while a preview is playing
 stops it so the next run uses the new spacing. The gap is not written into the
 ZIP: the ten WAVs stay separate, and the game decides when to trigger each one.
 
@@ -129,6 +133,8 @@ ZIP: the ten WAVs stay separate, and the game decides when to trigger each one.
 
 - **Download WAV** → `crunchr_<preset_slug>.wav`
   - RIFF/WAVE, PCM format 1, 44.1 kHz, 16-bit, stereo
+- **Save vNN** → `crunchr_<preset_slug>_vNN.wav`
+  - one humanized version from the preview strip
 - **Download 10 versions** → `crunchr_<preset_slug>_variants.zip`
   - contains `crunchr_<preset_slug>_v01.wav` through `_v10.wav`
 - `audioBufferToWav(audioBuffer)` is exported as a standalone utility in
@@ -219,9 +225,9 @@ The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 audio arm, selecting a sound auditions it, Play/Space/sound-wave playback, live
 scope, per-sound slider memory and Reset, re-rolling without losing the sliders,
 the active category being a no-op, session restore after reload, WAV and 10× ZIP
-downloads, the help modal and its Escape close, the batch preview, readable type
-sizes, and overflow-free layouts at 1440 px and 390 px. It also checks the 390 px
-help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
+downloads, single-version audition and Save vNN, the help modal and its Escape
+close, the batch preview, readable type sizes, and overflow-free layouts at
+1440 px and 390 px. It also checks the 390 px help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not in a
 standard location. A missing browser fails the gate rather than silently
 skipping it.
 

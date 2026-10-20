@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { CategoryId, ParamKey, Preset, SynthParams } from './audio/types'
+import type { CategoryId, ParamKey, Preset, RenderedSound, SynthParams } from './audio/types'
 import {
   DEFAULT_PRESET_ID,
   PRESETS,
@@ -19,12 +19,18 @@ import {
   sanitizeParam,
 } from './audio/params'
 import { createRng, createSeed } from './audio/random'
-import { buildVariations, jitterParameters, mutateParameters } from './audio/variations'
+import {
+  buildVariations,
+  jitterParameters,
+  mutateParameters,
+  variationWavFilename,
+} from './audio/variations'
 import { synthesize } from './audio/synthesis'
 import {
   buildBatchArchive,
   downloadBlob,
   downloadBytes,
+  renderedToBlob,
   singleWavFor,
 } from './audio/export'
 import { useRenderedSound } from './hooks/useRenderedSound'
@@ -37,6 +43,7 @@ import { ExportDock, type ExportKind } from './components/ExportDock'
 import { HelpDialog } from './components/HelpDialog'
 import { Toast, type ToastMessage, type ToastTone } from './components/Toast'
 import { AlertIcon, CrunchMark, SpeakerIcon } from './components/Icons'
+import { formatBytes } from './lib/format'
 import {
   SESSION_VERSION,
   readSession,
@@ -44,6 +51,11 @@ import {
   type SessionSnapshot,
   type SoundDraft,
 } from './lib/session'
+
+interface VariationSoundCache {
+  signature: string
+  sounds: RenderedSound[]
+}
 
 function messageFromError(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback
@@ -68,10 +80,12 @@ export default function App() {
   const [batchGapMs, setBatchGapMs] = useState(initialSession?.batchGapMs ?? BATCH_GAP_DEFAULT)
   const [batchPreviewPlaying, setBatchPreviewPlaying] = useState(false)
   const [batchPreviewStep, setBatchPreviewStep] = useState(0)
+  const [selectedVariation, setSelectedVariation] = useState<number | null>(null)
 
   const toastTimerRef = useRef<number | null>(null)
   const exportBusyRef = useRef(false)
   const batchPreviewActiveRef = useRef(false)
+  const variationCacheRef = useRef<VariationSoundCache | null>(null)
   const sessionSaveTimerRef = useRef<number | null>(null)
   const latestSessionRef = useRef<SessionSnapshot | null>(null)
   const draftsRef = useRef<Record<string, SoundDraft>>(initialSession?.drafts ?? {})
@@ -129,6 +143,7 @@ export default function App() {
     (preset: Preset, nextParams: SynthParams, nextSeed: number) => {
       if (status === 'unsupported') return
       stopBatchPreview()
+      setSelectedVariation(null)
       setTriggerNonce((value) => value + 1)
       const nextSound = synthesize(preset.model, nextParams, nextSeed)
       void play(nextSound).catch(() => {
@@ -224,6 +239,8 @@ export default function App() {
 
   useEffect(() => {
     stopBatchPreview()
+    setSelectedVariation(null)
+    variationCacheRef.current = null
   }, [batchSignature, stopBatchPreview])
 
   const handleBatchGapChange = useCallback(
@@ -238,17 +255,31 @@ export default function App() {
     [stopBatchPreview],
   )
 
+  /**
+   * Render the ten humanized versions once per session signature. Both the
+   * all-at-once preview and the individual version buttons reuse the same
+   * buffers, so clicking through versions does not re-synthesize anything.
+   */
+  const getVariationSounds = useCallback((): RenderedSound[] => {
+    if (variationCacheRef.current?.signature === batchSignature) {
+      return variationCacheRef.current.sounds
+    }
+    const variations = buildVariations(params, humanize, seed, BATCH_PREVIEW_COUNT)
+    const sounds = variations.map((variation) =>
+      synthesize(activePreset.model, variation.params, variation.seed),
+    )
+    variationCacheRef.current = { signature: batchSignature, sounds }
+    return sounds
+  }, [activePreset.model, batchSignature, humanize, params, seed])
+
   const handleToggleBatchPreview = useCallback(() => {
     if (batchPreviewActiveRef.current) {
       stopBatchPreview()
       return
     }
 
-    const variations = buildVariations(params, humanize, seed, BATCH_PREVIEW_COUNT)
-    const sounds = variations.map((variation) =>
-      synthesize(activePreset.model, variation.params, variation.seed),
-    )
-
+    const sounds = getVariationSounds()
+    setSelectedVariation(null)
     stop()
     batchPreviewActiveRef.current = true
     setBatchPreviewPlaying(true)
@@ -272,17 +303,45 @@ export default function App() {
         'error',
       )
     })
-  }, [
-    activePreset.model,
-    batchGapMs,
-    humanize,
-    params,
-    playSequence,
-    seed,
-    showToast,
-    stop,
-    stopBatchPreview,
-  ])
+  }, [batchGapMs, getVariationSounds, playSequence, showToast, stop, stopBatchPreview])
+
+  const handleAuditionVariation = useCallback(
+    (index: number) => {
+      const sound = getVariationSounds()[index - 1]
+      if (!sound) return
+      stopBatchPreview()
+      setSelectedVariation(index)
+      setTriggerNonce((value) => value + 1)
+      void play(sound).catch((error: unknown) => {
+        setSelectedVariation(null)
+        showToast(
+          messageFromError(error, 'That version could not play. Try it again.'),
+          'error',
+        )
+      })
+    },
+    [getVariationSounds, play, showToast, stopBatchPreview],
+  )
+
+  const handleExportVariation = useCallback(
+    (index: number) => {
+      if (exportBusyRef.current) return
+      const sound = getVariationSounds()[index - 1]
+      if (!sound) return
+      exportBusyRef.current = true
+      try {
+        const blob = renderedToBlob(sound)
+        const filename = variationWavFilename(activePreset.slug, index)
+        downloadBlob(blob, filename)
+        showToast(`Saved ${filename} (${formatBytes(blob.size)}).`)
+      } catch (error) {
+        showToast(messageFromError(error, 'That version could not be saved.'), 'error')
+      } finally {
+        exportBusyRef.current = false
+      }
+    },
+    [activePreset.slug, getVariationSounds, showToast],
+  )
 
   const handleSurprise = useCallback(() => {
     draftsRef.current[activePresetId] = { params, seed, take }
@@ -316,6 +375,7 @@ export default function App() {
 
   const trigger = useCallback(() => {
     stopBatchPreview()
+    setSelectedVariation(null)
     setTriggerNonce((value) => value + 1)
     try {
       if (typeof navigator.vibrate === 'function') navigator.vibrate(8)
@@ -474,9 +534,12 @@ export default function App() {
             humanize={humanize}
             batchPreviewPlaying={batchPreviewPlaying}
             batchPreviewStep={batchPreviewStep}
+            selectedVariation={selectedVariation}
             batchGapMs={batchGapMs}
             onBatchGapChange={handleBatchGapChange}
             onToggleBatchPreview={handleToggleBatchPreview}
+            onAuditionVariation={handleAuditionVariation}
+            onExportVariation={handleExportVariation}
             onExportSingle={handleExportSingle}
             onExportBatch={() => {
               void handleExportBatch()

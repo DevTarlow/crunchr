@@ -5,22 +5,33 @@ import { PlayIcon, StopIcon } from './Icons'
 interface BatchPreviewProps {
   playing: boolean
   step: number
+  selected: number | null
   gapMs: number
   disabled: boolean
   onGapChange: (value: number) => void
   onToggle: () => void
+  onAudition: (index: number) => void
+  onSave: (index: number) => void
+}
+
+function versionLabel(index: number): string {
+  return String(index).padStart(2, '0')
 }
 
 export function BatchPreview({
   playing,
   step,
+  selected,
   gapMs,
   disabled,
   onGapChange,
   onToggle,
+  onAudition,
+  onSave,
 }: BatchPreviewProps) {
   const fillPercent = (gapMs / BATCH_GAP_MAX) * 100
   const style = { '--range-fill': `${fillPercent}%` } as CSSProperties
+  const selectedLabel = selected === null ? null : versionLabel(selected)
 
   return (
     <section className="batch-preview" aria-labelledby="batch-preview-title">
@@ -47,20 +58,33 @@ export function BatchPreview({
             <span className="batch-preview-count">
               {playing
                 ? `Version ${step} of ${BATCH_PREVIEW_COUNT}`
-                : `${BATCH_PREVIEW_COUNT} versions`}
+                : selectedLabel
+                  ? `Version ${selectedLabel} selected`
+                  : `${BATCH_PREVIEW_COUNT} versions`}
             </span>
           </div>
-          <div className="batch-preview-dots" aria-hidden="true">
-            {Array.from({ length: BATCH_PREVIEW_COUNT }, (_, index) => {
-              const done = index < step - 1
-              const current = index === step - 1
+          <div className="batch-preview-dots" role="group" aria-label="Preview versions">
+            {Array.from({ length: BATCH_PREVIEW_COUNT }, (_, zeroBasedIndex) => {
+              const index = zeroBasedIndex + 1
+              const done = playing && index < step
+              const current = playing ? index === step : selected === index
               return (
-                <span
+                <button
                   key={index}
+                  type="button"
                   className={`batch-preview-dot ${done ? 'is-done' : ''} ${
                     current ? 'is-current' : ''
                   }`}
-                />
+                  aria-label={`Play version ${index} of ${BATCH_PREVIEW_COUNT}`}
+                  aria-pressed={selected === index}
+                  title={`Play version ${index}`}
+                  disabled={disabled}
+                  onClick={() => onAudition(index)}
+                >
+                  <span className="batch-preview-dot-number" aria-hidden="true">
+                    {versionLabel(index)}
+                  </span>
+                </button>
               )
             })}
           </div>
@@ -90,10 +114,24 @@ export function BatchPreview({
         </div>
       </div>
 
-      <p className="batch-preview-note">
-        This is just a preview. Your download has 10 separate sounds, so your game sets
-        the spacing.
-      </p>
+      <div className="batch-preview-foot">
+        <p className="batch-preview-note">
+          Click a number to hear one version. The ZIP still has 10 separate sounds, so
+          your game sets the spacing.
+        </p>
+        {selected !== null ? (
+          <button
+            type="button"
+            className="batch-save-button"
+            onClick={() => onSave(selected)}
+            disabled={disabled}
+            aria-label={`Save version ${selected} as a WAV file`}
+            title="Save this version as a WAV file"
+          >
+            Save v{selectedLabel}
+          </button>
+        ) : null}
+      </div>
     </section>
   )
 }

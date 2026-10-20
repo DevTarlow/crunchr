@@ -9,9 +9,12 @@ interface ExportDockProps {
   humanize: number
   batchPreviewPlaying: boolean
   batchPreviewStep: number
+  selectedVariation: number | null
   batchGapMs: number
   onBatchGapChange: (value: number) => void
   onToggleBatchPreview: () => void
+  onAuditionVariation: (index: number) => void
+  onExportVariation: (index: number) => void
   onExportSingle: () => void
   onExportBatch: () => void
 }
@@ -22,9 +25,12 @@ export function ExportDock({
   humanize,
   batchPreviewPlaying,
   batchPreviewStep,
+  selectedVariation,
   batchGapMs,
   onBatchGapChange,
   onToggleBatchPreview,
+  onAuditionVariation,
+  onExportVariation,
   onExportSingle,
   onExportBatch,
 }: ExportDockProps) {
@@ -95,10 +101,13 @@ export function ExportDock({
       <BatchPreview
         playing={batchPreviewPlaying}
         step={batchPreviewStep}
+        selected={selectedVariation}
         gapMs={batchGapMs}
         disabled={busy}
         onGapChange={onBatchGapChange}
         onToggle={onToggleBatchPreview}
+        onAudition={onAuditionVariation}
+        onSave={onExportVariation}
       />
 
       <div className="export-foot">

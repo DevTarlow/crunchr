@@ -341,13 +341,47 @@ async function main() {
     )
     assert.deepEqual(entries, expectedNames, 'ZIP must contain the ten numbered WAVs')
 
+    const zipEntries = new Map()
     for (const name of entries) {
       const bytes = Buffer.from(await archive.files[name].async('uint8array'))
       assert.equal(bytes.toString('ascii', 0, 4), 'RIFF')
       assert.equal(new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(24, true), 44_100)
+      zipEntries.set(name, bytes)
     }
     await page.waitForFunction(() => document.querySelector('.toast-message')?.textContent?.includes('Saved 10 sounds'))
     pass('batch export downloads a ZIP with 10 valid 44.1 kHz WAV variations')
+
+    assert.equal(await page.locator('.batch-preview-dot').count(), 10)
+    await page.locator('.batch-preview-dot').nth(2).click()
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    assert.equal(
+      await page.locator('.batch-preview-count').textContent(),
+      'Version 03 selected',
+    )
+    assert.equal(
+      await page.locator('.batch-preview-dot').nth(2).getAttribute('aria-pressed'),
+      'true',
+    )
+    const versionWavPromise = page.waitForEvent('download', { timeout: 15_000 })
+    await page.getByRole('button', { name: 'Save version 3 as a WAV file' }).click()
+    const versionWav = await versionWavPromise
+    assert.equal(versionWav.suggestedFilename(), 'crunchr_dice_roll_v03.wav')
+    const versionPath = path.join(downloadsDir, versionWav.suggestedFilename())
+    await versionWav.saveAs(versionPath)
+    const versionBytes = readFileSync(versionPath)
+    const versionWavInfo = readWav(versionBytes)
+    const zipVersionThree = zipEntries.get('crunchr_dice_roll_v03.wav')
+    assert.ok(zipVersionThree, 'The ZIP must contain version 03')
+    assert.deepEqual(
+      versionBytes,
+      zipVersionThree,
+      'Save vNN must be byte-identical to the matching ZIP entry',
+    )
+    await page.waitForFunction(() =>
+      document.querySelector('.toast-message')?.textContent?.includes('v03.wav'),
+    )
+    pass(`a single version auditions and matches its ZIP entry (${versionWavInfo.dataBytes} data bytes)`)
 
     if (await page.locator('.toast-close').isVisible()) {
       await page.locator('.toast-close').click()
@@ -435,6 +469,25 @@ async function main() {
     await mobilePage.locator('.trigger-button').click()
     await waitForPlayback(mobilePage, true)
     await waitForPlayback(mobilePage, false)
+    assert.equal(await mobilePage.locator('.batch-preview-dot').count(), 10)
+    const mobileDotMetrics = await mobilePage.locator('.batch-preview-dot').evaluateAll((nodes) =>
+      nodes.map((element) => {
+        const rect = element.getBoundingClientRect()
+        return { width: rect.width, height: rect.height }
+      }),
+    )
+    assert.ok(
+      Math.min(...mobileDotMetrics.map((dot) => dot.height)) >= 24,
+      'Version buttons must be at least 24 px tall on mobile',
+    )
+    assert.equal(
+      await mobilePage.evaluate(
+        () => getComputedStyle(document.querySelector('.batch-preview-dots')).gridTemplateColumns.split(' ').length,
+      ),
+      5,
+      'The version strip must wrap to five columns on mobile',
+    )
+    pass('390 px version buttons wrap to a 5 × 2 grid with comfortable targets')
 
     await mobilePage.locator('.help-button').click()
     await mobilePage.locator('.help-dialog').waitFor({ state: 'visible' })
@@ -445,6 +498,21 @@ async function main() {
     await mobilePage.keyboard.press('Escape')
     await mobilePage.locator('.help-dialog').waitFor({ state: 'detached' })
     pass('the help manual fits the 390 px layout')
+
+    await mobilePage.setViewportSize({ width: 320, height: 800 })
+    await mobilePage.waitForTimeout(250)
+    assert.equal(
+      await mobilePage.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      true,
+    )
+    const narrowDotMetrics = await mobilePage.locator('.batch-preview-dot').evaluateAll((nodes) =>
+      nodes.map((element) => element.getBoundingClientRect().height),
+    )
+    assert.ok(
+      Math.min(...narrowDotMetrics) >= 24,
+      'Version buttons must stay at least 24 px tall at 320 px',
+    )
+    pass('320 px layout is overflow-free with usable version buttons')
 
     assert.deepEqual(mobile.consoleErrors, [], 'Mobile console errors')
     assert.deepEqual(mobile.pageErrors, [], 'Mobile page errors')

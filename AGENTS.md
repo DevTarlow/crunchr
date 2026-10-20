@@ -80,6 +80,8 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 - a reload restores the last session without creating the AudioContext;
 - WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
 - the batch download contains exactly the ten correctly named valid WAVs;
+- clicking a numbered version auditions it, and Save vNN downloads the same
+  valid WAV that appears in the ZIP;
 - the help manual opens as a modal and closes on Escape;
 - the batch preview plays all ten versions and stops on its own;
 - body, control-label and helper type stay at readable sizes;

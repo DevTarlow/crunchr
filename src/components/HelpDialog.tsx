@@ -26,11 +26,11 @@ const STEPS = [
   },
   {
     title: 'Listen to 10 versions.',
-    body: 'The Variation slider changes each of the 10 downloaded sounds a little. Use Play all 10 in the Save section to hear them in a row. Set the space between sounds and press play. This is just an example. The download has 10 separate sounds, so your game sets the spacing.',
+    body: 'The Variation slider changes each of the 10 downloaded sounds a little. Use Play all 10 in the Save section to hear them in a row, or click a numbered button to hear one version. Save vNN downloads just that version. Set the space between sounds and press play; the spacing is only an example, because your game sets it for the ten separate files.',
   },
   {
     title: 'Download it.',
-    body: 'Download WAV saves the sound on your sliders. Download 10 versions gives you a ZIP file with 10 separate sounds. They are standard WAV files that work in games and editors. Everything is saved on your device.',
+    body: 'Download WAV saves the sound on your sliders. Download 10 versions gives you a ZIP file with 10 separate sounds, and Save vNN saves one version on its own. They are standard WAV files that work in games and editors. Everything is saved on your device.',
   },
 ]
 

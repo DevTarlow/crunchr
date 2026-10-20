@@ -41,3 +41,12 @@ export function formatElapsedMs(value: number): string {
   if (value < 10) return `${value.toFixed(1)} ms`
   return `${Math.round(value)} ms`
 }
+
+/** Compact file size for download buttons and toasts. */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
+  if (bytes < 1024) return `${Math.round(bytes)} B`
+  const kb = bytes / 1024
+  if (kb < 1024) return `${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB`
+  return `${(kb / 1024).toFixed(1)} MB`
+}
