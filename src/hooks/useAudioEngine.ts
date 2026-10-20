@@ -32,6 +32,25 @@ export function useAudioEngine() {
     [getEngine],
   )
 
+  const playSequence = useCallback(
+    async (
+      sounds: readonly RenderedSound[],
+      gapMs: number,
+      onStep?: (step: number, total: number) => void,
+      onEnded?: () => void,
+    ): Promise<void> => {
+      const engine = getEngine()
+      setIsPlaying(false)
+      await engine.playSequence(sounds, gapMs, onStep, onEnded)
+    },
+    [getEngine],
+  )
+
+  const stop = useCallback((): void => {
+    engineRef.current?.stop()
+    setIsPlaying(false)
+  }, [])
+
   const getWaveform = useCallback((): Float32Array | null => {
     return engineRef.current?.getTimeDomain() ?? null
   }, [])
@@ -59,5 +78,5 @@ export function useAudioEngine() {
     }
   }, [getEngine])
 
-  return { status, isPlaying, play, getWaveform }
+  return { status, isPlaying, play, playSequence, stop, getWaveform }
 }

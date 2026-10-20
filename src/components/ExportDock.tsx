@@ -1,4 +1,5 @@
 import { ArchiveIcon, DownloadIcon } from './Icons'
+import { BatchPreview } from './BatchPreview'
 
 export type ExportKind = 'single' | 'batch'
 
@@ -6,6 +7,11 @@ interface ExportDockProps {
   exportKind: ExportKind | null
   batchProgress: number
   humanize: number
+  batchPreviewPlaying: boolean
+  batchPreviewStep: number
+  batchGapMs: number
+  onBatchGapChange: (value: number) => void
+  onToggleBatchPreview: () => void
   onExportSingle: () => void
   onExportBatch: () => void
 }
@@ -14,6 +20,11 @@ export function ExportDock({
   exportKind,
   batchProgress,
   humanize,
+  batchPreviewPlaying,
+  batchPreviewStep,
+  batchGapMs,
+  onBatchGapChange,
+  onToggleBatchPreview,
   onExportSingle,
   onExportBatch,
 }: ExportDockProps) {
@@ -26,21 +37,20 @@ export function ExportDock({
         <div className="section-heading">
           <span className="section-index">04</span>
           <div>
-            <div className="section-kicker">Output</div>
+            <div className="section-kicker">Save</div>
             <h2 id="export-title" className="section-title">
-              Bake it into the game<span className="title-dot">.</span>
+              Save your sounds<span className="title-dot">.</span>
             </h2>
           </div>
         </div>
         <p>
-          Save the exact take you just heard, or export ten seeded variations for
-          footsteps and clicks that never repeat mechanically.
+          Download the sound you just heard, or 10 versions with small changes. They are
+          handy for footsteps and clicks that should not repeat the same way.
         </p>
-        <div className="export-specs" aria-label="Export format">
-          <span>44.1 kHz</span>
-          <span>16-bit PCM</span>
+        <div className="export-specs" aria-label="Download format">
+          <span>WAV</span>
           <span>Stereo</span>
-          <span>Local only</span>
+          <span>Stays on your device</span>
         </div>
       </div>
 
@@ -56,8 +66,8 @@ export function ExportDock({
             <DownloadIcon />
           </span>
           <span className="export-button-copy">
-            <strong>{exportKind === 'single' ? 'ENCODING…' : 'EXPORT .WAV'}</strong>
-            <span>One take · current seed</span>
+            <strong>{exportKind === 'single' ? 'SAVING…' : 'DOWNLOAD WAV'}</strong>
+            <span>The sound you just heard</span>
           </span>
           <span className="export-extension">.WAV</span>
         </button>
@@ -73,19 +83,30 @@ export function ExportDock({
             <ArchiveIcon />
           </span>
           <span className="export-button-copy">
-            <strong>{packing ? `PACKING ${batchProgress}/10…` : 'BATCH VARIATIONS'}</strong>
-            <span>10 humanized takes · ZIP archive</span>
+            <strong>
+              {packing ? `MAKING ${batchProgress}/10…` : 'DOWNLOAD 10 VERSIONS'}
+            </strong>
+            <span>10 small changes · ZIP file</span>
           </span>
-          <span className="export-extension">{packing ? '10×' : '10× ZIP'}</span>
+          <span className="export-extension">{packing ? '10×' : 'ZIP'}</span>
         </button>
       </div>
+
+      <BatchPreview
+        playing={batchPreviewPlaying}
+        step={batchPreviewStep}
+        gapMs={batchGapMs}
+        disabled={busy}
+        onGapChange={onBatchGapChange}
+        onToggle={onToggleBatchPreview}
+      />
 
       <div className="export-foot">
         <span>
           <span className="tiny-led batch-led" aria-hidden="true" />
-          Batch drift {Math.round(humanize)}%
+          Variation {Math.round(humanize)}%
         </span>
-        <span>Runs entirely in your browser</span>
+        <span>Works in your browser. Nothing is uploaded.</span>
       </div>
     </section>
   )

@@ -8,36 +8,36 @@ interface HelpDialogProps {
 
 const STEPS = [
   {
-    title: 'Pick a material.',
-    body: 'Four banks sit at the top: UI clicks, footsteps, foley and impacts. Tap a chip and the sound loads into the scope, ready to play.',
+    title: 'Pick a sound.',
+    body: 'There are four groups at the top: clicks, footsteps, items and crunches. Click a sound to load it. The picture shows the shape of the sound.',
   },
   {
-    title: 'Tap it again for a new take.',
-    body: 'The active chip is still live. A second tap rolls a fresh random seed and puts the sliders back to the preset, so the coin rings a little differently and the gravel scatters another way. The take counter and seed under the trigger keep score.',
+    title: 'Click it again for a new version.',
+    body: 'The sound you picked stays selected. Click it again to make a new version with random changes. The version number under the Play button shows which one you are hearing. The sliders go back to their starting point.',
     reroll: true,
   },
   {
-    title: 'Trigger it.',
-    body: 'Hit the big orange button or press Space from anywhere on the page. Click the scope to replay. Hover the scope to read the exact time and amplitude under your cursor.',
+    title: 'Play it.',
+    body: 'Click the big orange Play button, or press Space. Click the sound wave to play it again. Point at the sound wave to see the time and loudness at that spot.',
   },
   {
-    title: 'Shape the sound.',
-    body: 'Six sliders control length, pitch, punch, body, grit and decay. They update the sound as you drag. Mutate ±10% nudges all six at once. Surprise me jumps to a random material with a new seed.',
+    title: 'Shape it.',
+    body: 'Six sliders change the length, pitch, punch, body, roughness and fade. The sound changes as you drag. Nudge 10% moves all six at once. Surprise me picks a random sound.',
   },
   {
-    title: 'Humanize the batch.',
-    body: 'Humanize only changes the ZIP export. It drifts timing, pitch and texture across all 10 takes, so a row of footsteps does not sound like a metronome. At 0% the sliders stay put. Every take still gets its own noise.',
+    title: 'Listen to 10 versions.',
+    body: 'The Variation slider changes each of the 10 downloaded sounds a little. Use Play all 10 in the Save section to hear them in a row. Set the space between sounds and press play. This is just an example. The download has 10 separate sounds, so your game sets the spacing.',
   },
   {
-    title: 'Take it with you.',
-    body: 'Export .WAV saves the exact take you just heard. Batch Variations packs 10 humanized takes into a ZIP. They are 44.1 kHz, 16-bit stereo, and they build on your machine.',
+    title: 'Download it.',
+    body: 'Download WAV saves the sound you just heard. Download 10 versions gives you a ZIP file with 10 separate sounds. They are standard WAV files that work in games and editors. Everything is saved on your device.',
   },
 ]
 
 const KEYS = [
-  { key: 'Space', action: 'Play the current material' },
-  { key: 'Enter', action: 'Press the focused button' },
-  { key: '← →', action: 'Nudge a focused slider' },
+  { key: 'Space', action: 'Play the sound' },
+  { key: 'Enter', action: 'Press the selected button' },
+  { key: '← →', action: 'Change a slider' },
   { key: 'Esc', action: 'Close this window' },
 ]
 
@@ -124,13 +124,13 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
           <div className="help-heading">
             <span className="help-kicker">How to use Crunchr</span>
             <h2 id={titleId}>
-              Make something that crunches<span className="title-dot">.</span>
+              Make your first sound<span className="title-dot">.</span>
             </h2>
             <p id={descriptionId}>
-              Crunchr builds tiny game sounds from math, right here in your browser. There
-              are no samples and no account. Nothing leaves the page. Browsers need a tap
-              before sound can start, so the first click arms the engine. Pick a material,
-              shape it, then take the WAV.
+              Crunchr makes small sounds for games. Everything is made in your browser.
+              Nothing is uploaded, and you don't need an account. Your browser needs one tap
+              before it can play sound, so press any button to start. Then pick a sound,
+              change it, and download it.
             </p>
           </div>
           <button
@@ -167,7 +167,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
           </ol>
 
           <section className="help-keys-block" aria-labelledby="help-keys-title">
-            <h3 id="help-keys-title">Keyboard, if you like keys</h3>
+            <h3 id="help-keys-title">Keyboard shortcuts</h3>
             <dl className="help-keys">
               {KEYS.map((item) => (
                 <div key={item.key}>
@@ -182,7 +182,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
         </div>
 
         <div className="help-foot">
-          <p>That is the whole app. Go make your game sound better.</p>
+          <p>That's everything. Go make your game sound better.</p>
           <button type="button" className="help-cta" onClick={onClose}>
             Back to the sounds
           </button>

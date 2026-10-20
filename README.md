@@ -1,7 +1,7 @@
 # Crunchr
 
-**Tactile Micro-SFX & Foley Generator** — a standalone browser instrument for
-indie game developers. Dial in tiny clicks, stone-crunching footsteps, dice
+**Tiny Sound Maker for Games** — a standalone browser instrument for indie game
+developers. Dial in tiny clicks, stone-crunching footsteps, dice
 bounces, cloth rustle, coins, wet squishes and bone fractures, then export
 finished 44.1 kHz / 16-bit WAVs. Every sound is synthesized mathematically in
 the browser. There are zero audio samples, zero network calls and no backend.
@@ -10,18 +10,20 @@ the browser. There are zero audio samples, zero network calls and no backend.
 
 ## Highlights
 
-- **11 hand-tuned procedural presets** across UI, footsteps, foley and impact
-  categories.
-- **Seven controls** for length, pitch, transient punch, resonance, grit, decay
-  and batch humanization.
+- **11 hand-tuned procedural sounds** across clicks, footsteps, items and
+  crunches.
+- **Seven controls** for length, pitch, punch, body, roughness, fade and batch
+  variation.
 - **Real-time Canvas oscilloscope** driven by the Web Audio `AnalyserNode`, with
   an idle one-shot preview, live waveform, playhead and hover inspection.
-- **Single-take WAV export** and **10× humanized ZIP batches**, both generated
+- **Single-sound WAV downloads** and **10-version ZIP batches**, both generated
   entirely on the client.
+- **Batch preview**: hear all ten versions in a row, with an adjustable space
+  between each sound and a clear note that the spacing is only an example.
 - **A tuned, tactile interface**: charcoal hardware panels, a single neon-amber
   accent, readable type at every size, proper empty/error/disabled states.
-- **Re-rollable takes**: tap the material you already selected to roll a fresh
-  random seed, with a take counter and seed to keep score.
+- **Re-rollable versions**: tap the sound you already selected to make a new
+  version with fresh random details.
 - **An in-app manual**: the info button in the top right explains the whole
   instrument, keyboard keys included.
 - **Desktop and mobile friendly**, with a global Spacebar performance shortcut.
@@ -35,14 +37,14 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (by default <http://localhost:5173>). Click any
-category/preset or press **Space** to play. Audio is unlocked on your first
-gesture; the header LED changes from **Standby** to **Armed**.
+Open the URL Vite prints (by default <http://localhost:5173>). Click any sound or
+press **Space** to play. Audio is unlocked on your first gesture; the header LED
+changes from **Tap to start** to **Ready**.
 
-Tap the preset you already have selected and Crunchr rolls a fresh seed for the
-same material. The take counter and seed under the trigger tell you which one
-you are hearing. The **Help** button in the top right opens a short manual for
-the rest.
+Tap the sound you already selected and Crunchr makes a new version with a fresh
+random seed. The version number under the Play button tells you which one you are
+hearing. In the Save section, **Play all 10** auditions the whole batch set. The
+**Help** button in the top right opens a short manual for the rest.
 
 ![Crunchr help manual](docs/crunchr-help.png)
 
@@ -50,57 +52,59 @@ the rest.
 
 | Action | Control |
 | --- | --- |
-| Trigger the current preset | **Space** (outside text-editing controls) |
+| Play the current sound | **Space** (outside text-editing controls) |
 | Activate a focused control | **Enter** |
-| Replay | Click the scope or the large **Trigger** button |
-| Roll a new take | Click the active preset chip again |
+| Replay | Click the sound wave or the large **Play** button |
+| Make a new version | Click the active sound chip again |
 | Tune a control | Drag or use arrow keys on any slider |
-| Select a preset | Click a category, then a preset chip |
+| Select a sound | Click a group, then a sound chip |
+| Preview the 10 versions | **Play all 10** in the Save section |
+| Change the preview spacing | Drag **Space between sounds** |
 | Open the manual | Click the **Help** button in the top right |
 
-Space is intercepted globally as a performance key, including while a preset
-button is focused. This is intentional: after picking a sound you can audition
-it without clicking elsewhere. Use **Enter** for ordinary button activation.
-The Spacebar does not fire while a text field, select or contenteditable element
-has focus.
+Space is intercepted globally as a performance key, including while a sound
+button is focused. This is intentional: after picking a sound you can play it
+without clicking elsewhere. Use **Enter** for ordinary button activation. The
+Spacebar does not fire while a text field, select or contenteditable element has
+focus.
 
 ## Controls
 
 | Control | Range | What it does |
 | --- | --- | --- |
-| Duration | 10–800 ms, log slider | Total rendered one-shot length |
-| Pitch / Base Frequency | 40–6000 Hz, log slider | Fundamental or filter centre; models map it to their material |
-| Transient Punch | 0–100% | Attack time (≈12 ms → ≈0.4 ms) and impact/transient gain |
-| Resonance / Body | Q 0.5–24.0 | Filter Q and modal ring/damping |
-| Grit / Texture | 0–100% | Tone ↔ granular noise/crackle balance |
-| Decay Curve | 0–100 | Linear fade → steep exponential tail |
-| Humanize / Variance | 0–50% | Batch-only amount of timing, pitch, body and texture drift |
+| Length | 10–800 ms, log slider | Total rendered one-shot length |
+| Pitch | 40–6000 Hz, log slider | Fundamental or filter centre; models map it to their material |
+| Punch | 0–100% | Attack time (≈12 ms → ≈0.4 ms) and impact/transient gain |
+| Body | Q 0.5–24.0 | Filter Q and modal ring/damping |
+| Roughness | 0–100% | Tone ↔ granular noise/crackle balance |
+| Fade | 0–100 | Linear fade → steep exponential tail |
+| Variation | 0–50% | Batch-only amount of timing, pitch, body and texture drift |
 
 ### The models
 
 | Category | Presets | Synthesis approach |
 | --- | --- | --- |
-| UI Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Sub-2 ms contact impulses, high-Q switch resonance, plastic pitch chirps, inharmonic timber modes |
+| Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Sub-2 ms contact impulses, high-Q switch resonance, plastic pitch chirps, inharmonic timber modes |
 | Footsteps | Gravel Crunch, Wood Thud/Creak, Stone/Concrete | Granular band-passed noise clusters, low pitch-bent thumps with brief FM, bright modal rings with a short room smear |
-| Foley / Items | Dice Roll, Cloth/Backpack Rustle, Coin Clink | 3–5 gravity-shaped bounce impacts, pink-noise fabric through modulated low-pass filters, dual inharmonic metal partials |
-| Impacts / Crunch | Flesh Squish, Bone Crunch | Pitch-bent FM bodies plus wet band-passed noise, and layered pink noise with abrupt gate jumps and high-pass snaps |
+| Items | Dice Roll, Cloth/Backpack Rustle, Coin Clink | 3–5 gravity-shaped bounce impacts, pink-noise fabric through modulated low-pass filters, dual inharmonic metal partials |
+| Crunches | Flesh Squish, Bone Crunch | Pitch-bent FM bodies plus wet band-passed noise, and layered pink noise with abrupt gate jumps and high-pass snaps |
 
 The complete model implementations live in [`src/audio/synthesis.ts`](src/audio/synthesis.ts).
 All recipes honor the same seven controls and are clamped for extreme settings.
 
-## Batch humanization
+## Batch variation
 
-**Mutate ±10%** nudges each currently displayed control by a random factor in
+**Nudge 10%** moves each currently displayed control by a random factor in
 `[0.9, 1.1]`, clamped to its range. The seed stays fixed. **Surprise me** selects
-a random preset, seeds a fresh take and applies a bounded ±15% jitter.
+a random sound, seeds a fresh version and applies a bounded ±15% jitter.
 
-The batch ZIP contains ten deterministic takes. With `d = humanize / 100`:
+The batch ZIP contains ten deterministic versions. With `d = humanize / 100`:
 
 - duration and Q wander up to `±0.6d`
 - pitch wanders up to `±0.4d`
 - punch, grit and decay wander up to `±28d` percentage points
-- every take always receives its own deterministic waveform seed, so even at
-  Humanize 0% the ten files have fresh granular texture. Humanize 0% means no
+- every version always receives its own deterministic waveform seed, so even at
+  Variation 0% the ten files have fresh granular texture. Variation 0% means no
   *parameter* drift.
 
 All values are clamped and rounded before rendering. At the default 20%,
@@ -108,11 +112,17 @@ duration/Q vary by roughly ±12% and pitch by ±8%; at 50% they reach roughly ±
 and ±20%. Every batch is generated from a snapshot taken at click time, so
 changing a slider mid-export cannot corrupt the package.
 
+**Play all 10** in the Save section renders the same ten versions and plays them
+back to back on the AudioContext clock. The **Space between sounds** slider sets
+a preview-only gap from 0 to 600 ms. Changing the gap while a preview is playing
+stops it so the next run uses the new spacing. The gap is not written into the
+ZIP: the ten WAVs stay separate, and the game decides when to trigger each one.
+
 ## Export
 
-- **Export .WAV** → `crunchr_<preset_slug>.wav`
+- **Download WAV** → `crunchr_<preset_slug>.wav`
   - RIFF/WAVE, PCM format 1, 44.1 kHz, 16-bit, stereo
-- **Batch Variations** → `crunchr_<preset_slug>_variants.zip`
+- **Download 10 versions** → `crunchr_<preset_slug>_variants.zip`
   - contains `crunchr_<preset_slug>_v01.wav` through `_v10.wav`
 - `audioBufferToWav(audioBuffer)` is exported as a standalone utility in
   [`src/audio/wav.ts`](src/audio/wav.ts), alongside the pure channel-based
@@ -127,7 +137,7 @@ src/
   audio/
     types.ts        shared parameter, preset and render types
     params.ts       ranges, clamps, slider mapping
-    presets.ts      the 11-patch bank and categories
+    presets.ts      the 11-sound bank and categories
     random.ts       seeded PRNG, seed derivation
     dsp.ts          white/pink noise, RBJ biquads, envelopes, oscillators
     synthesis.ts    eleven material models and finalization
@@ -153,8 +163,8 @@ oscillators, FM and noise generators are implemented mathematically rather than
 as per-note Web Audio graphs, and there is intentionally no AudioWorklet or
 deprecated ScriptProcessor. That choice gives us:
 
-- **bit-identical preview/export results**: all ten ZIP takes use the exact same
-  renderer as the live audition;
+- **bit-identical preview/export results**: all ten ZIP versions use the exact
+  same renderer as the live audition;
 - **fast triggering**: the buffer is rendered ahead of time and reused until a
   parameter or seed changes;
 - **reliable single-file/offline builds**: no worklet module URLs to resolve;
@@ -198,12 +208,12 @@ mutation bounds, and ZIP contents.
 
 The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 `dist-single/index.html` artifact directly from disk and checks the first-gesture
-audio arm, trigger/Space/scope playback, live scope, WAV and 10× ZIP downloads,
-the help modal and its Escape close, re-rolling the active material, readable
-type sizes, and overflow-free layouts at 1440 px and 390 px. It also checks the
-390 px help layout. It requires system Chrome; set `CHROME_PATH` if Chrome is not
-in a standard location. A missing browser fails the gate rather than silently
-skipping it.
+audio arm, Play/Space/sound-wave playback, live scope, WAV and 10× ZIP downloads,
+the help modal and its Escape close, re-rolling the active sound, the batch
+preview, readable type sizes, and overflow-free layouts at 1440 px and 390 px. It
+also checks the 390 px help layout. It requires system Chrome; set `CHROME_PATH`
+if Chrome is not in a standard location. A missing browser fails the gate rather
+than silently skipping it.
 
 ## Browser support
 
@@ -227,4 +237,4 @@ code in this repository is original.
 
 ---
 
-Built for game feel. Trigger responsibly.
+Made for games. Make something that crunches.

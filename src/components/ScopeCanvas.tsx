@@ -290,9 +290,9 @@ export function ScopeCanvas({
       <div className="scope-toolbar">
         <div className="scope-mode">
           <span className={`scope-live-dot ${isPlaying ? 'is-live' : ''}`} aria-hidden="true" />
-          <span>{isPlaying ? 'LIVE SIGNAL' : 'WAVEFORM PREVIEW'}</span>
+          <span>{isPlaying ? 'PLAYING' : 'SOUND WAVE'}</span>
         </div>
-        <span className="scope-meta">TIME DOMAIN / 2048</span>
+        <span className="scope-meta">TIME / LOUDNESS</span>
       </div>
 
       <div
@@ -300,7 +300,7 @@ export function ScopeCanvas({
         className={`scope-screen ${isPlaying ? 'is-playing' : ''}`}
         role="button"
         tabIndex={0}
-        aria-label={`Waveform scope for ${presetName}. Activate to replay the sound.`}
+        aria-label={`Sound wave for ${presetName}. Click to play again.`}
         aria-keyshortcuts="Enter Space"
         onClick={onTrigger}
         onPointerMove={handlePointerMove}
@@ -328,7 +328,7 @@ export function ScopeCanvas({
           </span>
         ) : (
           <span className="scope-hint" aria-hidden="true">
-            Hover to inspect · click to replay
+            Point to inspect · click to play again
           </span>
         )}
       </div>

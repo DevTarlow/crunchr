@@ -27,7 +27,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
         {isError ? <AlertIcon /> : <CheckIcon />}
       </span>
       <span className="toast-message">{toast.message}</span>
-      <button type="button" className="toast-close" onClick={onDismiss} aria-label="Dismiss notification">
+      <button type="button" className="toast-close" onClick={onDismiss} aria-label="Close message">
         <CloseIcon />
       </button>
     </div>

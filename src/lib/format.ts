@@ -25,7 +25,7 @@ export function readoutForParam(key: ParamKey, value: number): string {
     case 'pitchHz':
       return formatHz(value)
     case 'resonance':
-      return `${formatQ(value)} Q`
+      return formatQ(value)
     case 'punch':
     case 'grit':
     case 'decay':
@@ -35,10 +35,6 @@ export function readoutForParam(key: ParamKey, value: number): string {
 
 export function readoutForHumanize(value: number): string {
   return `${Math.round(value)}%`
-}
-
-export function formatSeed(seed: number): string {
-  return (seed >>> 0).toString(16).toUpperCase().padStart(8, '0')
 }
 
 export function formatElapsedMs(value: number): string {

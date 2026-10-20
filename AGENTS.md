@@ -71,12 +71,13 @@ single-file build.
 against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 
 - the single-file UI renders and no network requests leave the page;
-- the first gesture arms audio; the trigger button, Spacebar and scope click
+- the first gesture arms audio; the Play button, Spacebar and sound-wave click
   each play the Dice preset and drive the live scope;
 - WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
 - the batch download contains exactly the ten correctly named valid WAVs;
 - the help manual opens as a modal and closes on Escape;
-- tapping the active preset rolls a new take and seed;
+- tapping the active sound rolls a new version;
+- the batch preview plays all ten versions and stops on its own;
 - body, control-label and helper type stay at readable sizes;
 - the 1440 px and 390 px layouts have no horizontal overflow, and the help
   manual fits the 390 px layout;

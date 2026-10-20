@@ -1,13 +1,11 @@
 import type { Preset, RenderedSound } from '../audio/types'
 import { getCategory } from '../audio/presets'
-import { formatSeed } from '../lib/format'
 import { ScopeCanvas } from './ScopeCanvas'
 import { TriggerIcon } from './Icons'
 
 interface PerformancePanelProps {
   preset: Preset
   sound: RenderedSound
-  seed: number
   modified: boolean
   isPlaying: boolean
   triggerNonce: number
@@ -19,7 +17,6 @@ interface PerformancePanelProps {
 export function PerformancePanel({
   preset,
   sound,
-  seed,
   modified,
   isPlaying,
   triggerNonce,
@@ -35,9 +32,9 @@ export function PerformancePanel({
         <div className="section-heading">
           <span className="section-index">03</span>
           <div>
-            <div className="section-kicker">Game feel</div>
+            <div className="section-kicker">Listen</div>
             <h2 id="performance-title" className="section-title">
-              Audition the take<span className="title-dot">.</span>
+              Hear the sound<span className="title-dot">.</span>
             </h2>
           </div>
         </div>
@@ -47,7 +44,7 @@ export function PerformancePanel({
       <div className="preset-identity">
         <div className="preset-title-row">
           <h3>{preset.name}</h3>
-          {modified ? <span className="modified-label">MODIFIED TAKE</span> : null}
+          {modified ? <span className="modified-label">Changed</span> : null}
         </div>
         <p>{preset.description}</p>
         <div className="preset-tags">
@@ -71,15 +68,15 @@ export function PerformancePanel({
           type="button"
           className="trigger-button"
           onClick={onTrigger}
-          aria-label={`Trigger ${preset.name}`}
+          aria-label={`Play ${preset.name}`}
           aria-keyshortcuts="Space"
         >
           <span className="trigger-icon-wrap" aria-hidden="true">
             <TriggerIcon />
           </span>
           <span className="trigger-copy">
-            <strong>TRIGGER</strong>
-            <span>{isPlaying ? 'VOICE ACTIVE' : 'PLAY THE CRUNCH'}</span>
+            <strong>PLAY</strong>
+            <span>{isPlaying ? 'PLAYING' : 'HEAR THE SOUND'}</span>
           </span>
           <span className="keycap" aria-hidden="true">
             SPACE
@@ -90,17 +87,14 @@ export function PerformancePanel({
         </button>
         <div className="trigger-meta">
           <span>
-            Click the scope or hit <kbd>space</kbd> to audition
+            Click the sound wave or press <kbd>space</kbd> to play
           </span>
-          <span className="take-meta">
-            <span className="take-readout">Take {String(take).padStart(2, '0')}</span>
-            <span className="seed-readout">Seed {formatSeed(seed)}</span>
-          </span>
+          <span className="version-readout">Version {String(take).padStart(2, '0')}</span>
         </div>
       </div>
 
       <span className="sr-only" aria-live="polite">
-        {isPlaying ? `Playing ${preset.name}` : 'Ready to trigger'}
+        {isPlaying ? `Playing ${preset.name}` : 'Ready to play'}
       </span>
     </section>
   )

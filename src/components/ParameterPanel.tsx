@@ -24,13 +24,13 @@ export function ParameterPanel({
           <div>
             <div className="section-kicker">Shape</div>
             <h2 id="parameters-title" className="section-title">
-              Dial in the texture<span className="title-dot">.</span>
+              Shape the sound<span className="title-dot">.</span>
             </h2>
           </div>
         </div>
         <div className="live-controls-badge">
           <span className="tiny-led" aria-hidden="true" />
-          Live controls
+          Changes live
         </div>
       </div>
 
@@ -61,28 +61,28 @@ export function ParameterPanel({
               ×
             </span>
             <div>
-              <span className="humanize-title">Humanize / Variance</span>
-              <span className="batch-tag">Batch only</span>
+              <span className="humanize-title">Variation</span>
+              <span className="batch-tag">10 sounds only</span>
             </div>
           </div>
           <p>
-            Drifts timing, pitch, body and texture across the 10 batch takes. A row of
-            footsteps stops sounding like one footstep.
+            Changes each of the 10 downloaded sounds a little, so a row of footsteps does
+            not sound like one footstep.
           </p>
         </div>
         <div className="humanize-slider">
           <HardwareSlider
             id="param-humanize"
-            label="Batch drift"
-            helper="0% keeps the sliders put. Every take still gets fresh noise."
+            label="Variation amount"
+            helper="0% keeps the sliders where they are. Every sound still changes a little."
             min={0}
             max={HUMANIZE_MAX}
             step={1}
             log={false}
             value={humanize}
             valueLabel={readoutForHumanize(humanize)}
-            minLabel="Identical"
-            maxLabel="Wide"
+            minLabel="Same"
+            maxLabel="Different"
             onChange={onHumanizeChange}
             variant="batch"
           />
@@ -91,7 +91,7 @@ export function ParameterPanel({
 
       <p className="panel-footnote">
         <span className="footnote-dot" aria-hidden="true" />
-        Seeded synthesis is deterministic. The take you hear is the take you export.
+        Every sound is made the same way each time. What you hear is what you download.
       </p>
     </section>
   )

@@ -148,3 +148,19 @@ export function RerollIcon(props: IconProps) {
     </IconBase>
   )
 }
+
+export function PlayIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M7.5 4.8 19.2 12 7.5 19.2V4.8Z" />
+    </IconBase>
+  )
+}
+
+export function StopIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M6.5 6.5h11v11h-11z" />
+    </IconBase>
+  )
+}

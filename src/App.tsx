@@ -4,12 +4,14 @@ import {
   DEFAULT_PRESET_ID,
   PRESETS,
   clonePresetDefaults,
+  getCategory,
   getPresetById,
   getPresetsByCategory,
 } from './audio/presets'
 import { DEFAULT_HUMANIZE, isModifiedPreset, sanitizeHumanize, sanitizeParam } from './audio/params'
 import { createRng, createSeed } from './audio/random'
-import { jitterParameters, mutateParameters } from './audio/variations'
+import { buildVariations, jitterParameters, mutateParameters } from './audio/variations'
+import { synthesize } from './audio/synthesis'
 import {
   buildBatchArchive,
   downloadBlob,
@@ -24,6 +26,12 @@ import { ParameterPanel } from './components/ParameterPanel'
 import { PerformancePanel } from './components/PerformancePanel'
 import { ExportDock, type ExportKind } from './components/ExportDock'
 import { HelpDialog } from './components/HelpDialog'
+import {
+  BATCH_GAP_DEFAULT,
+  BATCH_GAP_MAX,
+  BATCH_GAP_STEP,
+  BATCH_PREVIEW_COUNT,
+} from './components/BatchPreview'
 import { Toast, type ToastMessage, type ToastTone } from './components/Toast'
 import { AlertIcon, CrunchMark, SpeakerIcon } from './components/Icons'
 
@@ -43,16 +51,20 @@ export default function App() {
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const [exportKind, setExportKind] = useState<ExportKind | null>(null)
   const [batchProgress, setBatchProgress] = useState(0)
+  const [batchGapMs, setBatchGapMs] = useState(BATCH_GAP_DEFAULT)
+  const [batchPreviewPlaying, setBatchPreviewPlaying] = useState(false)
+  const [batchPreviewStep, setBatchPreviewStep] = useState(0)
 
   const toastTimerRef = useRef<number | null>(null)
   const exportBusyRef = useRef(false)
+  const batchPreviewActiveRef = useRef(false)
 
   const activePreset = getPresetById(activePresetId)
   const sound = useRenderedSound(activePreset, params, seed)
   const modified = isModifiedPreset(params, activePreset)
   const activeCategory = activePreset.category
 
-  const { status, isPlaying, play, getWaveform } = useAudioEngine()
+  const { status, isPlaying, play, playSequence, stop, getWaveform } = useAudioEngine()
 
   const closeHelp = useCallback(() => setHelpOpen(false), [])
 
@@ -92,7 +104,7 @@ export default function App() {
       setSeed(createSeed())
       setTriggerNonce(0)
       if (reroll) {
-        showToast(`New take ${nextTake}. Same material, fresh seed.`)
+        showToast(`New version ${nextTake}. Same sound, new changes.`)
       }
     },
     [activePresetId, showToast, take],
@@ -114,6 +126,78 @@ export default function App() {
     setHumanize(sanitizeHumanize(value))
   }, [])
 
+  const stopBatchPreview = useCallback(() => {
+    if (!batchPreviewActiveRef.current) return
+    batchPreviewActiveRef.current = false
+    setBatchPreviewPlaying(false)
+    setBatchPreviewStep(0)
+    stop()
+  }, [stop])
+
+  const batchSignature = `${activePreset.id}|${seed}|${humanize}|${params.durationMs}|${params.pitchHz}|${params.punch}|${params.resonance}|${params.grit}|${params.decay}`
+
+  useEffect(() => {
+    stopBatchPreview()
+  }, [batchSignature, stopBatchPreview])
+
+  const handleBatchGapChange = useCallback(
+    (value: number) => {
+      const next = Math.min(
+        BATCH_GAP_MAX,
+        Math.max(0, Math.round(value / BATCH_GAP_STEP) * BATCH_GAP_STEP),
+      )
+      setBatchGapMs(next)
+      stopBatchPreview()
+    },
+    [stopBatchPreview],
+  )
+
+  const handleToggleBatchPreview = useCallback(() => {
+    if (batchPreviewActiveRef.current) {
+      stopBatchPreview()
+      return
+    }
+
+    const variations = buildVariations(params, humanize, seed, BATCH_PREVIEW_COUNT)
+    const sounds = variations.map((variation) =>
+      synthesize(activePreset.model, variation.params, variation.seed),
+    )
+
+    stop()
+    batchPreviewActiveRef.current = true
+    setBatchPreviewPlaying(true)
+    setBatchPreviewStep(1)
+
+    void playSequence(
+      sounds,
+      batchGapMs,
+      (step) => setBatchPreviewStep(step),
+      () => {
+        batchPreviewActiveRef.current = false
+        setBatchPreviewPlaying(false)
+        setBatchPreviewStep(0)
+      },
+    ).catch((error: unknown) => {
+      batchPreviewActiveRef.current = false
+      setBatchPreviewPlaying(false)
+      setBatchPreviewStep(0)
+      showToast(
+        messageFromError(error, 'The preview could not start. Press Play all 10 again.'),
+        'error',
+      )
+    })
+  }, [
+    activePreset.model,
+    batchGapMs,
+    humanize,
+    params,
+    playSequence,
+    seed,
+    showToast,
+    stop,
+    stopBatchPreview,
+  ])
+
   const handleSurprise = useCallback(() => {
     const nextSeed = createSeed()
     const rng = createRng(nextSeed)
@@ -132,6 +216,7 @@ export default function App() {
   }, [humanize, params])
 
   const trigger = useCallback(() => {
+    stopBatchPreview()
     setTriggerNonce((value) => value + 1)
     try {
       if (typeof navigator.vibrate === 'function') navigator.vibrate(8)
@@ -139,9 +224,9 @@ export default function App() {
       // Haptics are optional and unavailable on most desktop browsers.
     }
     void play(sound).catch((error: unknown) => {
-      showToast(messageFromError(error, 'The audio engine could not start.'), 'error')
+      showToast(messageFromError(error, 'The sound could not start. Press Play again.'), 'error')
     })
-  }, [play, showToast, sound])
+  }, [play, showToast, sound, stopBatchPreview])
 
   // Spacebar is the performance key. Ignore editable fields, let the trigger
   // button use its native space activation, and prevent the page from scrolling.
@@ -176,6 +261,7 @@ export default function App() {
 
   const handleExportSingle = useCallback(() => {
     if (exportBusyRef.current) return
+    stopBatchPreview()
     exportBusyRef.current = true
     setExportKind('single')
     const presetSnapshot = activePreset
@@ -183,17 +269,18 @@ export default function App() {
     try {
       const { blob, filename } = singleWavFor(presetSnapshot, soundSnapshot)
       downloadBlob(blob, filename)
-      showToast(`Exported ${filename} · 44.1 kHz / 16-bit stereo`)
+      showToast(`Saved ${filename}.`)
     } catch (error) {
-      showToast(messageFromError(error, 'WAV encoding failed.'), 'error')
+      showToast(messageFromError(error, 'The WAV file could not be made.'), 'error')
     } finally {
       setExportKind(null)
       exportBusyRef.current = false
     }
-  }, [activePreset, showToast, sound])
+  }, [activePreset, showToast, sound, stopBatchPreview])
 
   const handleExportBatch = useCallback(async () => {
     if (exportBusyRef.current) return
+    stopBatchPreview()
     exportBusyRef.current = true
     setExportKind('batch')
     setBatchProgress(0)
@@ -211,15 +298,15 @@ export default function App() {
         onProgress: (completed) => setBatchProgress(completed),
       })
       downloadBytes(result.bytes, result.filename, 'application/zip')
-      showToast(`Packed ${result.files.length} humanized takes into ${result.filename}`)
+      showToast(`Saved 10 sounds in ${result.filename}.`)
     } catch (error) {
-      showToast(messageFromError(error, 'Batch export failed.'), 'error')
+      showToast(messageFromError(error, 'The ZIP file could not be made.'), 'error')
     } finally {
       exportBusyRef.current = false
       setExportKind(null)
       setBatchProgress(0)
     }
-  }, [activePreset, humanize, params, seed, showToast])
+  }, [activePreset, humanize, params, seed, showToast, stopBatchPreview])
 
   return (
     <div
@@ -254,9 +341,9 @@ export default function App() {
                 <AlertIcon />
               </span>
               <span>
-                Live audio could not start in this browser. You can still shape the
-                waveform and export WAV files. Try tapping the trigger once more, or check
-                that audio is allowed for this page.
+                Sound could not start in this browser. You can still change the sound
+                and download the files. Try pressing Play again, or check that sound is
+                allowed for this page.
               </span>
             </div>
           ) : null}
@@ -271,7 +358,6 @@ export default function App() {
             <PerformancePanel
               preset={activePreset}
               sound={sound}
-              seed={seed}
               modified={modified}
               isPlaying={isPlaying}
               triggerNonce={triggerNonce}
@@ -285,6 +371,11 @@ export default function App() {
             exportKind={exportKind}
             batchProgress={batchProgress}
             humanize={humanize}
+            batchPreviewPlaying={batchPreviewPlaying}
+            batchPreviewStep={batchPreviewStep}
+            batchGapMs={batchGapMs}
+            onBatchGapChange={handleBatchGapChange}
+            onToggleBatchPreview={handleToggleBatchPreview}
             onExportSingle={handleExportSingle}
             onExportBatch={() => {
               void handleExportBatch()
@@ -302,13 +393,12 @@ export default function App() {
           </div>
           <p className="footer-manifesto">
             <SpeakerIcon aria-hidden="true" />
-            Every sound here is math and noise, made inside your browser. Nothing leaves the
-            page.
+            Every sound is made inside your browser. Nothing is uploaded.
           </p>
           <p className="footer-made">
-            Built for game feel
+            Made for games
             <span aria-hidden="true">·</span>
-            {activeCategory === 'ui' ? 'UI' : activeCategory === 'footsteps' ? 'Steps' : activeCategory === 'foley' ? 'Foley' : 'Crunch'}
+            {getCategory(activeCategory).label}
           </p>
         </footer>
       </div>

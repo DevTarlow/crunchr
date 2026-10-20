@@ -1,5 +1,5 @@
 import type { CategoryId, Preset } from '../audio/types'
-import { CATEGORIES, getPresetsByCategory, PRESETS } from '../audio/presets'
+import { CATEGORIES, getCategory, getPresetsByCategory, PRESETS } from '../audio/presets'
 import { MutateIcon, RerollIcon, SparkIcon, SlidersIcon } from './Icons'
 
 interface PresetBankProps {
@@ -30,13 +30,13 @@ export function PresetBank({
         <div className="section-heading">
           <span className="section-index">01</span>
           <div>
-            <div className="section-kicker">Sound bank</div>
+            <div className="section-kicker">Sounds</div>
             <h2 id="sound-bank-title" className="section-title">
-              Pick a material<span className="title-dot">.</span>
+              Pick a sound<span className="title-dot">.</span>
             </h2>
           </div>
           <span className="patch-count">
-            {total.toString().padStart(2, '0')} patches / 04 banks
+            {total} sounds / {CATEGORIES.length} groups
           </span>
         </div>
         <div className="bank-actions">
@@ -46,13 +46,13 @@ export function PresetBank({
           </button>
           <button type="button" className="button button-ghost" onClick={onMutate}>
             <MutateIcon className="button-icon" />
-            <span>Mutate ±10%</span>
+            <span>Nudge 10%</span>
           </button>
         </div>
       </div>
 
       <div className="bank-browser">
-        <div className="category-rail" role="group" aria-label="Sound categories">
+        <div className="category-rail" role="group" aria-label="Sound groups">
           {CATEGORIES.map((category) => {
             const selected = category.id === activePreset.category
             const count = getPresetsByCategory(category.id).length
@@ -75,7 +75,11 @@ export function PresetBank({
           })}
         </div>
 
-        <div className="preset-rail" role="group" aria-label={`${activePreset.category} presets`}>
+        <div
+          className="preset-rail"
+          role="group"
+          aria-label={`${getCategory(activePreset.category).label} sounds`}
+        >
           {categoryPresets.map((preset, index) => {
             const selected = preset.id === activePreset.id
             return (
@@ -85,11 +89,9 @@ export function PresetBank({
                 className={`preset-chip ${selected ? 'is-active' : ''}`}
                 aria-pressed={selected}
                 aria-label={
-                  selected
-                    ? `${preset.name}. Activate again for a new take.`
-                    : undefined
+                  selected ? `${preset.name}. Tap again for a new version.` : undefined
                 }
-                title={selected ? 'Tap again for a fresh take' : preset.description}
+                title={selected ? 'Tap again for a new version' : preset.description}
                 onClick={() => onSelectPreset(preset)}
               >
                 <span className="preset-chip-index">{String(index + 1).padStart(2, '0')}</span>
@@ -100,10 +102,10 @@ export function PresetBank({
                 {selected ? (
                   <span key={take} className="preset-chip-reroll" aria-hidden="true">
                     <RerollIcon />
-                    <span>Reroll</span>
+                    <span>New version</span>
                   </span>
                 ) : null}
-                {selected && modified ? <span className="modified-badge">Mod</span> : null}
+                {selected && modified ? <span className="modified-badge">Changed</span> : null}
               </button>
             )
           })}
@@ -116,8 +118,8 @@ export function PresetBank({
             <SlidersIcon />
           </span>
           <span>
-            Every sound is built from oscillators, filters and seeded noise. Nothing is
-            loaded from a file.
+            Every sound is made from scratch in your browser. Nothing is loaded from a
+            file.
           </span>
         </div>
         <div className="bank-footnote bank-tip">
@@ -125,8 +127,8 @@ export function PresetBank({
             <RerollIcon />
           </span>
           <span>
-            The glowing material is still live. Tap it again for a fresh take: same
-            material, new seed.
+            Tap the selected sound again for a new version. Same sound, new random
+            details.
           </span>
         </div>
       </div>

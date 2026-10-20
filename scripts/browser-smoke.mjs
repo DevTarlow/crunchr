@@ -130,7 +130,7 @@ async function loadApp(page) {
 }
 
 async function selectLongPreset(page) {
-  await page.locator('.category-button').filter({ hasText: 'Foley / Items' }).click()
+  await page.locator('.category-button').filter({ hasText: 'Items' }).click()
   await page.locator('.preset-chip').filter({ hasText: 'Dice Roll' }).click()
   await page.waitForFunction(
     () => document.querySelector('.preset-title-row h3')?.textContent === 'Dice Roll / Bounce',
@@ -208,34 +208,33 @@ async function main() {
     await page.locator('.help-dialog').waitFor({ state: 'detached' })
     pass('the help manual opens as a modal and Escape closes it')
 
-    const seedBeforeReroll = await page.locator('.seed-readout').innerText()
-    const takeBeforeReroll = await page.locator('.take-readout').innerText()
+    const versionBeforeReroll = await page.locator('.version-readout').innerText()
     await page.locator('.preset-chip.is-active').click()
     await page.waitForFunction(
-      (previous) => document.querySelector('.seed-readout')?.textContent !== previous,
-      seedBeforeReroll,
+      (previous) => document.querySelector('.version-readout')?.textContent !== previous,
+      versionBeforeReroll,
     )
-    const takeAfterReroll = await page.locator('.take-readout').innerText()
-    const takeNumber = (label) => Number.parseInt(label.replace(/[^0-9]/g, ''), 10)
+    const versionAfterReroll = await page.locator('.version-readout').innerText()
+    const versionNumber = (label) => Number.parseInt(label.replace(/[^0-9]/g, ''), 10)
     assert.equal(
-      takeNumber(takeAfterReroll),
-      takeNumber(takeBeforeReroll) + 1,
-      'Re-rolling must advance the take counter',
+      versionNumber(versionAfterReroll),
+      versionNumber(versionBeforeReroll) + 1,
+      'Re-rolling must advance the version number',
     )
     await page.waitForFunction(() =>
-      /New take [0-9]+\. Same material/.test(
+      /New version [0-9]+\. Same sound/.test(
         document.querySelector('.toast-message')?.textContent ?? '',
       ),
     )
-    pass('tapping the active material rolls a new take and seed')
+    pass('tapping the active sound rolls a new version')
 
     await page.locator('.trigger-button').click()
     await waitForPlayback(page, true)
     await page.waitForFunction(() => document.querySelector('.scope-screen')?.classList.contains('is-playing'))
     assert.equal(await page.locator('.status-value').innerText(), 'PLAYING')
     await waitForPlayback(page, false)
-    assert.equal(await page.locator('.status-value').innerText(), 'ARMED')
-    pass('trigger button plays audio, drives the live scope and reports playback')
+    assert.equal(await page.locator('.status-value').innerText(), 'READY')
+    pass('the Play button plays audio, drives the sound wave and reports playback')
 
     await page.evaluate(() => {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
@@ -251,7 +250,7 @@ async function main() {
     pass('clicking the scope replays the current preset')
 
     const wavDownloadPromise = page.waitForEvent('download', { timeout: 15_000 })
-    await page.getByRole('button', { name: /EXPORT \.WAV/ }).click()
+    await page.getByRole('button', { name: /DOWNLOAD WAV/ }).click()
     const wavDownload = await wavDownloadPromise
     assert.equal(wavDownload.suggestedFilename(), 'crunchr_dice_roll.wav')
     const wavPath = path.join(downloadsDir, wavDownload.suggestedFilename())
@@ -260,7 +259,7 @@ async function main() {
     pass(`WAV export is valid 44.1 kHz / 16-bit stereo (${wavInfo.dataBytes} data bytes, peak ${wavInfo.peak})`)
 
     const zipDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
-    await page.getByRole('button', { name: /BATCH VARIATIONS/ }).click()
+    await page.getByRole('button', { name: /DOWNLOAD 10 VERSIONS/ }).click()
     const zipDownload = await zipDownloadPromise
     assert.equal(zipDownload.suggestedFilename(), 'crunchr_dice_roll_variants.zip')
     const zipPath = path.join(downloadsDir, zipDownload.suggestedFilename())
@@ -281,8 +280,30 @@ async function main() {
       assert.equal(bytes.toString('ascii', 0, 4), 'RIFF')
       assert.equal(new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(24, true), 44_100)
     }
-    await page.waitForFunction(() => document.querySelector('.toast-message')?.textContent?.includes('Packed 10'))
+    await page.waitForFunction(() => document.querySelector('.toast-message')?.textContent?.includes('Saved 10 sounds'))
     pass('batch export downloads a ZIP with 10 valid 44.1 kHz WAV variations')
+
+    if (await page.locator('.toast-close').isVisible()) {
+      await page.locator('.toast-close').click()
+    }
+    await page.locator('.category-button').filter({ hasText: 'Clicks' }).click()
+    await page.waitForFunction(
+      () => document.querySelector('.preset-title-row h3')?.textContent === 'Mechanical Click',
+    )
+    await page.locator('#batch-gap').focus()
+    await page.keyboard.press('Home')
+    assert.equal(await page.locator('#batch-gap').inputValue(), '0')
+    assert.equal(await page.locator('.batch-preview-gap output').innerText(), '0 ms')
+    await page.getByRole('button', { name: 'Play all 10 versions' }).click()
+    await page.waitForFunction(
+      () => document.querySelector('.batch-preview-button')?.getAttribute('aria-pressed') === 'true',
+    )
+    await page.waitForFunction(
+      () => document.querySelector('.batch-preview-button')?.getAttribute('aria-pressed') === 'false',
+      undefined,
+      { timeout: 10_000 },
+    )
+    pass('the batch preview plays all ten versions and stops on its own')
 
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true)
     assert.deepEqual(desktop.consoleErrors, [], 'Desktop console errors')

@@ -5,8 +5,6 @@ type AudioContextConstructor = typeof AudioContext
 interface ActiveVoice {
   source: AudioBufferSourceNode
   gain: GainNode
-  token: number
-  onEnded?: () => void
 }
 
 /**
@@ -20,8 +18,8 @@ export class CrunchrAudioEngine {
   private context: AudioContext | null = null
   private master: GainNode | null = null
   private analyser: AnalyserNode | null = null
-  private active: ActiveVoice | null = null
-  private token = 0
+  private voices = new Set<ActiveVoice>()
+  private progressTimers = new Set<number>()
   private silentUnlockDone = false
   private disposed = false
   private cachedSound: RenderedSound | null = null
@@ -107,9 +105,28 @@ export class CrunchrAudioEngine {
     }
   }
 
+  private async ensureRunning(): Promise<AudioContext> {
+    const unlocked = await this.unlock()
+    const context = this.context
+    if (!unlocked || !context || !this.master) {
+      throw new Error('Sound could not start. Press Play again.')
+    }
+    if (context.state !== 'running') {
+      try {
+        await context.resume()
+      } catch {
+        throw new Error('This browser blocked the sound. Press Play again.')
+      }
+    }
+    if (context.state !== 'running') {
+      throw new Error('Sound is still paused. Press Play again.')
+    }
+    return context
+  }
+
   private getBuffer(sound: RenderedSound): AudioBuffer {
     const context = this.context
-    if (!context) throw new Error('Audio context is not ready.')
+    if (!context) throw new Error('Sound is not ready yet.')
     if (this.cachedSound === sound && this.cachedBuffer) return this.cachedBuffer
 
     const frames = Math.max(1, sound.channels[0].length)
@@ -122,56 +139,48 @@ export class CrunchrAudioEngine {
     return buffer
   }
 
-  private fadeOutActive(fadeSeconds = 0.006): void {
+  private fadeOutVoices(fadeSeconds = 0.006): void {
     const context = this.context
-    const active = this.active
-    if (!context || !active) return
-    this.active = null
+    if (!context) return
+
+    for (const timer of this.progressTimers) window.clearTimeout(timer)
+    this.progressTimers.clear()
+
+    const voices = Array.from(this.voices)
+    this.voices.clear()
     const now = context.currentTime
-    try {
-      active.gain.gain.cancelScheduledValues(now)
-      active.gain.gain.setValueAtTime(active.gain.gain.value, now)
-      active.gain.gain.linearRampToValueAtTime(0.00001, now + fadeSeconds)
-      active.source.stop(now + fadeSeconds + 0.002)
-    } catch {
-      // A source that has already ended can throw when stopped again; no state
-      // is left dangling by this path.
+    for (const voice of voices) {
+      try {
+        voice.gain.gain.cancelScheduledValues(now)
+        voice.gain.gain.setValueAtTime(voice.gain.gain.value, now)
+        voice.gain.gain.linearRampToValueAtTime(0.00001, now + fadeSeconds)
+        voice.source.stop(now + fadeSeconds + 0.002)
+      } catch {
+        // A source that has already ended can throw when stopped again; no state
+        // is left dangling by this path.
+      }
     }
   }
 
   async play(sound: RenderedSound, onEnded?: () => void): Promise<void> {
-    if (this.disposed) throw new Error('Audio engine has been disposed.')
-    const unlocked = await this.unlock()
-    const context = this.context
-    if (!unlocked || !context || !this.master) {
-      throw new Error('Audio could not be started. Tap the trigger again to enable sound.')
-    }
-    if (context.state !== 'running') {
-      try {
-        await context.resume()
-      } catch {
-        throw new Error('This browser blocked audio. Tap the trigger again to enable sound.')
-      }
-    }
-    if (context.state !== 'running') {
-      throw new Error('Audio is still suspended. Tap the trigger again to enable sound.')
-    }
+    if (this.disposed) throw new Error('The sound player is closed.')
+    const context = await this.ensureRunning()
+    const master = this.master
+    if (!master) throw new Error('Sound could not start. Press Play again.')
 
-    this.fadeOutActive()
+    this.fadeOutVoices()
     const buffer = this.getBuffer(sound)
     const source = context.createBufferSource()
     source.buffer = buffer
     const gain = context.createGain()
     gain.gain.setValueAtTime(1, context.currentTime)
     source.connect(gain)
-    gain.connect(this.master)
+    gain.connect(master)
 
-    const token = ++this.token
-    const voice: ActiveVoice = { source, gain, token, onEnded }
-    this.active = voice
+    const voice: ActiveVoice = { source, gain }
+    this.voices.add(voice)
     source.onended = () => {
-      if (this.active?.token !== token) return
-      this.active = null
+      if (!this.voices.delete(voice)) return
       this.setStatus('armed')
       onEnded?.()
     }
@@ -181,9 +190,68 @@ export class CrunchrAudioEngine {
     source.start(context.currentTime + 0.002)
   }
 
+  /**
+   * Play the whole variation set back to back. Every sound is scheduled on the
+   * AudioContext clock so the spacing stays steady even when the page is busy.
+   */
+  async playSequence(
+    sounds: readonly RenderedSound[],
+    gapMs: number,
+    onStep?: (step: number, total: number) => void,
+    onEnded?: () => void,
+  ): Promise<void> {
+    if (this.disposed) throw new Error('The sound player is closed.')
+    if (sounds.length === 0) return
+
+    const context = await this.ensureRunning()
+    const master = this.master
+    if (!master) throw new Error('Sound could not start. Press Play again.')
+
+    this.fadeOutVoices()
+    const gapSeconds = Math.max(0, gapMs) / 1000
+    const total = sounds.length
+    let startAt = context.currentTime + 0.002
+
+    sounds.forEach((sound, index) => {
+      const buffer = this.getBuffer(sound)
+      const source = context.createBufferSource()
+      source.buffer = buffer
+      const gain = context.createGain()
+      gain.gain.setValueAtTime(1, startAt)
+      source.connect(gain)
+      gain.connect(master)
+
+      const voice: ActiveVoice = { source, gain }
+      this.voices.add(voice)
+      source.onended = () => {
+        if (!this.voices.delete(voice)) return
+        if (index === total - 1) {
+          this.setStatus('armed')
+          onEnded?.()
+        }
+      }
+      source.start(startAt)
+
+      const delay = Math.max(0, (startAt - context.currentTime) * 1000)
+      const timer = window.setTimeout(() => {
+        this.progressTimers.delete(timer)
+        if (this.voices.has(voice)) onStep?.(index + 1, total)
+      }, delay)
+      this.progressTimers.add(timer)
+
+      startAt += buffer.duration + gapSeconds
+    })
+  }
+
+  /** Stop whatever is playing, including a scheduled batch preview. */
+  stop(): void {
+    this.fadeOutVoices()
+    if (this.context?.state === 'running') this.setStatus('armed')
+  }
+
   /** Live time-domain samples for the oscilloscope. */
   getTimeDomain(): Float32Array | null {
-    if (!this.analyser || !this.active) return null
+    if (!this.analyser || this.voices.size === 0) return null
     if (this.waveform.length !== this.analyser.fftSize) {
       this.waveform = new Float32Array(this.analyser.fftSize)
     }
@@ -194,13 +262,13 @@ export class CrunchrAudioEngine {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.fadeOutActive(0)
+    this.fadeOutVoices(0)
     try {
       void this.context?.close()
     } catch {
       // Closing an already-closed context is harmless.
     }
-    this.active = null
+    this.voices.clear()
     this.context = null
     this.master = null
     this.analyser = null

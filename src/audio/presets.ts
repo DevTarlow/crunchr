@@ -9,23 +9,23 @@ export interface CategoryMeta {
 export const CATEGORIES: readonly CategoryMeta[] = [
   {
     id: 'ui',
-    label: 'UI Clicks',
-    blurb: 'Switches, plastic and wood',
+    label: 'Clicks',
+    blurb: 'Buttons, cards and switches',
   },
   {
     id: 'footsteps',
     label: 'Footsteps',
-    blurb: 'Gravel, timber and concrete',
+    blurb: 'Gravel, wood and stone',
   },
   {
     id: 'foley',
-    label: 'Foley / Items',
-    blurb: 'Dice, cloth and metal',
+    label: 'Items',
+    blurb: 'Dice, cloth and coins',
   },
   {
     id: 'impacts',
-    label: 'Impacts / Crunch',
-    blurb: 'Wet flesh and dry bone',
+    label: 'Crunches',
+    blurb: 'Squishes, snaps and breaks',
   },
 ]
 
@@ -36,8 +36,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'mechanical_click',
     category: 'ui',
     model: 'mechanicalClick',
-    description: 'A crisp dome-switch tick with a brittle plastic shell.',
-    tags: ['IMPULSE', 'SWITCH'],
+    description: 'A short, sharp click with a plastic snap.',
+    tags: ['CLICK', 'PLASTIC'],
     defaults: {
       durationMs: 46,
       pitchHz: 2300,
@@ -53,8 +53,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'card_snap',
     category: 'ui',
     model: 'cardSnap',
-    description: 'A fast plastic flex and snap for cards, cases and toy parts.',
-    tags: ['CHIRP', 'SNAP'],
+    description: 'A quick plastic snap, like a card bending and letting go.',
+    tags: ['PLASTIC', 'SNAP'],
     defaults: {
       durationMs: 82,
       pitchHz: 1700,
@@ -70,8 +70,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'wooden_button',
     category: 'ui',
     model: 'woodButton',
-    description: 'A warm low tock with real timber under the cap.',
-    tags: ['PING', 'WOOD'],
+    description: 'A warm, low knock with wood under the cap.',
+    tags: ['WOOD', 'WARM'],
     defaults: {
       durationMs: 160,
       pitchHz: 180,
@@ -87,8 +87,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'gravel_crunch',
     category: 'footsteps',
     model: 'gravel',
-    description: 'Scattered stone chips under a boot, all grit and micro-collisions.',
-    tags: ['GRAINS', 'STONE'],
+    description: 'Loose stones shifting under a boot.',
+    tags: ['STONES', 'STEPS'],
     defaults: {
       durationMs: 380,
       pitchHz: 1100,
@@ -104,8 +104,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'wood_thud',
     category: 'footsteps',
     model: 'woodThud',
-    description: 'Hollow timber impact with a creak hiding in the tail.',
-    tags: ['THUD', 'CREAK'],
+    description: 'A hollow wooden thump with a small creak.',
+    tags: ['WOOD', 'HOLLOW'],
     defaults: {
       durationMs: 300,
       pitchHz: 90,
@@ -121,8 +121,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'concrete_step',
     category: 'footsteps',
     model: 'stone',
-    description: 'Sharp aggregate and a tight, bright room slapping back.',
-    tags: ['CRACK', 'RING'],
+    description: 'A hard step on stone with a short, bright echo.',
+    tags: ['STONE', 'HARD'],
     defaults: {
       durationMs: 230,
       pitchHz: 1500,
@@ -138,8 +138,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'dice_roll',
     category: 'foley',
     model: 'dice',
-    description: 'A handful of hard bounces with timings that obey gravity.',
-    tags: ['BOUNCE', 'WOOD'],
+    description: 'A handful of hard bounces that slow down like real dice.',
+    tags: ['DICE', 'BOUNCE'],
     defaults: {
       durationMs: 640,
       pitchHz: 380,
@@ -155,8 +155,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'cloth_rustle',
     category: 'foley',
     model: 'cloth',
-    description: 'Soft, moving fabric with the occasional seam crackle.',
-    tags: ['PINK', 'FABRIC'],
+    description: 'Soft fabric moving, with a few little crackles.',
+    tags: ['CLOTH', 'SOFT'],
     defaults: {
       durationMs: 520,
       pitchHz: 1800,
@@ -172,8 +172,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'coin_clink',
     category: 'foley',
     model: 'coin',
-    description: 'Two inharmonic partials and a fast, bright metal ring.',
-    tags: ['METAL', 'PARTIAL'],
+    description: 'A bright metal ring that fades fast.',
+    tags: ['METAL', 'RING'],
     defaults: {
       durationMs: 250,
       pitchHz: 2400,
@@ -189,8 +189,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'flesh_squish',
     category: 'impacts',
     model: 'flesh',
-    description: 'A wet, pitch-bent squelch with a short band-passed slurp.',
-    tags: ['WET', 'FM'],
+    description: 'A wet, rubbery squelch.',
+    tags: ['WET', 'SQUISH'],
     defaults: {
       durationMs: 340,
       pitchHz: 190,
@@ -206,8 +206,8 @@ export const PRESETS: readonly Preset[] = [
     slug: 'bone_crunch',
     category: 'impacts',
     model: 'bone',
-    description: 'Pink-noise fractures, hard volume jumps and a snap that bites.',
-    tags: ['DRY', 'FRACTURE'],
+    description: 'A dry crunch with sharp little breaks.',
+    tags: ['DRY', 'CRUNCH'],
     defaults: {
       durationMs: 360,
       pitchHz: 900,

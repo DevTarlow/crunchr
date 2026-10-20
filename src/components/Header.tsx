@@ -9,9 +9,9 @@ interface HeaderProps {
 }
 
 const STATUS_LABEL: Record<EngineStatus, string> = {
-  standby: 'Standby',
-  armed: 'Armed',
-  unsupported: 'Unavailable',
+  standby: 'Tap to start',
+  armed: 'Ready',
+  unsupported: 'Not available',
 }
 
 export function Header({ engineStatus, isPlaying, helpOpen, onOpenHelp }: HeaderProps) {
@@ -27,7 +27,7 @@ export function Header({ engineStatus, isPlaying, helpOpen, onOpenHelp }: Header
         <div className="brand-copy">
           <div className="eyebrow">
             <span className="eyebrow-square" aria-hidden="true" />
-            Tactile Micro-SFX &amp; Foley Generator
+            Tiny sounds for games
           </div>
           <h1 className="wordmark">
             CRUNCHR<span className="wordmark-dot">.</span>
@@ -36,21 +36,21 @@ export function Header({ engineStatus, isPlaying, helpOpen, onOpenHelp }: Header
       </div>
 
       <div className="header-actions">
-        <div className="header-instruments" aria-label="Instrument status">
+        <div className="header-instruments" aria-label="Sound status">
           <div className="status-module">
             <div className="status-line">
               <span
                 className={`status-led ${engineStatus} ${isPlaying ? 'playing' : ''}`}
                 aria-hidden="true"
               />
-              <span className="micro-label">Audio engine</span>
+              <span className="micro-label">Sound</span>
             </div>
             <strong className="status-value">{statusLabel}</strong>
           </div>
           <div className="status-divider" aria-hidden="true" />
           <div className="spec-module">
-            <span className="micro-label">Output</span>
-            <span className="spec-value">44.1 kHz / 16-bit / Stereo</span>
+            <span className="micro-label">Files</span>
+            <span className="spec-value">WAV · Stereo</span>
           </div>
         </div>
 
