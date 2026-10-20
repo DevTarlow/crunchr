@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-single/
+.npm-cache/
+*.local
+.DS_Store
+coverage/
+qa-artifacts/
