@@ -388,6 +388,12 @@ async function main() {
       await selectDice(page)
       await page.locator('.batch-preview-dot').nth(2).click()
       await waitForPlaybackToStop(page)
+      await page.getByRole('radio', { name: /MP3/ }).check()
+      await page.waitForFunction(
+        () =>
+          document.querySelector('.export-single-card .export-button-copy strong')
+            ?.textContent === 'DOWNLOAD MP3',
+      )
       await page.evaluate(() => {
         const batch = document.querySelector('.export-batch-card')
         if (batch) {
@@ -437,6 +443,9 @@ async function main() {
         height: 1000,
       })
       await armInstrument(page)
+      await page.getByRole('radio', { name: /MP3/ }).check()
+      await page.locator('.batch-preview-dot').nth(2).click()
+      await waitForPlaybackToStop(page)
       await page.evaluate(() => window.scrollTo(0, 0))
       await page.screenshot({ path: path.join(docsDir, 'crunchr-ui.png'), fullPage: true })
       await page.locator('.help-button').click()

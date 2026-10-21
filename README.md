@@ -209,8 +209,9 @@ oscillators, FM and noise generators are implemented mathematically rather than
 as per-note Web Audio graphs, and there is intentionally no AudioWorklet or
 deprecated ScriptProcessor. That choice gives us:
 
-- **bit-identical preview/export results**: all ten ZIP versions use the exact
-  same renderer as the live audition;
+- **bit-identical WAV preview/export results**: all ten WAV ZIP versions use the
+  exact same renderer as the live audition. MP3 is encoded from those same
+  renders, then compressed by the local LAME codec;
 - **fast triggering**: the buffer is rendered ahead of time and reused until a
   parameter or seed changes;
 - **reliable single-file/offline builds**: no worklet module URLs to resolve;
@@ -232,17 +233,18 @@ npm run build:single   # one self-contained HTML file → dist-single/index.html
 ```
 
 Both builds use relative asset URLs. The single-file artifact is itch.io-ready
-and can be opened directly from disk; everything (JS, CSS, JSZip) is inlined.
-To publish on itch.io, run `npm run itch:dist` and upload the resulting ZIP as
-an **HTML Game**. The ZIP has `index.html` at the root and the MIT licence. Set
-the embed to **Click to launch in fullscreen** so the instrument gets the whole
-window. The app detects itch's frame and scrolls inside it, since itch turns page
-scrolling off. The itch page copy, page fields, store art and publish checklist
-are kept locally and ignored by git.
+and can be opened directly from disk; everything (JS, CSS, JSZip and the MP3
+codec) is inlined. To publish on itch.io, run `npm run itch:dist` and upload the
+resulting ZIP as an **HTML Game**. The ZIP has `index.html` at the root and the
+MIT licence. Set the embed to **Click to launch in fullscreen** so the instrument
+gets the whole window. The app detects itch's frame and scrolls inside it, since
+itch turns page scrolling off. The itch page copy, page fields, store art and
+publish checklist are kept locally and ignored by git.
 
 The production build includes a restrictive Content Security Policy. The single
-file allows inline JS/CSS, data/blob images, and blocks all network egress. The
-development server uses a separate policy that permits HMR.
+file allows inline JS/CSS, data/blob images and `'wasm-unsafe-eval'` for the
+inlined MP3 codec, and blocks all network egress. The development server uses a
+separate policy that permits HMR.
 
 ### Release media and store kit
 
