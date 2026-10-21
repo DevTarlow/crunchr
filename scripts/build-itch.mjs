@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Package Crunchr's downloadable itch build.
+ * Package Crunchr's itch HTML-game build.
  *
- * The ZIP contains the single HTML file, the plain-language START HERE guide
- * and the MIT licence. The archive is read back and compared byte for byte with
+ * The ZIP contains `index.html` at the root, as itch requires for an HTML Game,
+ * plus the MIT licence. The archive is read back and compared byte for byte with
  * the source files before it is allowed to remain on disk, so a broken or stale
  * build cannot look publishable.
  */
@@ -31,8 +31,7 @@ const zipName = `Crunchr-${pkg.version}.zip`
 const zipPath = path.join(outputDir, zipName)
 
 const files = [
-  { name: 'crunchr.html', source: 'dist-single/index.html' },
-  { name: 'START HERE.txt', source: 'packaging/START HERE.txt' },
+  { name: 'index.html', source: 'dist-single/index.html' },
   { name: 'LICENSE.txt', source: 'LICENSE' },
 ]
 
@@ -103,7 +102,7 @@ async function main() {
     assert.deepEqual(
       entries,
       files.map((file) => file.name).sort(),
-      'The archive must contain exactly the app, the guide and the licence',
+      'The archive must contain exactly index.html and the licence',
     )
 
     for (const file of files) {
@@ -117,7 +116,7 @@ async function main() {
       console.log(`  ok  ${file.name} — ${formattedSize(packed.length)}`)
     }
 
-    console.log('\nVerified: the ZIP opens, holds the three expected files, and the app matches dist-single byte for byte.\n')
+    console.log('\nVerified: the ZIP opens, holds the two expected files, and index.html matches dist-single byte for byte.\n')
   } catch (error) {
     rmSync(zipPath, { force: true })
     throw error

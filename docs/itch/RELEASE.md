@@ -1,68 +1,73 @@
 # Crunchr 1.0.0 on itch.io
 
-This is the working file for the Crunchr store page. It has the page copy, the
-screenshots, the settings, and the steps to upload the build.
+This is the working file for the Crunchr page on itch.io. It has the page copy,
+the screenshots, the settings and the upload steps.
 
-Crunchr is a free download. People unzip it, double-click `crunchr.html`, and
-use it in their browser. There is no account and no server.
+Crunchr is an **HTML Game**. People press Play and use it right on the page.
+There is no app download and no account.
 
-> Choose **Downloadable** for Kind of Game. Do not choose **HTML Game**.
+> Set **Kind of Game** to **HTML Game**. Do not set it to Downloadable.
 
 ---
 
-## 1. Ship the file
+## 1. Play it in the browser
 
-Crunchr is a tool, not a game. The download is a ZIP with one HTML file, a short
-guide and the licence. People unzip it, double-click `crunchr.html`, and it opens
-in their browser. It works offline.
+itch runs HTML games inside a frame on the game page. Upload a ZIP with
+`index.html` at the root. Crunchr is one file, so the ZIP is just the app and the
+licence.
 
-Set **Kind of Game** to `Downloadable`. If you pick *HTML Game*, itch wraps
-Crunchr in its own page layout. That wrapper can block the download button, and
-it controls how the page scrolls. The file is the point, so make the file the
-download.
+Choose **Kind of Game: HTML Game**, then set the embed to **Click to launch in
+fullscreen**. Leave **Click to Play** on. itch uses that first click to load the
+game, and the app still asks for one click inside so the browser allows audio.
 
-| What you upload | Size | What people get |
+The app also gives itself a scroll area when it detects a frame. itch turns page
+scrolling off inside its frame, so without that the Save section would sit below
+the fold with no way to reach it. The app's own scrollbar keeps every panel
+reachable.
+
+| What you upload | Size | What itch does |
 | --- | --- | --- |
-| `Crunchr-1.0.0.zip` | about 133 kB | The whole download |
-| `crunchr.html` | about 438 kB | The app itself |
-| `START HERE.txt` | about 3 kB | A short guide |
+| `Crunchr-1.0.0.zip` | about 131 kB | Unpacks the HTML game |
+| `index.html` | about 438 kB | The app itself |
 | `LICENSE.txt` | about 1 kB | The MIT licence |
 
-`npm run itch:dist` checks the ZIP before it leaves the repo. It looks for the
-three files, compares the app with the build, and confirms the app makes no
-network calls. If a check fails, it deletes the ZIP.
+`npm run itch:dist` checks the ZIP before it leaves the repo. It looks for
+`index.html` at the root and the licence, compares the app with the build, and
+confirms the app makes no network calls. If a check fails, it deletes the ZIP.
 
 ---
 
 ## 2. Page settings
 
-| Field                 | Value                                                                                                                                                 |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Title**             | Crunchr                                                                                                                                               |
-| **Project URL**       | `crunchr`, at <https://tarlow.itch.io/crunchr>                                                                                                        |
+| Field | Value |
+| --- | --- |
+| **Title** | Crunchr |
+| **Project URL** | `crunchr`, at <https://tarlow.itch.io/crunchr> |
 | **Short description** | Make 11 sounds for your game in your browser. Pick one, change it, then download one sound file or ten versions. Free, no sign-up. |
-| **Classification**    | Tool                                                                                                                                                  |
-| **Kind of Game**      | **Downloadable** (see section 1)                                                                                                                      |
-| **Genre**             | Leave it blank. itch's genres are for games.                                                                                                          |
-| **Release status**    | Released                                                                                                                                              |
-| **Version**           | `1.0.0`, from `package.json`. The footer shows `v1.0.0`.                                                                                              |
-| **Platforms**         | Windows, macOS, Linux. One file covers all three.                                                                                                     |
-| **Price**             | Free (see section 7)                                                                                                                                  |
-| **Cover image**       | `docs/media/itch/cover-630x500.png` (630 by 500, required)                                                                                            |
-| **Banner**            | `docs/media/itch/banner-960x400.png` (960 by 400, optional)                                                                                           |
-| **Mobile Friendly**   | On. The layout works on a phone.                                                                                                                      |
-| **Support contact**   | `tarlow@mossaistudio.com`, shown on the page                                                                                                          |
-| **Tags**              | See section 3                                                                                                                                         |
+| **Classification** | Tool |
+| **Kind of Game** | **HTML Game** (see section 1) |
+| **Genre** | Leave it blank. itch's genres are for games. |
+| **Release status** | Released |
+| **Version** | `1.0.0`, from `package.json`. The footer shows `v1.0.0`. |
+| **Platforms** | HTML5. itch shows this as Play in browser. |
+| **Price** | Free (see section 7) |
+| **Cover image** | `docs/media/itch/cover-630x500.png` (630 by 500, required) |
+| **Banner** | `docs/media/itch/banner-960x400.png` (960 by 400, optional) |
+| **Mobile Friendly** | On. The layout works on a phone. |
+| **Embed** | Click to launch in fullscreen, with Click to Play left on |
+| **Support contact** | `tarlow@mossaistudio.com`, shown on the page |
+| **Tags** | See section 3 |
 
 ### Tags
 
 Pick up to 10. These are search labels, not sentences:
 
 ```
-audio, sound-effects, gamedev, tool, sound-design, offline, browser, no-install, sfx, foley
+audio, sound-effects, gamedev, tool, sound-design, offline, browser, html5, sfx, foley
 ```
 
-`html5` and `webgl` make itch treat the page like a playable game. Skip them.
+`html5` is right for a browser game. `webgl` is not, because Crunchr is drawn
+with Canvas and has no 3D engine.
 
 ---
 
@@ -142,8 +147,8 @@ italic, links and images. The block below is ready to paste.
 <h3>Works offline</h3>
 
 <p>
-  The app is one file that opens in your browser, so you can put it somewhere
-  you'll find it again, double-click it, and keep working with the wifi off.
+  The app runs right in your browser, so there is nothing to install, and once the
+  page is open it keeps working with the wifi off.
 </p>
 
 <p>
@@ -169,8 +174,8 @@ italic, links and images. The block below is ready to paste.
 <h3>What you need</h3>
 
 <p>
-  A current version of Chrome, Edge, Firefox or Safari on Windows, macOS or
-  Linux.
+  A current version of Chrome, Edge, Firefox or Safari on a computer, phone or
+  tablet.
 </p>
 
 <p>
@@ -224,7 +229,8 @@ Post this with the first screenshot or the cover at the top.
 <h2>Crunchr 1.0.0 is out</h2>
 
 <p>
-  I made a small sound tool called Crunchr, and it runs in one browser tab.
+  I made a small sound tool called Crunchr, and you can play it right here in
+  your browser.
 </p>
 
 <p>
@@ -247,9 +253,9 @@ Post this with the first screenshot or the cover at the top.
       take without losing them.</li>
   <li>A built-in guide, the Spacebar shortcut, and a phone layout with buttons
       you can actually hit.</li>
-  <li>It doesn't connect to the internet or collect anything about you. The sound
-      you were working on stays in your browser.</li>
-  <li>One file that works offline.</li>
+  <li>It doesn't connect to the internet or collect anything about you. Your last
+      session stays in your browser.</li>
+  <li>It keeps working if the wifi drops.</li>
 </ul>
 
 <p>
@@ -288,11 +294,11 @@ sounds between devices.
 
 ## 7. Price and licence
 
-Free. The code is MIT licensed, and the sounds you make are yours, including in
-games you sell.
+Free to play. The code is MIT licensed, and the sounds you make are yours,
+including in games you sell.
 
 itch can take donations on a free page. Leave the minimum at zero. The page copy
-promises a free file, and a price would turn a simple download into a checkout.
+promises a free game, and a price would turn a simple play button into a checkout.
 
 Support address on the page: `tarlow@mossaistudio.com`.
 
@@ -316,18 +322,20 @@ ZIP can't come from an old build. `release:check` only reads.
 ### Upload in the browser
 
 1. Create the page with project URL `crunchr`.
-2. Set **Classification** to `Tool` and **Kind of Game** to **Downloadable**.
-3. Upload `dist-itch/Crunchr-1.0.0.zip` as the Windows, macOS and Linux download.
-   One file covers all three.
-4. Upload `cover-630x500.png`. The banner is optional.
-5. Add the five screenshots in the order and with the captions in section 4.
-6. Paste the description from section 3 and the tags from section 2.
-7. Set the price to **Free**, add `tarlow@mossaistudio.com` as the support
-   contact, and turn **Mobile Friendly** on.
-8. Tick **Released**, save, and run the checks in section 10.
+2. Set **Classification** to `Tool` and **Kind of Game** to **HTML Game**.
+3. Upload `dist-itch/Crunchr-1.0.0.zip` as the game file. itch unpacks it and
+   uses `index.html` as the entry point. This is not a file for players to
+   download.
+4. In **Embed options**, choose **Click to launch in fullscreen**. Leave **Click
+   to Play** on so the first click can start the audio. Turn **Mobile Friendly**
+   on.
+5. Upload `cover-630x500.png`. The banner is optional.
+6. Add the five screenshots in the order and with the captions in section 4.
+7. Paste the description from section 3 and the tags from section 2.
+8. Set the price to **Free**, add `tarlow@mossaistudio.com` as the support
+   contact, save, and use the itch preview to test the frame.
 
-There is no command-line uploader in this repo. Upload in the browser. The ZIP
-is small, so re-uploading a new build by hand is fine for 1.0.
+There is no command-line uploader in this repo. Upload in the browser.
 
 ---
 
@@ -339,7 +347,7 @@ When you cut the next release:
 2. Change the footer in `src/App.tsx` to match.
 3. Update `version` in `docs/itch/metadata.json` and the title of this file.
 4. Run `npm run release:media` so the cover shows the new number.
-5. Run the section 8 commands and upload the new ZIP.
+5. Run the section 8 commands and upload the new ZIP as the HTML game.
 
 `release:check` catches a mismatch between `package.json`, the page settings and
 the footer. The ZIP name comes from `package.json`, so it changes automatically.
@@ -351,29 +359,32 @@ the footer. The ZIP name comes from `package.json`, so it changes automatically.
 Automated checks, run 20 October 2026 against this tree:
 
 - [x] `npm run verify` passed. It ran the code check, 32 unit tests, both builds
-      and 28 browser checks. Those cover WAV and ZIP downloads, each sound's
-      saved sliders, the guide, the setting that turns off animation, button
-      sizes, and layouts at 1440, 390 and 320 pixels.
+      and 29 browser checks. Those cover WAV and ZIP downloads, each sound's
+      saved sliders, the guide, the setting that turns off animation, the
+      itch-style frame's internal scroll, button sizes, and layouts at 1440, 390
+      and 320 pixels.
 - [x] `npm run release:media` passed. Nine real captures, no console errors and
       no network requests.
 - [x] `npm run release:check` passed. The settings match `package.json`, every
       image has the right size, the licence is there, and the one-file build
       makes no network calls.
-- [x] `npm run itch:dist` passed. `dist-itch/Crunchr-1.0.0.zip`, three files,
-      about 133 kB, and the app matches the build.
+- [x] `npm run itch:dist` passed. `dist-itch/Crunchr-1.0.0.zip`, two files, about
+      131 kB, `index.html` at the root, and the app matches the build.
+- [x] A local cross-origin frame with itch's `scrolling="no"` attribute got the
+      app's internal scroll area, scrolled to the Save section, and downloaded both
+      a WAV and the ten-version ZIP in Chrome.
 - [x] Page copy, tags, screenshots, cover, banner, support address and version
       are written down in this kit.
 - [x] The price is free and the app is MIT licensed.
-- [x] Kind of Game is documented as **Downloadable**, not HTML Game.
+- [x] Kind of Game is documented as **HTML Game**, not Downloadable.
 
 Still needs a person:
 
 - [ ] Listen to all eleven sounds on headphones and on a phone speaker. The
       tests check levels and file validity, not whether the sounds are good.
-- [ ] Upload the ZIP, download it from the public page, unzip it and open
-      `crunchr.html`. Save one WAV and the ten-version ZIP, reload the page, and
-      check that the sound you were working on comes back.
+- [ ] Preview the actual itch page: launch the game, scroll to Save, export one
+      WAV and the ten-version ZIP, reload, and check the sound comes back.
 - [ ] Confirm that the project URL `tarlow/crunchr` is the intended target, then
       set the page to Released and publish.
-- [ ] Check the page on a phone and in one browser that isn't Chrome. The test
-      suite only runs Chrome.
+- [ ] Check the game in itch's fullscreen view on a phone and in one browser that
+      isn't Chrome. The test suite only runs Chrome.

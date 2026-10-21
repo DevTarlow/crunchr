@@ -4,20 +4,20 @@
   "version": "1.0.0",
   "urlSlug": "crunchr",
   "itchTarget": "tarlow/crunchr",
-  "channel": "download",
+  "channel": "html5",
   "classification": "Tool",
-  "kindOfGame": "Downloadable",
+  "kindOfGame": "HTML Game",
   "genre": null,
   "releaseStatus": "Released",
-  "platforms": ["Windows", "macOS", "Linux"],
+  "platforms": ["HTML5"],
   "mobileFriendly": true,
   "shortDescription": "Make 11 sounds for your game in your browser. Pick one, change it, then download one sound file or ten versions. Free, no sign-up.",
   "pricing": {
     "model": "free",
-    "note": "MIT licensed and free to download. itch can take donations, but the file stays free either way."
+    "note": "MIT licensed and free to play. itch can take donations, but the game stays free either way."
   },
   "support": "tarlow@mossaistudio.com",
-  "refundPolicy": "Nothing to refund: the download is free.",
+  "refundPolicy": "Nothing to refund: the game is free.",
   "tags": [
     "audio",
     "sound-effects",
@@ -26,7 +26,7 @@
     "sound-design",
     "offline",
     "browser",
-    "no-install",
+    "html5",
     "sfx",
     "foley"
   ],

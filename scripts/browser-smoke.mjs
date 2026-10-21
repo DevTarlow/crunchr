@@ -632,6 +632,52 @@ async function main() {
     pass('the sound wave still renders and plays with reduced motion')
     await reducedContext.close()
 
+    const embeddedContext = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+    })
+    const embeddedPage = await embeddedContext.newPage()
+    const embedded = attachDiagnostics(embeddedPage)
+    const embeddedHtml = readFileSync(artifactPath, 'utf8')
+    await embeddedPage.setContent(
+      '<iframe id="game" scrolling="no" style="width:1280px;height:800px;border:0"></iframe>',
+    )
+    await embeddedPage.evaluate((html) => {
+      const frame = document.getElementById('game')
+      if (!(frame instanceof HTMLIFrameElement)) throw new Error('missing embedded frame')
+      frame.srcdoc = html
+    }, embeddedHtml)
+    await embeddedPage.waitForFunction(() => {
+      const frame = document.getElementById('game')
+      return frame instanceof HTMLIFrameElement && frame.contentDocument?.querySelector('.app-root')
+    })
+    const embeddedFrame = embeddedPage.frames().find((frame) => frame !== embeddedPage.mainFrame())
+    assert.ok(embeddedFrame, 'The itch-style frame must load the app')
+    await embeddedFrame.locator('.app-root').waitFor({ state: 'visible' })
+    assert.equal(
+      await embeddedFrame.locator('.app-root').getAttribute('data-embedded'),
+      'true',
+      'The app must detect an itch-style frame',
+    )
+    const embeddedMetrics = await embeddedFrame.locator('.app-shell').evaluate((element) => ({
+      overflowY: getComputedStyle(element).overflowY,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }))
+    assert.equal(embeddedMetrics.overflowY, 'auto', 'The embedded app shell must scroll')
+    assert.ok(
+      embeddedMetrics.scrollHeight > embeddedMetrics.clientHeight,
+      'The embedded page must be taller than its frame',
+    )
+    const embeddedScrollTop = await embeddedFrame.locator('.app-shell').evaluate((element) => {
+      element.scrollTop = element.scrollHeight
+      return element.scrollTop
+    })
+    assert.ok(embeddedScrollTop > 0, 'The embedded app shell must reach the Save section')
+    assert.deepEqual(embedded.consoleErrors, [], 'Embedded console errors')
+    assert.deepEqual(embedded.pageErrors, [], 'Embedded page errors')
+    pass('an itch-style frame gets its own scroll area')
+    await embeddedContext.close()
+
     await mobileContext.close()
     await desktopContext.close()
   } catch (error) {

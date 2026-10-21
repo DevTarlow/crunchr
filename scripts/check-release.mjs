@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Validate the release kit: page metadata, screenshots, cover art, packaging
- * copy, licence and the single-file artifact. This is additive to the unit and
+ * Validate the release kit: page metadata, screenshots, cover art, store copy,
+ * licence and the single-file artifact. This is additive to the unit and
  * browser suites; it never changes a file.
  */
 
@@ -69,7 +69,8 @@ function main() {
   assert.equal(metadata.title, 'Crunchr')
   assert.equal(metadata.tagline, 'Tiny Sound Maker for Games')
   assert.equal(metadata.classification, 'Tool')
-  assert.equal(metadata.kindOfGame, 'Downloadable', 'Crunchr must ship as a downloadable file, not an iframe build')
+  assert.equal(metadata.kindOfGame, 'HTML Game', 'Crunchr must ship as an HTML Game, not a downloadable file')
+  assert.equal(metadata.channel, 'html5', 'The release channel must be html5 for an HTML Game')
   assert.equal(metadata.genre, null)
   assert.equal(metadata.releaseStatus, 'Released')
   assert.equal(metadata.mobileFriendly, true)
@@ -77,16 +78,15 @@ function main() {
   assert.match(metadata.support, /^[^@\s]+@[^@\s]+\.[^@\s]+$/)
   assert.equal(metadata.urlSlug, 'crunchr')
   assert.equal(metadata.itchTarget, 'tarlow/crunchr')
-  pass(`page fields agree with v${pkg.version} (Tool, Downloadable, free, mobile friendly)`)
+  pass(`page fields agree with v${pkg.version} (Tool, HTML Game, free, mobile friendly)`)
 
   assert.ok(Array.isArray(metadata.tags), 'Tags must be a list')
   assert.ok(metadata.tags.length > 0 && metadata.tags.length <= 10, 'itch allows up to 10 tags')
   assert.equal(new Set(metadata.tags).size, metadata.tags.length, 'Tags must be unique')
-  for (const forbidden of ['html5', 'webgl']) {
-    assert.ok(!metadata.tags.includes(forbidden), `Do not use the ${forbidden} tag for a downloadable tool`)
-  }
+  assert.ok(metadata.tags.includes('html5'), 'An HTML Game should carry the html5 tag')
+  assert.ok(!metadata.tags.includes('webgl'), 'webgl would suggest a 3D engine this is not')
   assert.ok(metadata.shortDescription.length <= 200, 'The short description must fit itch')
-  pass(`${metadata.tags.length} unique tags, no playable-build tags, short description ${metadata.shortDescription.length}/200`)
+  pass(`${metadata.tags.length} unique tags, includes html5, short description ${metadata.shortDescription.length}/200`)
 
   requireFile('docs/itch/RELEASE.md')
   const releaseDoc = readFileSync(resolve('docs/itch/RELEASE.md'), 'utf8')
@@ -111,10 +111,13 @@ function main() {
   assert.deepEqual(pngSize(metadata.banner), { width: 960, height: 400, bytes: statSync(resolve(metadata.banner)).size })
   pass('cover is 630x500 and banner is 960x400')
 
-  requireFile('packaging/START HERE.txt')
   requireFile('docs/crunchr-ui.png')
   requireFile('docs/crunchr-help.png')
-  pass('packaging copy and README screenshots are present')
+  pass('README screenshots are present')
+
+  assert.match(releaseDoc, /HTML Game/)
+  assert.match(releaseDoc, /index\.html/)
+  pass('release notes describe the HTML Game upload and index.html entry point')
 
   const artifact = 'dist-single/index.html'
   requireFile(artifact)

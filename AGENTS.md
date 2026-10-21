@@ -98,6 +98,8 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 - the batch preview plays all ten versions and stops on its own;
 - the sound wave still renders and plays with `prefers-reduced-motion`;
 - body, control-label and helper type stay at readable sizes;
+- an itch-style frame gets its own scroll area so the Save section stays
+  reachable;
 - the 1440 px, 390 px and 320 px layouts have no horizontal overflow, and the
   help manual fits the 390 px layout;
 - there are no console errors or page errors.
@@ -130,10 +132,13 @@ this file in the same commit.
 - Every store image is a real capture of `dist-single/index.html`; do not paste
   in mock-ups. Change the composition in `scripts/release-media.mjs` instead of
   hand-editing a PNG.
-- Keep the ZIP downloadable-only. Crunchr's product is the file, and an itch
-  iframe controls downloads and page scrolling.
-- The ZIP must contain exactly `crunchr.html`, `START HERE.txt` and
-  `LICENSE.txt`; `itch:dist` enforces that and byte-compares the app.
+- Ship the build as an itch **HTML Game**, not a downloadable file. The page
+  should play in the browser, and the ZIP must have `index.html` at the root.
+- itch turns page scrolling off inside its frame. Keep the embedded scroll area
+  in `src/App.tsx` and `src/styles.css` working so the Save section stays
+  reachable.
+- The ZIP must contain exactly `index.html` and `LICENSE.txt`; `itch:dist`
+  enforces that and byte-compares the app.
 
 ## 4. Commit rules
 

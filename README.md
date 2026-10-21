@@ -177,13 +177,11 @@ docs/
   screenshots/      the five real store captures
   crunchr-ui.png    full-page README capture
   crunchr-help.png  the in-app manual
-packaging/
-  START HERE.txt    plain-language guide shipped inside the itch ZIP
 scripts/
   browser-smoke.mjs headless Chrome smoke of the single-file artifact
   release-media.mjs screenshots, cover and banner from the real build
   check-release.mjs metadata, artwork, licence and artifact checks
-  build-itch.mjs    packages and byte-verifies the downloadable ZIP
+  build-itch.mjs    packages and byte-verifies the HTML Game ZIP
 ```
 
 ### Why a deterministic DSP kernel?
@@ -219,11 +217,12 @@ npm run build:single   # one self-contained HTML file → dist-single/index.html
 
 Both builds use relative asset URLs. The single-file artifact is itch.io-ready
 and can be opened directly from disk; everything (JS, CSS, JSZip) is inlined.
-To publish on itch.io, run `npm run itch:dist` and upload the resulting ZIP as a
-**Downloadable** file — not an *HTML Game*. The ZIP contains `crunchr.html`, a
-plain-language `START HERE.txt` and the MIT licence. The store copy, page fields,
-screenshot order and publish checklist live in
-[`docs/itch/RELEASE.md`](docs/itch/RELEASE.md).
+To publish on itch.io, run `npm run itch:dist` and upload the resulting ZIP as
+an **HTML Game**. The ZIP has `index.html` at the root and the MIT licence. Set
+the embed to **Click to launch in fullscreen** so the instrument gets the whole
+window. The app detects itch's frame and scrolls inside it, since itch turns page
+scrolling off. The store copy, page fields, screenshot order and publish
+checklist live in [`docs/itch/RELEASE.md`](docs/itch/RELEASE.md).
 
 The production build includes a restrictive Content Security Policy. The single
 file allows inline JS/CSS, data/blob images, and blocks all network egress. The
@@ -243,8 +242,9 @@ npm run itch:dist       # package and byte-verify dist-itch/Crunchr-1.0.0.zip
 `release:check` fails if the store metadata, the in-app footer, `package.json`
 and `package-lock.json` disagree about the version or licence, or if a
 screenshot is the wrong size. It never writes. `itch:dist` reads the archive
-back, checks the three expected file names and compares `crunchr.html` byte for
-byte with `dist-single/index.html`; a failed check deletes the ZIP.
+back, checks the two expected file names (`index.html` and `LICENSE.txt`) and
+compares `index.html` byte for byte with `dist-single/index.html`; a failed check
+deletes the ZIP.
 
 ### Verify
 
@@ -266,8 +266,8 @@ scope, per-sound slider memory and Reset, re-rolling without losing the sliders,
 the active category being a no-op, session restore after reload, native Space
 activation on action buttons, WAV and 10× ZIP downloads, single-version audition
 and Save vNN, the help modal and its Escape close, the batch preview, reduced
-motion, Save format/size, touch-target sizes, and overflow-free layouts at 1440,
-390 and 320 px. It also checks the 390 px help layout. It requires system
+motion, Save format/size, the itch-style frame's internal scroll, touch-target
+sizes, and overflow-free layouts at 1440, 390 and 320 px. It also checks the 390 px help layout. It requires system
 Chrome; set `CHROME_PATH` if Chrome is not in a standard location. A missing
 browser fails the gate rather than silently skipping it.
 

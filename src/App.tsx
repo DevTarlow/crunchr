@@ -61,6 +61,18 @@ function messageFromError(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback
 }
 
+/**
+ * itch.io embeds HTML games in a frame with scrolling turned off. Give the
+ * instrument its own scroll area there so the Save section stays reachable.
+ */
+function isEmbedded(): boolean {
+  try {
+    return window.self !== window.top
+  } catch {
+    return true
+  }
+}
+
 export default function App() {
   const [initialSession] = useState(readSession)
   const initialPreset = getPresetById(initialSession?.activePresetId ?? DEFAULT_PRESET_ID)
@@ -81,6 +93,7 @@ export default function App() {
   const [batchPreviewPlaying, setBatchPreviewPlaying] = useState(false)
   const [batchPreviewStep, setBatchPreviewStep] = useState(0)
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null)
+  const [embedded] = useState(isEmbedded)
 
   const toastTimerRef = useRef<number | null>(null)
   const exportBusyRef = useRef(false)
@@ -484,6 +497,7 @@ export default function App() {
       data-audio-state={status}
       data-playing={isPlaying ? 'true' : 'false'}
       data-export-state={exportKind ?? 'idle'}
+      data-embedded={embedded ? 'true' : undefined}
     >
       <div className="app-atmosphere" aria-hidden="true" />
       <div className="app-shell">

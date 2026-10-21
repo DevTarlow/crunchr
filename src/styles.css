@@ -138,6 +138,20 @@ button:disabled {
   isolation: isolate;
 }
 
+/* itch.io's HTML-game frame does not scroll. Keep the page still and scroll the
+   instrument inside it, so the Save section remains reachable. */
+.app-root[data-embedded='true'] {
+  height: 100svh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-root[data-embedded='true'] .app-shell {
+  height: 100svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .app-atmosphere {
   position: fixed;
   inset: 0;
