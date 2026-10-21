@@ -36,6 +36,8 @@ the browser. There are zero audio samples, zero network calls and no backend.
 - **Deterministic synthesis**: the waveform you see, the sound you hear and every
   exported file come from the same seeded renderer.
 
+![The Shape and Listen workbench](docs/screenshots/02-shape-and-listen.png)
+
 ## Quick start
 
 ```bash
@@ -132,6 +134,8 @@ preview-only gap from 0 to 600 ms. Changing the gap while a preview is playing
 stops it so the next run uses the new spacing. The gap is not written into the
 ZIP: the ten WAVs stay separate, and the game decides when to trigger each one.
 
+![Ten versions, one selected and ready to save](docs/screenshots/03-ten-versions.png)
+
 ## Export
 
 - **Download WAV** → `crunchr_<preset_slug>.wav`
@@ -167,8 +171,19 @@ src/
   lib/session.ts    browser-local session memory (per-sound drafts)
   App.tsx           instrument state and interactions
   styles.css        design tokens, hardware styling, responsive rules
+docs/
+  itch/             page fields, launch copy, screenshot order and publish checklist
+  media/itch/       generated 630×500 cover and 960×400 banner
+  screenshots/      the five real store captures
+  crunchr-ui.png    full-page README capture
+  crunchr-help.png  the in-app manual
+packaging/
+  START HERE.txt    plain-language guide shipped inside the itch ZIP
 scripts/
   browser-smoke.mjs headless Chrome smoke of the single-file artifact
+  release-media.mjs screenshots, cover and banner from the real build
+  check-release.mjs metadata, artwork, licence and artifact checks
+  build-itch.mjs    packages and byte-verifies the downloadable ZIP
 ```
 
 ### Why a deterministic DSP kernel?
@@ -204,12 +219,32 @@ npm run build:single   # one self-contained HTML file → dist-single/index.html
 
 Both builds use relative asset URLs. The single-file artifact is itch.io-ready
 and can be opened directly from disk; everything (JS, CSS, JSZip) is inlined.
-To publish on itch.io, upload a ZIP containing `dist-single/index.html` as an
-HTML5 project. The app performs no fetches and requires no server.
+To publish on itch.io, run `npm run itch:dist` and upload the resulting ZIP as a
+**Downloadable** file — not an *HTML Game*. The ZIP contains `crunchr.html`, a
+plain-language `START HERE.txt` and the MIT licence. The store copy, page fields,
+screenshot order and publish checklist live in
+[`docs/itch/RELEASE.md`](docs/itch/RELEASE.md).
 
 The production build includes a restrictive Content Security Policy. The single
 file allows inline JS/CSS, data/blob images, and blocks all network egress. The
 development server uses a separate policy that permits HMR.
+
+### Release media and store kit
+
+Every screenshot, the 630×500 cover and the 960×400 banner are real captures of
+the single-file build in headless Chrome, not mock-ups:
+
+```bash
+npm run release:media   # rebuild the single file, then capture all nine images
+npm run release:check   # validate fields, versions, image sizes, licence and CSP
+npm run itch:dist       # package and byte-verify dist-itch/Crunchr-1.0.0.zip
+```
+
+`release:check` fails if the store metadata, the in-app footer, `package.json`
+and `package-lock.json` disagree about the version or licence, or if a
+screenshot is the wrong size. It never writes. `itch:dist` reads the archive
+back, checks the three expected file names and compares `crunchr.html` byte for
+byte with `dist-single/index.html`; a failed check deletes the ZIP.
 
 ### Verify
 
@@ -217,6 +252,7 @@ development server uses a separate policy that permits HMR.
 npm run verify         # typecheck + unit tests + builds + headless Chrome smoke
 npm run test:browser   # browser smoke against the existing dist-single build
 npm run verify:browser # rebuild the single file, then run the browser smoke
+npm run release:check  # validate the store kit, artwork, licence and artifact
 ```
 
 Unit tests cover WAV header/sample encoding, deterministic synthesis for all
@@ -250,6 +286,11 @@ browser until you download a file. Your last session (active sound, per-sound
 sliders, seed, version, variation amount and preview gap) is kept in browser
 local storage on this device and is never uploaded; clearing site data removes
 it.
+
+## License
+
+Crunchr is released under the [MIT License](LICENSE). The sounds you make with
+it are yours to use in games, including commercial ones.
 
 ## Dependencies
 

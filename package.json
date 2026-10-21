@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Crunchr — a tactile, procedural micro-SFX and foley generator for indie game developers.",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -14,6 +15,9 @@
     "test:watch": "vitest",
     "test:browser": "node scripts/browser-smoke.mjs",
     "verify:browser": "npm run build:single && npm run test:browser",
+    "release:media": "npm run build:single && node scripts/release-media.mjs",
+    "release:check": "node scripts/check-release.mjs",
+    "itch:dist": "npm run build:single && node scripts/build-itch.mjs",
     "verify": "npm run typecheck && npm run test && npm run build && npm run build:single && npm run test:browser"
   },
   "dependencies": {

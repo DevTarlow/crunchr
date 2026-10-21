@@ -1,0 +1,62 @@
+{
+  "title": "Crunchr",
+  "tagline": "Tiny Sound Maker for Games",
+  "version": "1.0.0",
+  "urlSlug": "crunchr",
+  "itchTarget": "tarlow/crunchr",
+  "channel": "download",
+  "classification": "Tool",
+  "kindOfGame": "Downloadable",
+  "genre": null,
+  "releaseStatus": "Released",
+  "platforms": ["Windows", "macOS", "Linux"],
+  "mobileFriendly": true,
+  "shortDescription": "Eleven procedural game sounds in one browser tab. Shape them, hear ten versions, and download clean WAVs. No samples, no account, no uploads.",
+  "pricing": {
+    "model": "free",
+    "note": "MIT licensed and free to download. itch can take donations; the file stays free either way."
+  },
+  "support": "tarlow@mossaistudio.com",
+  "refundPolicy": "Nothing to refund: the download is free.",
+  "tags": [
+    "audio",
+    "sound-effects",
+    "gamedev",
+    "tool",
+    "procedural",
+    "offline",
+    "browser",
+    "no-install",
+    "sfx",
+    "foley"
+  ],
+  "cover": "docs/media/itch/cover-630x500.png",
+  "banner": "docs/media/itch/banner-960x400.png",
+  "screenshots": [
+    {
+      "file": "docs/screenshots/01-instrument.png",
+      "size": "1600x1000",
+      "caption": "The whole instrument: eleven sounds in four groups, seven controls, and a live picture of the wave."
+    },
+    {
+      "file": "docs/screenshots/02-shape-and-listen.png",
+      "size": "1600x1000",
+      "caption": "Shape a footstep, then hear it. Length, pitch, punch, body, roughness and fade all update the same renderer that writes the WAV."
+    },
+    {
+      "file": "docs/screenshots/03-ten-versions.png",
+      "size": "1600x1000",
+      "caption": "Save one WAV or ten versions. Preview the batch, hear a single version, and save it on its own."
+    },
+    {
+      "file": "docs/screenshots/04-help.png",
+      "size": "1600x1000",
+      "caption": "The built-in manual explains the instrument and the keyboard shortcuts without leaving the page."
+    },
+    {
+      "file": "docs/screenshots/05-mobile.png",
+      "size": "390x844",
+      "caption": "The one-column phone layout: the full sound bank and instrument, with touch-sized controls."
+    }
+  ]
+}

@@ -56,6 +56,9 @@ tree.
 | `npm run test:browser` | Headless Chrome smoke against the existing `dist-single/` build | UI, audio, export or CSP changes |
 | `npm run verify:browser` | `build:single` → browser smoke | Re-run just the browser gate |
 | `npm run verify` | typecheck → tests → `dist/` → `dist-single/` → browser smoke | Before commit for risky work, and **always before a push** |
+| `npm run release:media` | Rebuild and recapture screenshots, cover and banner | After any visual change or version bump |
+| `npm run release:check` | Page metadata, version/licence agreement, image sizes, self-contained artifact | Before a release, and after editing the kit |
+| `npm run itch:dist` | Build and byte-verify `dist-itch/Crunchr-<version>.zip` | Before uploading to itch.io |
 | `npm run build` | Standard static build in `dist/` | Build-sensitive changes |
 | `npm run build:single` | Self-contained `dist-single/index.html` | Before itch packaging |
 
@@ -64,6 +67,11 @@ tree.
 single-file build.
 
 **Before every push:** `npm run verify` (including the browser smoke).
+
+**Before every release:** `npm run verify`, then `npm run release:media`,
+`npm run release:check` and `npm run itch:dist`, then follow
+[`docs/itch/RELEASE.md`](docs/itch/RELEASE.md). `release:media` intentionally
+rewrites committed PNGs; review and commit them with the release.
 
 ### Browser smoke
 
@@ -113,6 +121,19 @@ this file in the same commit.
   click-free.
 - Never weaken TypeScript strictness to make a change compile.
 - Keep the tree free of `TODO`, `FIXME` and placeholder implementations.
+
+### Release kit expectations
+
+- `docs/itch/RELEASE.md` is the source of truth for page fields, copy, tag
+  order, screenshot captions and the publish checklist.
+- Page fields and screenshot paths live in `docs/itch/metadata.json`.
+- Every store image is a real capture of `dist-single/index.html`; do not paste
+  in mock-ups. Change the composition in `scripts/release-media.mjs` instead of
+  hand-editing a PNG.
+- Keep the ZIP downloadable-only. Crunchr's product is the file, and an itch
+  iframe controls downloads and page scrolling.
+- The ZIP must contain exactly `crunchr.html`, `START HERE.txt` and
+  `LICENSE.txt`; `itch:dist` enforces that and byte-compares the app.
 
 ## 4. Commit rules
 
@@ -183,9 +204,10 @@ asked. A GitHub push is not an itch.io deployment.
   config has `credential.helper=!gh auth git-credential`, so a normal
   `git -c safe.directory="$PWD" push` works once an explicit push is requested.
   Never write tokens into the repository or a remote URL.
-- The browser smoke needs Google Chrome or a Chromium binary. Set
-  `CHROME_PATH=/path/to/chrome` when it is not in a standard location. The
-  `playwright-core` package deliberately does not download a browser.
+- The browser smoke and release-media capture need Google Chrome or a Chromium
+  binary. Set `CHROME_PATH=/path/to/chrome` when it is not in a standard
+  location. The `playwright-core` package deliberately does not download a
+  browser.
 - npm's default cache directory is read-only in this environment. If dependency
   installation is needed, use a writable cache:
   ```bash
@@ -202,6 +224,9 @@ A task is done only when:
 - `npm run typecheck && npm test` pass, plus `npm run verify` when appropriate;
 - the browser smoke has run (`npm run verify:browser`) whenever UI, audio,
   exports, CSP or the single-file build changed;
+- for release work, `npm run release:check` and `npm run itch:dist` pass and the
+  version agrees across `package.json`, `package-lock.json`, the footer,
+  `docs/itch/metadata.json` and `docs/itch/RELEASE.md`;
 - docs are updated if behaviour or workflow changed;
 - only task-related files are staged;
 - a Conventional Commit exists;

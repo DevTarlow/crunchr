@@ -39,8 +39,9 @@ Source: <https://github.com/tailwindlabs/tailwindcss> — MIT License.
 ## Other development tooling
 
 - **Playwright Core** — Copyright (c) Microsoft Corporation,
-  <https://github.com/microsoft/playwright>, Apache-2.0. Used only by the
-  headless Chrome smoke test; it is not included in the app bundle.
+  <https://github.com/microsoft/playwright>, Apache-2.0. Used by the headless
+  Chrome smoke test and the release-media capture; it is not included in the app
+  bundle.
 - **TypeScript** — Copyright (c) Microsoft Corporation,
   <https://github.com/microsoft/TypeScript>, Apache-2.0. Development dependency.
 
