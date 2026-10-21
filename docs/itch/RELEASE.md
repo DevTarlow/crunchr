@@ -36,23 +36,23 @@ network calls. If a check fails, it deletes the ZIP.
 
 ## 2. Page settings
 
-| Field | Value |
-| --- | --- |
-| **Title** | Crunchr |
-| **Project URL** | `crunchr`, at <https://tarlow.itch.io/crunchr> |
-| **Short description** | Eleven game sounds you can shape in your browser. Listen to ten versions, then download the WAV files. No sample packs, no account, nothing uploaded. |
-| **Classification** | Tool |
-| **Kind of Game** | **Downloadable** (see section 1) |
-| **Genre** | Leave it blank. itch's genres are for games. |
-| **Release status** | Released |
-| **Version** | `1.0.0`, from `package.json`. The footer shows `v1.0.0`. |
-| **Platforms** | Windows, macOS, Linux. One file covers all three. |
-| **Price** | Free (see section 7) |
-| **Cover image** | `docs/media/itch/cover-630x500.png` (630 by 500, required) |
-| **Banner** | `docs/media/itch/banner-960x400.png` (960 by 400, optional) |
-| **Mobile Friendly** | On. The layout works on a phone. |
-| **Support contact** | `tarlow@mossaistudio.com`, shown on the page |
-| **Tags** | See section 3 |
+| Field                 | Value                                                                                                                                                 |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**             | Crunchr                                                                                                                                               |
+| **Project URL**       | `crunchr`, at <https://tarlow.itch.io/crunchr>                                                                                                        |
+| **Short description** | Eleven sounds for your game, from clicks to footsteps to coins. Shape them in your browser, then download one WAV or ten versions. No sample packs, no account, nothing uploaded. |
+| **Classification**    | Tool                                                                                                                                                  |
+| **Kind of Game**      | **Downloadable** (see section 1)                                                                                                                      |
+| **Genre**             | Leave it blank. itch's genres are for games.                                                                                                          |
+| **Release status**    | Released                                                                                                                                              |
+| **Version**           | `1.0.0`, from `package.json`. The footer shows `v1.0.0`.                                                                                              |
+| **Platforms**         | Windows, macOS, Linux. One file covers all three.                                                                                                     |
+| **Price**             | Free (see section 7)                                                                                                                                  |
+| **Cover image**       | `docs/media/itch/cover-630x500.png` (630 by 500, required)                                                                                            |
+| **Banner**            | `docs/media/itch/banner-960x400.png` (960 by 400, optional)                                                                                           |
+| **Mobile Friendly**   | On. The layout works on a phone.                                                                                                                      |
+| **Support contact**   | `tarlow@mossaistudio.com`, shown on the page                                                                                                          |
+| **Tags**              | See section 3                                                                                                                                         |
 
 ### Tags
 
