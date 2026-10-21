@@ -296,7 +296,7 @@ function plateHtml({ width, height, screenshot }) {
         <div class="tagline">Make the small sounds your game is missing.</div>
         <div class="chips">
           <span>11 sounds</span>
-          <span>WAV files</span>
+          <span>WAV + MP3</span>
           <span>10 versions</span>
           <span>Runs offline</span>
         </div>
