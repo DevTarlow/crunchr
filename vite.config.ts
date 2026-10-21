@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
+import { mp3WasmPlugin } from './scripts/mp3-wasm-plugin'
 
 /**
  * Crunchr has two deliberate output shapes:
@@ -14,7 +15,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
  */
 const DEV_CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
@@ -27,7 +28,7 @@ const DEV_CSP = [
 
 const PROD_CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
@@ -40,7 +41,7 @@ const PROD_CSP = [
 
 const SINGLE_CSP = [
   "default-src 'none'",
-  "script-src 'unsafe-inline'",
+  "script-src 'unsafe-inline' 'wasm-unsafe-eval'",
   "style-src 'unsafe-inline'",
   "img-src data: blob:",
   "font-src data:",
@@ -72,6 +73,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      mp3WasmPlugin(),
       cspPlugin(single),
       ...(single ? [viteSingleFile({ removeViteModuleLoader: true })] : []),
     ],

@@ -26,11 +26,11 @@ const STEPS = [
   },
   {
     title: 'Listen to 10 versions.',
-    body: 'The Variation slider changes each of the 10 downloaded sounds. Play all 10 hears them in a row; click a number to hear one, then Save vNN to download it. The spacing is only a preview; your game sets it for the ten files.',
+    body: 'The Variation slider changes each of the 10 downloaded sounds. Play all 10 hears them in a row; click a number to hear one, then Save vNN to download it. This preview is only for the ten versions; the single sound is in the One sound card. The spacing is only a preview; your game sets it for the ten files.',
   },
   {
     title: 'Download it.',
-    body: 'Download WAV saves the sound on your sliders. Download 10 versions gives you a ZIP with 10 separate sounds; Save vNN saves one. They are standard WAV files for games and editors.',
+    body: 'Choose WAV or MP3 at the top of Save. WAV is lossless and best for games; MP3 is smaller and plays on anything, with a tiny delay at the start. Download one sound saves the sound on your sliders. Download 10 versions gives you a ZIP with ten separate files in the same format; Save vNN saves just one of those ten.',
   },
 ]
 

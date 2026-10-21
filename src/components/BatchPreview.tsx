@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import type { ExportFormat } from '../audio/types'
 import { BATCH_GAP_MAX, BATCH_GAP_STEP, BATCH_PREVIEW_COUNT } from '../audio/params'
 import { PlayIcon, StopIcon } from './Icons'
 
@@ -7,7 +8,9 @@ interface BatchPreviewProps {
   step: number
   selected: number | null
   gapMs: number
+  exportFormat: ExportFormat
   disabled: boolean
+  saving: boolean
   onGapChange: (value: number) => void
   onToggle: () => void
   onAudition: (index: number) => void
@@ -23,7 +26,9 @@ export function BatchPreview({
   step,
   selected,
   gapMs,
+  exportFormat,
   disabled,
+  saving,
   onGapChange,
   onToggle,
   onAudition,
@@ -32,6 +37,8 @@ export function BatchPreview({
   const fillPercent = (gapMs / BATCH_GAP_MAX) * 100
   const style = { '--range-fill': `${fillPercent}%` } as CSSProperties
   const selectedLabel = selected === null ? null : versionLabel(selected)
+  const formatLabel = exportFormat === 'wav' ? 'WAV' : 'MP3'
+  const formatArticle = exportFormat === 'mp3' ? 'an' : 'a'
 
   return (
     <section className="batch-preview" aria-labelledby="batch-preview-title">
@@ -54,7 +61,7 @@ export function BatchPreview({
 
         <div className="batch-preview-meter">
           <div className="batch-preview-meter-head">
-            <span id="batch-preview-title">Preview</span>
+            <span id="batch-preview-title">10-version preview</span>
             <span className="batch-preview-count">
               {playing
                 ? `Version ${step} of ${BATCH_PREVIEW_COUNT}`
@@ -117,8 +124,8 @@ export function BatchPreview({
 
       <div className="batch-preview-foot">
         <p className="batch-preview-note">
-          Click a number to hear one version. The ZIP still has 10 separate sounds, so
-          your game sets the spacing.
+          Click a number to hear one version. The ZIP still has 10 separate {formatLabel}{' '}
+          files, so your game sets the spacing.
         </p>
         {selected !== null ? (
           <button
@@ -126,10 +133,11 @@ export function BatchPreview({
             className="batch-save-button"
             onClick={() => onSave(selected)}
             disabled={disabled}
-            aria-label={`Save version ${selected} as a WAV file`}
-            title="Save this version as a WAV file"
+            aria-busy={saving}
+            aria-label={`Save version ${selected} as ${formatArticle} ${formatLabel} file`}
+            title={`Save this version as ${formatArticle} ${formatLabel} file`}
           >
-            Save v{selectedLabel}
+            {saving ? `Saving v${selectedLabel}…` : `Save v${selectedLabel} ${formatLabel}`}
           </button>
         ) : null}
       </div>

@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { CategoryId, ParamKey, Preset, RenderedSound, SynthParams } from './audio/types'
+import type {
+  CategoryId,
+  ExportFormat,
+  ParamKey,
+  Preset,
+  RenderedSound,
+  SynthParams,
+} from './audio/types'
 import {
   DEFAULT_PRESET_ID,
   PRESETS,
@@ -20,19 +27,21 @@ import {
 } from './audio/params'
 import { createRng, createSeed } from './audio/random'
 import {
+  batchZipFilename,
   buildVariations,
   jitterParameters,
   mutateParameters,
-  variationWavFilename,
+  singleFilename,
 } from './audio/variations'
 import { synthesize } from './audio/synthesis'
 import {
   buildBatchArchive,
   downloadBlob,
   downloadBytes,
-  renderedToBlob,
-  singleWavFor,
+  singleFileFor,
+  versionFileFor,
 } from './audio/export'
+import { warmMp3Encoder } from './audio/mp3'
 import { useRenderedSound } from './hooks/useRenderedSound'
 import { useAudioEngine } from './hooks/useAudioEngine'
 import { Header } from './components/Header'
@@ -88,6 +97,7 @@ export default function App() {
   const [triggerNonce, setTriggerNonce] = useState(0)
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const [exportKind, setExportKind] = useState<ExportKind | null>(null)
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('wav')
   const [batchProgress, setBatchProgress] = useState(0)
   const [batchGapMs, setBatchGapMs] = useState(initialSession?.batchGapMs ?? BATCH_GAP_DEFAULT)
   const [batchPreviewPlaying, setBatchPreviewPlaying] = useState(false)
@@ -343,19 +353,35 @@ export default function App() {
       if (exportBusyRef.current) return
       const sound = getVariationSounds()[index - 1]
       if (!sound) return
+      stopBatchPreview()
+      setSelectedVariation(index)
       exportBusyRef.current = true
-      try {
-        const blob = renderedToBlob(sound)
-        const filename = variationWavFilename(activePreset.slug, index)
-        downloadBlob(blob, filename)
-        showToast(`Saved ${filename} (${formatBytes(blob.size)}).`)
-      } catch (error) {
-        showToast(messageFromError(error, 'That version could not be saved.'), 'error')
-      } finally {
-        exportBusyRef.current = false
-      }
+      setExportKind('version')
+
+      const presetSlug = activePreset.slug
+      const format = exportFormat
+      void (async () => {
+        try {
+          const { blob, filename } = await versionFileFor(presetSlug, index, sound, format)
+          downloadBlob(blob, filename)
+          showToast(`Saved ${filename} (${formatBytes(blob.size)}).`)
+        } catch (error) {
+          showToast(
+            messageFromError(
+              error,
+              format === 'mp3'
+                ? 'The MP3 could not be made in this browser. Choose WAV and try again.'
+                : 'The WAV file could not be made.',
+            ),
+            'error',
+          )
+        } finally {
+          exportBusyRef.current = false
+          setExportKind(null)
+        }
+      })()
     },
-    [activePreset.slug, getVariationSounds, showToast],
+    [activePreset.slug, exportFormat, getVariationSounds, showToast, stopBatchPreview],
   )
 
   const handleSurprise = useCallback(() => {
@@ -440,6 +466,15 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [helpOpen, trigger])
 
+  const handleExportFormatChange = useCallback((format: ExportFormat) => {
+    setExportFormat(format)
+    if (format === 'mp3') {
+      // Compile the WASM encoder while the user is still choosing, so the
+      // eventual download is quick. A failure is reported by the export path.
+      void warmMp3Encoder().catch(() => {})
+    }
+  }, [])
+
   const handleExportSingle = useCallback(() => {
     if (exportBusyRef.current) return
     stopBatchPreview()
@@ -447,17 +482,29 @@ export default function App() {
     setExportKind('single')
     const presetSnapshot = activePreset
     const soundSnapshot = sound
-    try {
-      const { blob, filename } = singleWavFor(presetSnapshot, soundSnapshot)
-      downloadBlob(blob, filename)
-      showToast(`Saved ${filename} (${formatBytes(blob.size)}).`)
-    } catch (error) {
-      showToast(messageFromError(error, 'The WAV file could not be made.'), 'error')
-    } finally {
-      setExportKind(null)
-      exportBusyRef.current = false
-    }
-  }, [activePreset, showToast, sound, stopBatchPreview])
+    const format = exportFormat
+
+    void (async () => {
+      try {
+        const { blob, filename } = await singleFileFor(presetSnapshot, soundSnapshot, format)
+        downloadBlob(blob, filename)
+        showToast(`Saved ${filename} (${formatBytes(blob.size)}).`)
+      } catch (error) {
+        showToast(
+          messageFromError(
+            error,
+            format === 'mp3'
+              ? 'The MP3 could not be made in this browser. Choose WAV and try again.'
+              : 'The WAV file could not be made.',
+          ),
+          'error',
+        )
+      } finally {
+        setExportKind(null)
+        exportBusyRef.current = false
+      }
+    })()
+  }, [activePreset, exportFormat, showToast, sound, stopBatchPreview])
 
   const handleExportBatch = useCallback(async () => {
     if (exportBusyRef.current) return
@@ -466,11 +513,13 @@ export default function App() {
     setExportKind('batch')
     setBatchProgress(0)
 
+    const format = exportFormat
     const snapshot = {
       preset: activePreset,
       params,
       humanize,
       seed,
+      format,
     }
 
     try {
@@ -483,13 +532,21 @@ export default function App() {
         `Saved 10 sounds in ${result.filename} (${formatBytes(result.bytes.length)}).`,
       )
     } catch (error) {
-      showToast(messageFromError(error, 'The ZIP file could not be made.'), 'error')
+      showToast(
+        messageFromError(
+          error,
+          format === 'mp3'
+            ? 'The MP3 ZIP could not be made in this browser. Choose WAV and try again.'
+            : 'The ZIP file could not be made.',
+        ),
+        'error',
+      )
     } finally {
       exportBusyRef.current = false
       setExportKind(null)
       setBatchProgress(0)
     }
-  }, [activePreset, humanize, params, seed, showToast, stopBatchPreview])
+  }, [activePreset, exportFormat, humanize, params, seed, showToast, stopBatchPreview])
 
   return (
     <div
@@ -555,6 +612,7 @@ export default function App() {
 
           <ExportDock
             exportKind={exportKind}
+            exportFormat={exportFormat}
             batchProgress={batchProgress}
             humanize={humanize}
             batchPreviewPlaying={batchPreviewPlaying}
@@ -562,7 +620,10 @@ export default function App() {
             selectedVariation={selectedVariation}
             batchGapMs={batchGapMs}
             singleDurationMs={sound.durationMs}
-            singleBytes={singleWavBytes}
+            singleWavBytes={singleWavBytes}
+            singleFilename={singleFilename(activePreset.slug, exportFormat)}
+            batchFilename={batchZipFilename(activePreset.slug, exportFormat)}
+            onFormatChange={handleExportFormatChange}
             onBatchGapChange={handleBatchGapChange}
             onToggleBatchPreview={handleToggleBatchPreview}
             onAuditionVariation={handleAuditionVariation}

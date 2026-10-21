@@ -174,6 +174,10 @@ function main() {
   const html = readFileSync(resolve(artifact), 'utf8')
   assert.ok(html.includes('<div id="root"></div>'), 'The single-file build must contain the app root')
   assert.ok(!html.includes('__CRUNCHR_CSP__'), 'The CSP placeholder must be replaced at build time')
+  assert.ok(
+    html.includes("script-src 'unsafe-inline' 'wasm-unsafe-eval'"),
+    'The single-file CSP must allow the bundled MP3 WebAssembly encoder',
+  )
   assert.ok(html.includes("connect-src 'none'"), 'The single-file build must block network egress')
   assert.ok(!/<script[^>]+\ssrc=/i.test(html), 'The single-file build must not load an external script')
   assert.ok(!/<link[^>]+\shref=(?!["']data:)/i.test(html), 'The single-file build must not load an external stylesheet')

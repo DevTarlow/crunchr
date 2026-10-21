@@ -3,8 +3,8 @@ import {
   batchZipFilename,
   buildVariations,
   mutateParameters,
-  singleWavFilename,
-  variationWavFilename,
+  singleFilename,
+  variationFilename,
 } from './variations'
 import { createRng } from './random'
 import { sanitizeParams } from './params'
@@ -27,14 +27,20 @@ describe('humanized batch variations', () => {
     expect(first).toEqual(second)
     expect(new Set(first.map((variation) => variation.seed)).size).toBe(10)
     expect(first.map((variation) => variation.index)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    expect(variationWavFilename('mechanical_click', 1)).toBe(
+    expect(variationFilename('mechanical_click', 1, 'wav')).toBe(
       'crunchr_mechanical_click_v01.wav',
     )
-    expect(variationWavFilename('mechanical_click', 10)).toBe(
-      'crunchr_mechanical_click_v10.wav',
+    expect(variationFilename('mechanical_click', 10, 'mp3')).toBe(
+      'crunchr_mechanical_click_v10.mp3',
     )
-    expect(singleWavFilename('coin_clink')).toBe('crunchr_coin_clink.wav')
-    expect(batchZipFilename('coin_clink')).toBe('crunchr_coin_clink_variants.zip')
+    expect(singleFilename('coin_clink', 'wav')).toBe('crunchr_coin_clink.wav')
+    expect(singleFilename('coin_clink', 'mp3')).toBe('crunchr_coin_clink.mp3')
+    expect(batchZipFilename('coin_clink', 'wav')).toBe(
+      'crunchr_coin_clink_variants_wav.zip',
+    )
+    expect(batchZipFilename('coin_clink', 'mp3')).toBe(
+      'crunchr_coin_clink_variants_mp3.zip',
+    )
   })
 
   it('keeps every drifted parameter legal and within the humanize envelope', () => {

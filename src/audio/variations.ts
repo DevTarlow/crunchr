@@ -1,4 +1,4 @@
-import type { SoundVariation, SynthParams } from './types'
+import type { ExportFormat, SoundVariation, SynthParams } from './types'
 import { clamp, sanitizeHumanize, sanitizeParams } from './params'
 import { bipolar, createRng, deriveSeed, type Rng } from './random'
 
@@ -86,14 +86,18 @@ export function safeSlug(value: string): string {
   return slug || 'sound'
 }
 
-export function variationWavFilename(presetSlug: string, index: number): string {
-  return `crunchr_${safeSlug(presetSlug)}_v${String(index).padStart(2, '0')}.wav`
+export function variationFilename(
+  presetSlug: string,
+  index: number,
+  format: ExportFormat,
+): string {
+  return `crunchr_${safeSlug(presetSlug)}_v${String(index).padStart(2, '0')}.${format}`
 }
 
-export function singleWavFilename(presetSlug: string): string {
-  return `crunchr_${safeSlug(presetSlug)}.wav`
+export function singleFilename(presetSlug: string, format: ExportFormat): string {
+  return `crunchr_${safeSlug(presetSlug)}.${format}`
 }
 
-export function batchZipFilename(presetSlug: string): string {
-  return `crunchr_${safeSlug(presetSlug)}_variants.zip`
+export function batchZipFilename(presetSlug: string, format: ExportFormat): string {
+  return `crunchr_${safeSlug(presetSlug)}_variants_${format}.zip`
 }

@@ -1,18 +1,24 @@
 import JSZip from 'jszip'
-import type { Preset, RenderedSound, SynthParams } from './types'
+import type { ExportFormat, Preset, RenderedSound, SynthParams } from './types'
 import { audioBufferToWav } from './wav'
+import { encodeMp3, MP3_MIME } from './mp3'
 import { synthesize } from './synthesis'
 import {
   batchZipFilename,
   buildVariations,
-  singleWavFilename,
-  variationWavFilename,
+  singleFilename,
+  variationFilename,
 } from './variations'
 
 export interface BatchArchiveResult {
   bytes: Uint8Array
   filename: string
   files: string[]
+}
+
+export interface ExportFile {
+  blob: Blob
+  filename: string
 }
 
 export type BatchProgress = (completed: number, total: number) => void
@@ -31,15 +37,55 @@ export function renderedToWav(sound: RenderedSound): ArrayBuffer {
   return audioBufferToWav(bufferLike)
 }
 
-export function renderedToBlob(sound: RenderedSound): Blob {
-  return new Blob([renderedToWav(sound)], { type: 'audio/wav' })
+export function renderedToMp3(sound: RenderedSound): Promise<Uint8Array> {
+  const bufferLike = {
+    numberOfChannels: sound.channels.length,
+    sampleRate: sound.sampleRate,
+    length: sound.channels[0].length,
+    getChannelData: (channel: number) => sound.channels[channel],
+  }
+  return encodeMp3(
+    Array.from({ length: bufferLike.numberOfChannels }, (_, channel) =>
+      bufferLike.getChannelData(channel),
+    ),
+    bufferLike.sampleRate,
+  )
 }
 
-export function singleWavFor(preset: Preset, sound: RenderedSound): { blob: Blob; filename: string } {
-  return {
-    blob: renderedToBlob(sound),
-    filename: singleWavFilename(preset.slug),
+async function renderedFile(
+  sound: RenderedSound,
+  filename: string,
+  format: ExportFormat,
+): Promise<ExportFile> {
+  if (format === 'wav') {
+    return { blob: new Blob([renderedToWav(sound)], { type: 'audio/wav' }), filename }
   }
+  const bytes = await renderedToMp3(sound)
+  const exactBuffer = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer
+  return {
+    blob: new Blob([exactBuffer], { type: MP3_MIME }),
+    filename,
+  }
+}
+
+export function singleFileFor(
+  preset: Preset,
+  sound: RenderedSound,
+  format: ExportFormat = 'wav',
+): Promise<ExportFile> {
+  return renderedFile(sound, singleFilename(preset.slug, format), format)
+}
+
+export function versionFileFor(
+  presetSlug: string,
+  index: number,
+  sound: RenderedSound,
+  format: ExportFormat = 'wav',
+): Promise<ExportFile> {
+  return renderedFile(sound, variationFilename(presetSlug, index, format), format)
 }
 
 /**
@@ -52,9 +98,11 @@ export async function buildBatchArchive(options: {
   params: SynthParams
   humanize: number
   seed: number
+  format?: ExportFormat
   count?: number
   onProgress?: BatchProgress
 }): Promise<BatchArchiveResult> {
+  const format = options.format ?? 'wav'
   const count = options.count ?? 10
   const variations = buildVariations(options.params, options.humanize, options.seed, count)
   const zip = new JSZip()
@@ -68,27 +116,31 @@ export async function buildBatchArchive(options: {
     })
     const variation = variations[i]
     const sound = synthesize(options.preset.model, variation.params, variation.seed)
-    const wav = renderedToWav(sound)
-    const filename = variationWavFilename(options.preset.slug, variation.index)
-    zip.file(filename, wav)
+    const bytes = format === 'wav' ? new Uint8Array(renderedToWav(sound)) : await renderedToMp3(sound)
+    const filename = variationFilename(options.preset.slug, variation.index, format)
+    zip.file(filename, bytes)
     files.push(filename)
     options.onProgress?.(i + 1, variations.length)
   }
 
   const bytes = await zip.generateAsync({
     type: 'uint8array',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 },
+    // MP3 is already compressed; storing it is faster and yields the same size.
+    compression: format === 'wav' ? 'DEFLATE' : 'STORE',
+    ...(format === 'wav' ? { compressionOptions: { level: 6 } } : {}),
   })
 
   return {
     bytes,
-    filename: batchZipFilename(options.preset.slug),
+    filename: batchZipFilename(options.preset.slug, format),
     files,
   }
 }
 
-/** Safe for any modern browser; revokes the object URL after the click. */
+/**
+ * Safe for any modern browser; the anchor stays available long enough for
+ * slower mobile downloads to start, and the object URL is revoked afterwards.
+ */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
@@ -98,8 +150,10 @@ export function downloadBlob(blob: Blob, filename: string): void {
   anchor.style.display = 'none'
   document.body.appendChild(anchor)
   anchor.click()
-  anchor.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 2_000)
+  window.setTimeout(() => {
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }, 10_000)
 }
 
 export function downloadBytes(bytes: Uint8Array, filename: string, mime: string): void {

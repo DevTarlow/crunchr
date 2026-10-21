@@ -388,7 +388,12 @@ async function main() {
       await selectDice(page)
       await page.locator('.batch-preview-dot').nth(2).click()
       await waitForPlaybackToStop(page)
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+      await page.evaluate(() => {
+        const batch = document.querySelector('.export-batch-card')
+        if (batch) {
+          window.scrollTo(0, batch.getBoundingClientRect().top + window.scrollY - 24)
+        }
+      })
       await page.waitForTimeout(250)
       await page.screenshot({ path: path.join(screenshotsDir, '03-ten-versions.png') })
       diagnostics.push(pageDiagnostics)

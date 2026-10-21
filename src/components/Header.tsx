@@ -50,7 +50,7 @@ export function Header({ engineStatus, isPlaying, helpOpen, onOpenHelp }: Header
           <div className="status-divider" aria-hidden="true" />
           <div className="spec-module">
             <span className="micro-label">Files</span>
-            <span className="spec-value">WAV · Stereo</span>
+            <span className="spec-value">WAV + MP3</span>
           </div>
         </div>
 

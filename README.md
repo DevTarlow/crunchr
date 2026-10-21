@@ -3,7 +3,7 @@
 **Tiny Sound Maker for Games** — a standalone browser instrument for indie game
 developers. Dial in tiny clicks, stone-crunching footsteps, dice
 bounces, cloth rustle, coins, wet squishes and bone fractures, then export
-finished 44.1 kHz / 16-bit WAVs. Every sound is synthesized mathematically in
+finished WAVs or MP3s. Every sound is synthesized mathematically in
 the browser. There are zero audio samples, zero network calls and no backend.
 
 ![Crunchr interface](docs/crunchr-ui.png)
@@ -16,8 +16,10 @@ the browser. There are zero audio samples, zero network calls and no backend.
   variation.
 - **Real-time Canvas oscilloscope** driven by the Web Audio `AnalyserNode`, with
   an idle one-shot preview, live waveform, playhead and hover inspection.
-- **Single-sound WAV downloads** and **10-version ZIP batches**, both generated
-  entirely on the client.
+- **Single-sound WAV/MP3 downloads** and **10-version ZIP batches** in the
+  chosen format, both generated entirely on the client.
+- **Clear save groups**: one sound is the sound on your sliders; ten versions
+  are humanized takes in a ZIP, with a preview strip that belongs only to them.
 - **Batch preview**: hear all ten versions in a row, with an adjustable space
   between each sound and a clear note that the spacing is only an example.
   Click any numbered button to audition one version and save it on its own.
@@ -52,10 +54,12 @@ your first gesture; the header LED changes from **Tap to start** to **Ready**.
 Tap the sound you already selected and Crunchr makes a new version with a fresh
 random seed. Your sliders stay where you set them, and the version number under
 the Play button tells you which one you are hearing. **Reset** in the Shape
-section returns the sliders to the preset defaults. In the Save section, **Play
-all 10** auditions the whole batch set; click a numbered button to hear one
-version, then **Save vNN** to keep that one file. The **Help** button in the top
-right opens a short manual for the rest.
+section returns the sliders to the preset defaults. In the Save section, choose
+**WAV** or **MP3**, then download the sound on your sliders from the **One sound**
+card. The **10 versions** card holds the ZIP and its preview: **Play all 10**
+auditions the whole batch set, click a numbered button to hear one version, then
+**Save vNN** to keep that one file. The **Help** button in the top right opens a
+short manual for the rest.
 
 ![Crunchr help manual](docs/crunchr-help.png)
 
@@ -126,27 +130,40 @@ duration/Q vary by roughly ±12% and pitch by ±8%; at 50% they reach roughly ±
 and ±20%. Every batch is generated from a snapshot taken at click time, so
 changing a slider mid-export cannot corrupt the package.
 
-**Play all 10** in the Save section renders the same ten versions and plays them
-back to back on the AudioContext clock. Click one of the ten numbered buttons to
-audition that version on its own; **Save vNN** downloads just that file as
-`crunchr_<preset_slug>_vNN.wav`. The **Space between sounds** slider sets a
-preview-only gap from 0 to 600 ms. Changing the gap while a preview is playing
-stops it so the next run uses the new spacing. The gap is not written into the
-ZIP: the ten WAVs stay separate, and the game decides when to trigger each one.
+**Play all 10** in the 10 versions card renders the same ten versions and plays
+them back to back on the AudioContext clock. Click one of the ten numbered
+buttons to audition that version on its own; **Save vNN** downloads just that
+file as `crunchr_<preset_slug>_vNN.wav` or `.mp3`, matching the chosen format.
+The **Space between sounds** slider sets a preview-only gap from 0 to 600 ms.
+Changing the gap while a preview is playing stops it so the next run uses the
+new spacing. The gap is not written into the ZIP: the ten files stay separate,
+and the game decides when to trigger each one.
 
 ![Ten versions, one selected and ready to save](docs/screenshots/03-ten-versions.png)
 
 ## Export
 
-- **Download WAV** → `crunchr_<preset_slug>.wav`
-  - RIFF/WAVE, PCM format 1, 44.1 kHz, 16-bit, stereo
-- **Save vNN** → `crunchr_<preset_slug>_vNN.wav`
-  - one humanized version from the preview strip
-- **Download 10 versions** → `crunchr_<preset_slug>_variants.zip`
-  - contains `crunchr_<preset_slug>_v01.wav` through `_v10.wav`
+Choose **WAV** or **MP3** at the top of the Save section. The choice applies to
+every download in that pass. The one-sound card only saves the sound on your
+sliders; the ten-version card only saves the batch and its individual takes.
+
+- **Download WAV / MP3** → `crunchr_<preset_slug>.wav` or `.mp3`
+  - WAV: RIFF/WAVE, PCM format 1, 44.1 kHz, 16-bit, stereo
+  - MP3: MPEG-1 Layer III, 44.1 kHz, 192 kbps CBR, stereo
+- **Save vNN** → `crunchr_<preset_slug>_vNN.wav` or `.mp3`
+  - one humanized version from the ten-version preview
+- **Download 10 WAVs / 10 MP3s** → `crunchr_<preset_slug>_variants_wav.zip`
+  or `_variants_mp3.zip`
+  - contains ten files, `crunchr_<preset_slug>_v01` through `_v10`
 - `audioBufferToWav(audioBuffer)` is exported as a standalone utility in
   [`src/audio/wav.ts`](src/audio/wav.ts), alongside the pure channel-based
   `encodeWav(channels, sampleRate)`.
+- `audioBufferToMp3(audioBuffer)` and `encodeMp3(channels, sampleRate)` live in
+  [`src/audio/mp3.ts`](src/audio/mp3.ts). The MP3 codec is a WebAssembly build of
+  LAME, loaded on the first MP3 action and encoded locally.
+- WAV is lossless and frame-accurate. MP3 is much smaller and plays everywhere,
+  but its encoder adds a short delay and padding at the start; use WAV for very
+  short clicks or frame-accurate game sync.
 - All processing is local. Object URLs are revoked after download.
 - Exports work even if the browser blocks live audio playback.
 
@@ -163,7 +180,8 @@ src/
     synthesis.ts    eleven material models and finalization
     variations.ts   humanize, mutate, filenames
     wav.ts          standalone 16-bit PCM WAV encoder
-    export.ts       JSZip batch builder and download helpers
+    mp3.ts          lazy WebAssembly MP3 encoder wrapper
+    export.ts       format-aware file builders, JSZip and download helpers
     engine.ts       lazy Web Audio playback and AnalyserNode
   components/       hardware UI, scope, presets, export dock, toasts
   hooks/            audio engine lifecycle, memoized rendering
@@ -255,28 +273,32 @@ npm run verify:browser # rebuild the single file, then run the browser smoke
 npm run release:check  # validate the store kit, artwork, licence and artifact
 ```
 
-Unit tests cover WAV header/sample encoding, deterministic synthesis for all
-eleven models, range clamping at parameter extremes, humanize drift bounds,
-mutation bounds, session parsing/storage and ZIP contents.
+Unit tests cover WAV header/sample encoding, MP3 frame encoding and determinism,
+deterministic synthesis for all eleven models, range clamping at parameter
+extremes, humanize drift bounds, mutation bounds, session parsing/storage and ZIP
+contents.
 
 The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 `dist-single/index.html` artifact directly from disk and checks the first-gesture
 audio arm, selecting a sound auditions it, Play/Space/sound-wave playback, live
 scope, per-sound slider memory and Reset, re-rolling without losing the sliders,
 the active category being a no-op, session restore after reload, native Space
-activation on action buttons, WAV and 10× ZIP downloads, single-version audition
-and Save vNN, the help modal and its Escape close, the batch preview, reduced
-motion, Save format/size, the itch-style frame's internal scroll, touch-target
-sizes, and overflow-free layouts at 1440, 390 and 320 px. It also checks the 390 px help layout. It requires system
-Chrome; set `CHROME_PATH` if Chrome is not in a standard location. A missing
-browser fails the gate rather than silently skipping it.
+activation on action buttons, the separate one-sound and ten-version cards, WAV
+and MP3 single downloads, WAV and MP3 10× ZIP downloads, browser MP3 decoding,
+single-version audition and byte-identical Save vNN, the help modal and its
+Escape close, the batch preview, reduced motion, Save format/size, the itch-style
+frame's internal scroll, touch-target sizes, and overflow-free layouts at 1440,
+390 and 320 px. It also checks the 390 px help layout. It requires system Chrome;
+set `CHROME_PATH` if Chrome is not in a standard location. A missing browser
+fails the gate rather than silently skipping it.
 
 ## Browser support
 
-Current evergreen Chrome, Edge, Firefox and Safari with ES2022 and Web Audio
-support. The app uses native range inputs, semantic buttons and Canvas, and
-honors `prefers-reduced-motion`. Audio can only start after a user gesture, as
-required by browser autoplay policy.
+Current evergreen Chrome, Edge, Firefox and Safari with ES2022, Web Audio and
+WebAssembly support. The app uses native range inputs, semantic buttons and
+Canvas, and honors `prefers-reduced-motion`. Audio can only start after a user
+gesture, as required by browser autoplay policy. WAV export needs no WebAssembly;
+if the browser cannot run the MP3 codec, the app reports it and WAV still works.
 
 ## Privacy
 
@@ -294,7 +316,8 @@ it are yours to use in games, including commercial ones.
 
 ## Dependencies
 
-React, JSZip, Vite, TypeScript, Tailwind CSS, Vitest and Playwright Core. See
+React, JSZip, wasm-media-encoders (the LAME WebAssembly MP3 encoder), Vite,
+TypeScript, Tailwind CSS, Vitest and Playwright Core. See
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for licenses. Pink-noise
 filtering follows the widely published Paul Kellet approximation; all other DSP
 code in this repository is original.

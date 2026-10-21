@@ -1,5 +1,8 @@
 export const SAMPLE_RATE = 44_100
 export const WAV_BIT_DEPTH = 16
+export const MP3_BITRATE = 192
+
+export type ExportFormat = 'wav' | 'mp3'
 
 export type CategoryId = 'ui' | 'footsteps' | 'foley' | 'impacts'
 

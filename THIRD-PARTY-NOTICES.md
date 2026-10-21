@@ -19,6 +19,16 @@ António Afonso.
 Source: <https://github.com/Stuk/jszip> — MIT or GPL-3.0-or-later. Crunchr uses
 the MIT license.
 
+### wasm-media-encoders (MP3 encoder)
+
+Copyright (c) 2020-2024 arseneyr.
+
+Source: <https://github.com/arseneyr/wasm-media-encoders> — MIT License.
+
+The package embeds a WebAssembly build of the LAME MP3 encoder. LAME is
+distributed under the GNU Lesser General Public License; upstream source and
+licence information are available at <https://lame.sourceforge.io/>.
+
 ### Tailwind CSS
 
 Copyright (c) Tailwind Labs, Inc.
@@ -44,6 +54,22 @@ Source: <https://github.com/tailwindlabs/tailwindcss> — MIT License.
   bundle.
 - **TypeScript** — Copyright (c) Microsoft Corporation,
   <https://github.com/microsoft/TypeScript>, Apache-2.0. Development dependency.
+
+## Apache-2.0 components
+
+`@swc/helpers` (a runtime dependency of wasm-media-encoders), Playwright Core
+and TypeScript are distributed under the Apache License, Version 2.0. A copy of
+the license is available at
+<https://www.apache.org/licenses/LICENSE-2.0>. The SWC helpers source is at
+<https://github.com/swc-project/swc>.
+
+## MP3 codec licensing
+
+Crunchr's MP3 export uses the `wasm-media-encoders` package (MIT) with its
+bundled LAME WebAssembly binary. LAME is LGPL-2.1; the source and licence are
+available from <https://lame.sourceforge.io/> and
+<https://github.com/arseneyr/wasm-media-encoders>. The encoder runs entirely in
+the browser and is shipped as part of the self-contained build.
 
 ## MIT License text
 

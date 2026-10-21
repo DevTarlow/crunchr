@@ -90,11 +90,14 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 - Space on Help opens the manual instead of playing, a non-active chip is
   selected with Space, and the active chip/slider still replay the sound;
 - WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
-- the Save section shows duration/size and the mobile controls meet their touch
-  target sizes;
-- the batch download contains exactly the ten correctly named valid WAVs;
-- clicking a numbered version auditions it, and Save vNN downloads the same
-  valid WAV that appears in the ZIP;
+- MP3 export is valid MPEG-1 Layer III, 44.1 kHz, 192 kbps, stereo and decodes
+  to audible audio in the browser;
+- the Save section separates the one-sound card from the ten-version preview and
+  shows the chosen format, duration, size or bitrate;
+- the WAV and MP3 batch downloads contain exactly the ten correctly named valid
+  files for the chosen format;
+- clicking a numbered version auditions it, and Save vNN downloads a file that is
+  byte-identical to the matching ZIP entry in the chosen format;
 - the help manual opens as a modal and closes on Escape;
 - the batch preview plays all ten versions and stops on its own;
 - the sound wave still renders and plays with `prefers-reduced-motion`;
@@ -117,7 +120,7 @@ this file in the same commit.
 ### Project-specific test expectations
 
 - Add or update tests when synthesis, parameter mapping, humanization, WAV
-  encoding or ZIP packaging changes.
+  encoding, MP3 encoding or ZIP packaging changes.
 - Preserve deterministic rendering: the same model, parameters and seed must
   produce the same samples.
 - Extreme slider values and durations must remain finite, bounded and
@@ -182,17 +185,20 @@ asked. A GitHub push is not an itch.io deployment.
 
 - **No audio sample assets.** All sound is procedural. Do not add `.wav`,
   `.mp3`, `.ogg` or other sample files to the app, and do not introduce runtime
-  CDNs or remote assets.
+  CDNs or remote assets. The bundled MP3 codec is code, not a sample.
 - **Deterministic DSP is the source of truth.** The renderer in
-  `src/audio/synthesis.ts` feeds audition, WAV export and ZIP batches. Keep them
-  in sync; do not replace it with a live-only graph.
-- **Preserve the export contract:** 44.1 kHz, 16-bit PCM, stereo, `audioBufferToWav`
-  remains a standalone encoder, batches contain 10 WAVs, and downloads stay
-  client-side.
+  `src/audio/synthesis.ts` feeds audition, WAV export, MP3 export and ZIP
+  batches. Keep them in sync; do not replace it with a live-only graph.
+- **Preserve the export contract:** WAV stays 44.1 kHz, 16-bit PCM, stereo and
+  `audioBufferToWav` remains a standalone encoder; MP3 stays MPEG-1 Layer III,
+  44.1 kHz, 192 kbps CBR, stereo; batches contain 10 files in the chosen format;
+  downloads stay client-side.
 - **Preserve autoplay compliance:** do not create or resume the `AudioContext`
   before a user gesture.
 - **No external backend, analytics or telemetry.** The production CSP blocks
-  network egress; keep it that way.
+  network egress; keep it that way. The single-file CSP allows
+  `'wasm-unsafe-eval'` only for the inlined MP3 encoder; `connect-src` stays
+  `'none'` and the WASM is instantiated from bytes, never fetched.
 - **Keep the single-file build working.** `dist-single/index.html` must remain
   self-contained and openable from disk.
 - **Keep the UI accessible and responsive.** Preserve labels, focus behavior,

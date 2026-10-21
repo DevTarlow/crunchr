@@ -4,9 +4,9 @@
  * Headless Chrome smoke test for the shipping artifact.
  *
  * It opens the inlined `dist-single/index.html` directly from disk (the same
- * file intended for itch.io), exercises the audio UI, downloads and validates a
- * WAV and a 10-take ZIP, checks the mobile layout, and fails on console errors
- * or any network request. It runs without a dev server.
+ * file intended for itch.io), exercises the audio UI, downloads and validates
+ * WAV and MP3 files plus the 10-take ZIPs, checks the mobile layout, and fails
+ * on console errors or any network request. It runs without a dev server.
  *
  * Run `npm run build:single` first, or `npm run verify:browser` which builds.
  * Chrome is found through CHROME_PATH, the usual platform locations, or a
@@ -91,6 +91,58 @@ async function waitForAttribute(page, selector, attribute, expected, timeout = 5
   )
 }
 
+function readMp3(buffer) {
+  assert.ok(buffer.length > 100, 'MP3 must contain audio frames')
+  assert.equal(buffer[0], 0xff, 'MP3 must start on a frame sync')
+  assert.equal(buffer[1] & 0xe0, 0xe0, 'MP3 must start on a frame sync')
+
+  const version = (buffer[1] >> 3) & 0x03
+  const layer = (buffer[1] >> 1) & 0x03
+  const bitrateIndex = (buffer[2] >> 4) & 0x0f
+  const sampleRateIndex = (buffer[2] >> 2) & 0x03
+  const channelMode = (buffer[3] >> 6) & 0x03
+  assert.equal(version, 0x03, 'MP3 must be MPEG-1')
+  assert.equal(layer, 0x01, 'MP3 must be Layer III')
+  assert.equal(bitrateIndex, 0x0b, 'MP3 must be 192 kbps')
+  assert.equal(sampleRateIndex, 0x00, 'MP3 must be 44.1 kHz')
+  assert.ok([0x00, 0x01].includes(channelMode), 'MP3 must be stereo or joint stereo')
+
+  let frames = 0
+  let offset = 0
+  while (offset + 4 <= buffer.length) {
+    assert.equal(buffer[offset], 0xff, `MP3 frame ${frames + 1} must start on a sync`)
+    assert.equal(buffer[offset + 1] & 0xe0, 0xe0, `MP3 frame ${frames + 1} sync`)
+    const padding = (buffer[offset + 2] >> 1) & 0x01
+    const frameLength = Math.floor((144 * 192_000) / 44_100) + padding
+    frames += 1
+    offset += frameLength
+  }
+  assert.equal(offset, buffer.length, 'MP3 frames must fill the file exactly')
+  assert.ok(frames > 1, 'MP3 must contain more than one frame')
+  return { frames, duration: (frames * 1152) / 44_100 }
+}
+
+async function decodeMp3(page, buffer) {
+  return page.evaluate(async (base64) => {
+    const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0))
+    const context = new OfflineAudioContext(2, 44_100, 44_100)
+    const decoded = await context.decodeAudioData(bytes.buffer)
+    let peak = 0
+    for (let channel = 0; channel < decoded.numberOfChannels; channel += 1) {
+      const data = decoded.getChannelData(channel)
+      for (let index = 0; index < data.length; index += 1) {
+        peak = Math.max(peak, Math.abs(data[index]))
+      }
+    }
+    return {
+      duration: decoded.duration,
+      sampleRate: decoded.sampleRate,
+      channels: decoded.numberOfChannels,
+      peak,
+    }
+  }, buffer.toString('base64'))
+}
+
 function readWav(buffer) {
   assert.ok(buffer.length > 44, 'WAV must contain a header and PCM data')
   const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
@@ -171,7 +223,7 @@ async function main() {
 
     assert.equal(
       await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content'),
-      "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
+      "default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
       'The single-file build must keep its no-egress CSP',
     )
     assert.equal(await page.locator('.category-button').count(), 4)
@@ -327,16 +379,41 @@ async function main() {
     await waitForPlayback(page, false)
     pass('clicking the scope replays the current preset')
 
-    const singleMeta = await page.locator('.export-single .export-button-copy span').textContent()
+    assert.equal(await page.locator('.export-single-card').count(), 1)
+    assert.equal(await page.locator('.export-batch-card').count(), 1)
+    assert.equal(
+      await page.locator('.export-single-card .batch-preview').count(),
+      0,
+      'The one-sound card must not contain the ten-version preview',
+    )
+    assert.equal(
+      await page.locator('.export-batch-card .batch-preview').count(),
+      1,
+      'The ten-version card must own the preview',
+    )
+    assert.match(await page.locator('.export-single-card').innerText(), /one sound/i)
+    assert.match(await page.locator('.export-batch-card').innerText(), /10 versions/i)
+    assert.match(
+      await page.locator('.export-batch-card .batch-preview').innerText(),
+      /10-version preview/i,
+    )
+    pass('the Save section separates one sound from the ten-version preview')
+
+    const singleMeta = await page
+      .locator('.export-single-card .export-button-copy span')
+      .textContent()
     assert.match(singleMeta ?? '', /^\d+ ms · .+$/, 'The WAV button must show duration and size')
     const exportSpecs = await page.locator('.export-specs').textContent()
     assert.match(exportSpecs ?? '', /44\.1 kHz/)
     assert.match(exportSpecs ?? '', /16-bit/)
     assert.match(exportSpecs ?? '', /Stereo/)
-    pass('the Save section shows full WAV format, duration and file size')
+    pass('the Save section shows both formats, duration and file size')
 
     const wavDownloadPromise = page.waitForEvent('download', { timeout: 15_000 })
-    await page.getByRole('button', { name: /DOWNLOAD WAV/ }).click()
+    await page
+      .locator('.export-single-card')
+      .getByRole('button', { name: /DOWNLOAD WAV/ })
+      .click()
     const wavDownload = await wavDownloadPromise
     assert.equal(wavDownload.suggestedFilename(), 'crunchr_dice_roll.wav')
     const wavPath = path.join(downloadsDir, wavDownload.suggestedFilename())
@@ -351,9 +428,12 @@ async function main() {
     pass(`WAV export is valid 44.1 kHz / 16-bit stereo (${wavInfo.dataBytes} data bytes, peak ${wavInfo.peak})`)
 
     const zipDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
-    await page.getByRole('button', { name: /DOWNLOAD 10 VERSIONS/ }).click()
+    await page
+      .locator('.export-batch-card')
+      .getByRole('button', { name: /DOWNLOAD 10 WAVS/ })
+      .click()
     const zipDownload = await zipDownloadPromise
-    assert.equal(zipDownload.suggestedFilename(), 'crunchr_dice_roll_variants.zip')
+    assert.equal(zipDownload.suggestedFilename(), 'crunchr_dice_roll_variants_wav.zip')
     const zipPath = path.join(downloadsDir, zipDownload.suggestedFilename())
     await zipDownload.saveAs(zipPath)
 
@@ -408,6 +488,104 @@ async function main() {
       document.querySelector('.toast-message')?.textContent?.includes('v03.wav'),
     )
     pass(`a single version auditions and matches its ZIP entry (${versionWavInfo.dataBytes} data bytes)`)
+
+    await page.getByRole('radio', { name: /MP3/ }).check()
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.export-single-card .export-button-copy strong')?.textContent ===
+        'DOWNLOAD MP3',
+    )
+    const mp3Meta = await page
+      .locator('.export-single-card .export-button-copy span')
+      .textContent()
+    assert.match(mp3Meta ?? '', /^\d+ ms · 192 kbps$/)
+    assert.match(
+      await page.locator('.export-single-card .export-filename').innerText(),
+      /crunchr_dice_roll\.mp3/,
+    )
+    assert.match(
+      await page.locator('.export-batch-card .export-filename').innerText(),
+      /crunchr_dice_roll_variants_mp3\.zip/,
+    )
+
+    const mp3DownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
+    await page
+      .locator('.export-single-card')
+      .getByRole('button', { name: /DOWNLOAD MP3/ })
+      .click()
+    const mp3Download = await mp3DownloadPromise
+    assert.equal(mp3Download.suggestedFilename(), 'crunchr_dice_roll.mp3')
+    const mp3Path = path.join(downloadsDir, mp3Download.suggestedFilename())
+    await mp3Download.saveAs(mp3Path)
+    const mp3Bytes = readFileSync(mp3Path)
+    const mp3Info = readMp3(mp3Bytes)
+    const decodedMp3 = await decodeMp3(page, mp3Bytes)
+    assert.equal(decodedMp3.sampleRate, 44_100)
+    assert.equal(decodedMp3.channels, 2)
+    assert.ok(decodedMp3.peak > 0.05, `Decoded MP3 must be audible (peak=${decodedMp3.peak})`)
+    assert.ok(
+      Math.abs(decodedMp3.duration - mp3Info.duration) < 0.1,
+      `Decoded MP3 duration ${decodedMp3.duration}s disagrees with frames ${mp3Info.duration}s`,
+    )
+    await page.waitForFunction(() =>
+      document.querySelector('.toast-message')?.textContent?.includes('dice_roll.mp3'),
+    )
+    pass(
+      `MP3 export is valid MPEG-1 Layer III and decodes in Chrome (${mp3Info.frames} frames, ${mp3Bytes.length} bytes)`,
+    )
+
+    const mp3ZipPromise = page.waitForEvent('download', { timeout: 60_000 })
+    await page
+      .locator('.export-batch-card')
+      .getByRole('button', { name: /DOWNLOAD 10 MP3S/ })
+      .click()
+    const mp3ZipDownload = await mp3ZipPromise
+    assert.equal(mp3ZipDownload.suggestedFilename(), 'crunchr_dice_roll_variants_mp3.zip')
+    const mp3ZipPath = path.join(downloadsDir, mp3ZipDownload.suggestedFilename())
+    await mp3ZipDownload.saveAs(mp3ZipPath)
+
+    const mp3Archive = await JSZip.loadAsync(readFileSync(mp3ZipPath))
+    const mp3Entries = Object.keys(mp3Archive.files)
+      .filter((name) => !mp3Archive.files[name].dir)
+      .sort()
+    const expectedMp3Names = Array.from(
+      { length: 10 },
+      (_, index) => `crunchr_dice_roll_v${String(index + 1).padStart(2, '0')}.mp3`,
+    )
+    assert.deepEqual(mp3Entries, expectedMp3Names, 'MP3 ZIP must contain ten numbered MP3s')
+
+    const mp3ZipEntries = new Map()
+    for (const name of mp3Entries) {
+      const bytes = Buffer.from(await mp3Archive.files[name].async('uint8array'))
+      readMp3(bytes)
+      mp3ZipEntries.set(name, bytes)
+    }
+    await page.waitForFunction(() =>
+      document.querySelector('.toast-message')?.textContent?.includes('variants_mp3.zip'),
+    )
+    pass('batch export downloads a ZIP with 10 valid 44.1 kHz MP3 variations')
+
+    await page.locator('.batch-preview-dot').nth(2).click()
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    const versionMp3Promise = page.waitForEvent('download', { timeout: 30_000 })
+    await page.getByRole('button', { name: 'Save version 3 as an MP3 file' }).click()
+    const versionMp3 = await versionMp3Promise
+    assert.equal(versionMp3.suggestedFilename(), 'crunchr_dice_roll_v03.mp3')
+    const versionMp3Path = path.join(downloadsDir, versionMp3.suggestedFilename())
+    await versionMp3.saveAs(versionMp3Path)
+    const versionMp3Bytes = readFileSync(versionMp3Path)
+    const zipVersionMp3 = mp3ZipEntries.get('crunchr_dice_roll_v03.mp3')
+    assert.ok(zipVersionMp3, 'The MP3 ZIP must contain version 03')
+    assert.deepEqual(
+      versionMp3Bytes,
+      zipVersionMp3,
+      'Save vNN MP3 must be byte-identical to the matching ZIP entry',
+    )
+    await page.waitForFunction(() =>
+      document.querySelector('.toast-message')?.textContent?.includes('v03.mp3'),
+    )
+    pass('the MP3 Save vNN file matches its ZIP entry byte for byte')
 
     if (await page.locator('.toast-close').isVisible()) {
       await page.locator('.toast-close').click()
@@ -526,6 +704,14 @@ async function main() {
       .locator('#batch-gap')
       .evaluate((element) => element.getBoundingClientRect().height)
     assert.ok(mobileGapHeight >= 40, `The mobile gap slider is too short (${mobileGapHeight}px)`)
+    const mobileFormatHeight = await mobilePage
+      .locator('.export-format-option')
+      .first()
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(
+      mobileFormatHeight >= 44,
+      `The mobile format option is too short (${mobileFormatHeight}px)`,
+    )
     const mobileBatchButtonHeight = await mobilePage
       .locator('.batch-preview-button')
       .evaluate((element) => element.getBoundingClientRect().height)

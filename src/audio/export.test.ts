@@ -1,6 +1,12 @@
 import JSZip from 'jszip'
 import { describe, expect, it } from 'vitest'
-import { buildBatchArchive, renderedToWav } from './export'
+import {
+  buildBatchArchive,
+  renderedToMp3,
+  renderedToWav,
+  singleFileFor,
+  versionFileFor,
+} from './export'
 import { getPresetById } from './presets'
 import { buildVariations } from './variations'
 import { synthesize } from './synthesis'
@@ -24,7 +30,7 @@ describe('batch ZIP export', () => {
       onProgress: (completed) => progress.push(completed),
     })
 
-    expect(result.filename).toBe('crunchr_mechanical_click_variants.zip')
+    expect(result.filename).toBe('crunchr_mechanical_click_variants_wav.zip')
     expect(result.files).toHaveLength(10)
     expect(progress).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     expect(result.bytes).toBeInstanceOf(Uint8Array)
@@ -83,4 +89,80 @@ describe('batch ZIP export', () => {
     expect(variations).toHaveLength(10)
     expect(variations[0].params).not.toEqual(variations[9].params)
   })
+})
+
+describe('format-aware file export', () => {
+  it('names and types single WAV and MP3 files correctly', async () => {
+    const preset = getPresetById('dice-roll')
+    const sound = synthesize(preset.model, preset.defaults, 99)
+
+    const wavFile = await singleFileFor(preset, sound, 'wav')
+    expect(wavFile.filename).toBe('crunchr_dice_roll.wav')
+    expect(wavFile.blob.type).toBe('audio/wav')
+
+    const mp3File = await singleFileFor(preset, sound, 'mp3')
+    expect(mp3File.filename).toBe('crunchr_dice_roll.mp3')
+    expect(mp3File.blob.type).toBe('audio/mpeg')
+    const mp3Bytes = new Uint8Array(await mp3File.blob.arrayBuffer())
+    expect(mp3Bytes[0]).toBe(0xff)
+    expect(mp3Bytes[1]! & 0xe0).toBe(0xe0)
+  }, 20_000)
+
+  it('wraps the current take as MP3 through the shared encoder', () => {
+    const preset = getPresetById('coin-clink')
+    const sound = synthesize(preset.model, preset.defaults, 7)
+    return renderedToMp3(sound).then((bytes) => {
+      expect(bytes.length).toBeGreaterThan(100)
+      expect(bytes[0]).toBe(0xff)
+    })
+  })
+
+  it('packages ten MP3s and names the archive for the format', async () => {
+    const preset = getPresetById('mechanical-click')
+    const progress: number[] = []
+    const result = await buildBatchArchive({
+      preset,
+      params: preset.defaults,
+      humanize: 25,
+      seed: 0xbeef,
+      format: 'mp3',
+      onProgress: (completed) => progress.push(completed),
+    })
+
+    expect(result.filename).toBe('crunchr_mechanical_click_variants_mp3.zip')
+    expect(result.files).toHaveLength(10)
+    expect(progress).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+    const archive = await JSZip.loadAsync(result.bytes)
+    const entries = Object.keys(archive.files).filter((name) => !archive.files[name].dir)
+    expect(entries).toEqual(result.files)
+    for (const filename of entries) {
+      expect(filename).toMatch(/^crunchr_mechanical_click_v\d{2}\.mp3$/)
+      const bytes = await archive.files[filename].async('uint8array')
+      expect(bytes[0]).toBe(0xff)
+      expect(bytes[1]! & 0xe0).toBe(0xe0)
+    }
+  }, 30_000)
+
+  it('makes a single MP3 version byte-identical to its ZIP entry', async () => {
+    const preset = getPresetById('coin-clink')
+    const humanize = 25
+    const seed = 0x4444
+    const result = await buildBatchArchive({
+      preset,
+      params: preset.defaults,
+      humanize,
+      seed,
+      format: 'mp3',
+    })
+    const archive = await JSZip.loadAsync(result.bytes)
+    const variation = buildVariations(preset.defaults, humanize, seed)[2]
+    const sound = synthesize(preset.model, variation.params, variation.seed)
+    const file = await versionFileFor(preset.slug, 3, sound, 'mp3')
+
+    expect(file.filename).toBe('crunchr_coin_clink_v03.mp3')
+    const versionBytes = new Uint8Array(await file.blob.arrayBuffer())
+    const zipBytes = await archive.files['crunchr_coin_clink_v03.mp3'].async('uint8array')
+    expect(Buffer.from(versionBytes).equals(Buffer.from(zipBytes))).toBe(true)
+  }, 30_000)
 })
