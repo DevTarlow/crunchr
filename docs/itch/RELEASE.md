@@ -40,7 +40,7 @@ network calls. If a check fails, it deletes the ZIP.
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Title**             | Crunchr                                                                                                                                               |
 | **Project URL**       | `crunchr`, at <https://tarlow.itch.io/crunchr>                                                                                                        |
-| **Short description** | Eleven sounds for your game, from clicks to footsteps to coins. Shape them in your browser, then download one WAV or ten versions. No sample packs, no account, nothing uploaded. |
+| **Short description** | Make 11 sounds for your game in your browser. Pick one, change it, then download one sound file or ten versions. Free, no sign-up. |
 | **Classification**    | Tool                                                                                                                                                  |
 | **Kind of Game**      | **Downloadable** (see section 1)                                                                                                                      |
 | **Genre**             | Leave it blank. itch's genres are for games.                                                                                                          |
@@ -75,86 +75,90 @@ italic, links and images. The block below is ready to paste.
 <h2>Small sounds for games, made in your browser</h2>
 
 <p>
-  Crunchr is a small sound tool I made for game projects. It makes clicks,
-  footsteps, dice, cloth, coins, squishes and crunches. You shape them in the
-  page, then download the WAV files.
+  Crunchr is a small sound tool I made for game projects, and it makes 11 sounds
+  you can shape in the browser before you download the files.
 </p>
 
 <p>
-  A prototype can work perfectly and still feel unfinished when every button
-  makes the same dull click, so Crunchr gives you a quick way to replace those
-  sounds without opening a recording program.
-</p>
-
-<p>
-  When a prototype needs a footstep before the art is done, you can pick a sound,
-  move a couple of sliders, and have a file in a minute.
+  The sounds are clicks, footsteps, dice, cloth, coins, squishes and crunches.
 </p>
 
 <p>
   No sample packs, no account, and nothing gets uploaded.
 </p>
 
+<p>
+  You know the bit where the early version of your game works but every button
+  still sounds like a default beep? That's where Crunchr fits.
+</p>
+
 <h3>Pick a sound, then make it yours</h3>
 
 <p>
-  There are eleven sounds in four groups: clicks, footsteps, items and crunches.
-  Pick one and it plays. Six sliders change the length, pitch, punch, body,
-  roughness and fade. The seventh, Variation, decides how different the ten
-  downloadable takes should be.
+  Pick one of the 11 sounds and it plays, then use the six sliders to change the
+  length, pitch, punch, body, roughness and fade.
 </p>
 
 <p>
-  Tap the sound you already picked and you get a new take with fresh random
-  detail, while your sliders stay where they are. <strong>Nudge 10%</strong>
-  moves every control a little. <strong>Surprise me</strong> jumps to a random
-  sound. Reset puts the sliders back where they started.
-</p>
-
-<h3>One WAV, or ten</h3>
-
-<p>
-  <strong>Download WAV</strong> saves the sound you're hearing as one file. It's
-  a standard 44.1 kHz, 16-bit stereo WAV, which is what most game engines and
-  editors expect.
+  The seventh slider, Variation, decides how different the ten downloadable
+  versions are.
 </p>
 
 <p>
-  You can keep a single WAV for a button or a coin, or take the ten-version ZIP
-  when you need a row of footsteps that don't repeat. The changes are small,
-  which is what you want for sounds that repeat a lot.
+  Tap the sound you already picked and you get a new take. Your sliders stay
+  where they are. Reset puts them back where they started.
 </p>
 
 <p>
-  The row of numbers under Save plays all ten in order, and clicking one hears it
-  on its own before you decide which file to keep. The gap you set is only for
-  listening and never gets written into the files.
+  Not sure which sound to pick? Start with the closest one and change it.
+</p>
+
+<h3>Download one sound, or ten</h3>
+
+<p>
+  <strong>Download WAV</strong> saves the sound you're hearing as one standard
+  WAV file, which is what most game tools and editors expect when you drop it
+  into a project.
 </p>
 
 <p>
-  So the ZIP still has ten separate files, and your game decides when each one
-  plays.
-</p>
-
-<h3>The picture is the sound</h3>
-
-<p>
-  The wave beside the controls is the sound you're working on. It moves while the
-  sound plays. Point at it and you get the time and loudness at that spot.
+  <strong>Download 10 versions</strong> gives you a ZIP with ten numbered WAVs
+  and small differences between them.
 </p>
 
 <p>
-  Crunchr builds the sound in the page when you press Play, so the take you heard
-  is the one that goes into the WAV. Preview, the single WAV and the ten-version
-  ZIP all come from that same take.
+  The row of numbers under Save plays them. Click one to hear it alone, then
+  <strong>Save vNN</strong> to keep that file. The gap is only for the preview.
+  So the ZIP always has ten separate files.
 </p>
 
-<h3>Made for the middle of a project</h3>
+<h3>The wave is the sound</h3>
 
 <p>
-  You know the bit where the prototype works but every button still sounds like a
-  default beep? That's where Crunchr fits. It's also fine for a small final
-  effect when you don't need a whole library.
+  The wave beside the controls moves while the sound plays. Point at it to see
+  the time and loudness. What you hear is what gets downloaded.
+</p>
+
+<h3>Works offline</h3>
+
+<p>
+  The app is one file that opens in your browser, so you can put it somewhere
+  you'll find it again, double-click it, and keep working with the wifi off.
+</p>
+
+<p>
+  Your last sound and slider positions stay in that browser. Clear your browser
+  data and they're gone.
+</p>
+
+<p>
+  And the sounds you make are yours, including in games you sell.
+</p>
+
+<h3>What it doesn't do</h3>
+
+<p>
+  One sound at a time.
 </p>
 
 <p>
@@ -162,34 +166,21 @@ italic, links and images. The block below is ready to paste.
   already have, and it doesn't save a project file. The WAVs are what you keep.
 </p>
 
-<p>
-  What's the sound you keep putting off? Make that one first.
-</p>
-
-<h3>Works offline</h3>
-
-<p>
-  The app is one file that opens in your browser. Put it somewhere you'll find it
-  again, double-click it, and it works with the wifi off.
-</p>
-
-<p>
-  When you close the tab and come back later, the sound you were working on and
-  the slider positions are still there, waiting for you. Clear the site data and
-  they're gone.
-</p>
-
-<p>
-  The sounds you make are yours, including in games you sell.
-</p>
-
 <h3>What you need</h3>
 
 <p>
   A current version of Chrome, Edge, Firefox or Safari on Windows, macOS or
-  Linux. Browsers won't play sound until you click or press a key, so press
-  something first, and after that the Play button, the spacebar and the wave all
-  behave the way you expect. It's free, with the code under the MIT licence.
+  Linux.
+</p>
+
+<p>
+  Browsers won't play sound until you click or press a key, so press something
+  first, and after that the Play button, the spacebar and the wave all behave the
+  way you expect.
+</p>
+
+<p>
+  It's free, with the code under the MIT licence.
 </p>
 ```
 

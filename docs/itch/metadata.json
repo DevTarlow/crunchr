@@ -11,7 +11,7 @@
   "releaseStatus": "Released",
   "platforms": ["Windows", "macOS", "Linux"],
   "mobileFriendly": true,
-  "shortDescription": "Eleven sounds for your game, from clicks to footsteps to coins. Shape them in your browser, then download one WAV or ten versions. No sample packs, no account, nothing uploaded.",
+  "shortDescription": "Make 11 sounds for your game in your browser. Pick one, change it, then download one sound file or ten versions. Free, no sign-up.",
   "pricing": {
     "model": "free",
     "note": "MIT licensed and free to download. itch can take donations, but the file stays free either way."
