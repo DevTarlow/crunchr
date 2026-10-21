@@ -1,5 +1,7 @@
 import type { EngineStatus } from '../audio/types'
-import { CrunchMark, InfoIcon } from './Icons'
+import { CrunchMark, HeartIcon, InfoIcon } from './Icons'
+
+const SUPPORT_URL = 'https://tarlow.itch.io/crunchr/donate'
 
 interface HeaderProps {
   engineStatus: EngineStatus
@@ -53,6 +55,19 @@ export function Header({ engineStatus, isPlaying, helpOpen, onOpenHelp }: Header
             <span className="spec-value">WAV + MP3</span>
           </div>
         </div>
+
+        <a
+          className="support-button"
+          href={SUPPORT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          referrerPolicy="no-referrer"
+          aria-label="Support this tool on itch.io (opens in a new tab)"
+          title="Support this tool on itch.io"
+        >
+          <HeartIcon className="support-button-icon" />
+          <span className="support-button-label">Support this tool</span>
+        </a>
 
         <button
           type="button"

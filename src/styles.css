@@ -217,7 +217,8 @@ button:disabled {
   gap: 9px;
 }
 
-.help-button {
+.help-button,
+.support-button {
   display: inline-flex;
   flex: 0 0 auto;
   flex-direction: column;
@@ -236,6 +237,7 @@ button:disabled {
   font-weight: 600;
   letter-spacing: 0.12em;
   line-height: 1;
+  text-decoration: none;
   text-transform: uppercase;
   transition:
     color 140ms ease,
@@ -243,11 +245,13 @@ button:disabled {
     background-color 140ms ease;
 }
 
-.help-button:hover {
+.help-button:hover,
+.support-button:hover {
   color: var(--text);
   border-color: #5e4d26;
   background: #083039;
 }
+
 
 .help-button[aria-expanded='true'] {
   color: var(--text);
@@ -255,7 +259,28 @@ button:disabled {
   background: #0a2a32;
 }
 
-.help-button-icon {
+.support-button {
+  color: var(--accent-soft);
+  border-color: #4a3d1b;
+  background: rgba(255, 209, 102, 0.055);
+}
+
+.support-button:hover {
+  color: #fff1cc;
+  border-color: #8f7129;
+  background: rgba(255, 209, 102, 0.1);
+}
+
+.support-button-icon {
+  color: var(--accent);
+}
+
+.support-button-label {
+  white-space: nowrap;
+}
+
+.help-button-icon,
+.support-button-icon {
   width: 18px;
   height: 18px;
   color: var(--accent);
@@ -3053,6 +3078,17 @@ button:disabled {
   .export-copy > p {
     max-width: 66ch;
   }
+
+  .support-button {
+    min-width: 46px;
+    width: 46px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .support-button-label {
+    display: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -3078,13 +3114,16 @@ button:disabled {
     padding: 8px 10px;
   }
 
-  .help-button {
+  .help-button,
+  .support-button {
     min-width: 46px;
     width: 46px;
+    min-height: 44px;
     padding: 0;
   }
 
-  .help-button-label {
+  .help-button-label,
+  .support-button-label {
     display: none;
   }
 

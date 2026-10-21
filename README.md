@@ -34,6 +34,8 @@ the browser. There are zero audio samples, zero network calls and no backend.
   version with fresh random details without losing your slider settings.
 - **An in-app manual**: the info button in the top right explains the whole
   instrument, keyboard keys included.
+- **Support link**: the header's **Support this tool** button opens the itch.io
+  donation page in a new tab, so it stays reachable in fullscreen.
 - **Desktop and mobile friendly**, with a global Spacebar performance shortcut.
 - **Deterministic synthesis**: the waveform you see, the sound you hear and every
   exported file come from the same seeded renderer.

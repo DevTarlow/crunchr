@@ -140,6 +140,14 @@ export function InfoIcon(props: IconProps) {
   )
 }
 
+export function HeartIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 20.2S3.5 15 3.5 9.2A4.2 4.2 0 0 1 12 7.4a4.2 4.2 0 0 1 8.5 1.8c0 5.8-8.5 11-8.5 11Z" />
+    </IconBase>
+  )
+}
+
 export function RerollIcon(props: IconProps) {
   return (
     <IconBase {...props}>

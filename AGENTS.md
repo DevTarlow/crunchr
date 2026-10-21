@@ -89,6 +89,8 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 - a reload restores the last session without creating the AudioContext;
 - Space on Help opens the manual instead of playing, a non-active chip is
   selected with Space, and the active chip/slider still replay the sound;
+- the header support link points at the itch donation page and opens it in a
+  new tab with `noopener`/`noreferrer`;
 - WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
 - MP3 export is valid MPEG-1 Layer III, 44.1 kHz, 192 kbps, stereo and decodes
   to audible audio in the browser;

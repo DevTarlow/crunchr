@@ -233,6 +233,19 @@ async function main() {
     assert.equal(await page.locator('.app-root').getAttribute('data-audio-state'), 'standby')
     pass('single-file UI, preset bank, seven controls and scope render from file://')
 
+    const supportLink = page.locator('.support-button')
+    assert.equal(await supportLink.count(), 1)
+    assert.equal(
+      await supportLink.getAttribute('href'),
+      'https://tarlow.itch.io/crunchr/donate',
+    )
+    assert.equal(await supportLink.getAttribute('target'), '_blank')
+    assert.match(await supportLink.getAttribute('rel') ?? '', /noopener/)
+    assert.match(await supportLink.getAttribute('rel') ?? '', /noreferrer/)
+    assert.equal(await supportLink.getAttribute('referrerpolicy'), 'no-referrer')
+    assert.match(await supportLink.innerText(), /support this tool/i)
+    pass('the support link opens the itch donation page in a new tab')
+
     const bodyFontSize = await page.locator('body').evaluate((element) =>
       Number.parseFloat(getComputedStyle(element).fontSize),
     )
@@ -723,6 +736,13 @@ async function main() {
       .locator('.reset-button')
       .evaluate((element) => element.getBoundingClientRect().height)
     assert.ok(mobileResetHeight >= 44, `The mobile Reset button is too short (${mobileResetHeight}px)`)
+    const mobileSupportHeight = await mobilePage
+      .locator('.support-button')
+      .evaluate((element) => element.getBoundingClientRect().height)
+    assert.ok(
+      mobileSupportHeight >= 44,
+      `The mobile support link is too short (${mobileSupportHeight}px)`,
+    )
     const mobileToastCloseHeight = await mobilePage
       .locator('.toast-close')
       .evaluate((element) => element.getBoundingClientRect().height)
