@@ -172,8 +172,6 @@ src/
   App.tsx           instrument state and interactions
   styles.css        design tokens, hardware styling, responsive rules
 docs/
-  itch/             page fields, launch copy, screenshot order and publish checklist
-  media/itch/       generated 630×500 cover and 960×400 banner
   screenshots/      the five real store captures
   crunchr-ui.png    full-page README capture
   crunchr-help.png  the in-app manual
@@ -221,8 +219,8 @@ To publish on itch.io, run `npm run itch:dist` and upload the resulting ZIP as
 an **HTML Game**. The ZIP has `index.html` at the root and the MIT licence. Set
 the embed to **Click to launch in fullscreen** so the instrument gets the whole
 window. The app detects itch's frame and scrolls inside it, since itch turns page
-scrolling off. The store copy, page fields, screenshot order and publish
-checklist live in [`docs/itch/RELEASE.md`](docs/itch/RELEASE.md).
+scrolling off. The itch page copy, page fields, store art and publish checklist
+are kept locally and ignored by git.
 
 The production build includes a restrictive Content Security Policy. The single
 file allows inline JS/CSS, data/blob images, and blocks all network egress. The
@@ -241,7 +239,9 @@ npm run itch:dist       # package and byte-verify dist-itch/Crunchr-1.0.0.zip
 
 `release:check` fails if the store metadata, the in-app footer, `package.json`
 and `package-lock.json` disagree about the version or licence, or if a
-screenshot is the wrong size. It never writes. `itch:dist` reads the archive
+screenshot is the wrong size. It never writes. `release:media` and
+`release:check` use the local-only itch kit, so they need those ignored files
+present. `itch:dist` reads the archive
 back, checks the two expected file names (`index.html` and `LICENSE.txt`) and
 compares `index.html` byte for byte with `dist-single/index.html`; a failed check
 deletes the ZIP.

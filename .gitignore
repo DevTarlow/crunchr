@@ -7,3 +7,7 @@ dist-single/
 coverage/
 qa-artifacts/
 dist-itch/
+
+# Local itch launch kit and store art
+docs/itch/
+docs/media/itch/

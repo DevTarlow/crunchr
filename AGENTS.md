@@ -70,8 +70,9 @@ single-file build.
 
 **Before every release:** `npm run verify`, then `npm run release:media`,
 `npm run release:check` and `npm run itch:dist`, then follow
-[`docs/itch/RELEASE.md`](docs/itch/RELEASE.md). `release:media` intentionally
-rewrites committed PNGs; review and commit them with the release.
+`docs/itch/RELEASE.md` (local-only, ignored by git). `release:media`
+intentionally rewrites the committed screenshots; review and commit them with
+the release.
 
 ### Browser smoke
 
@@ -126,9 +127,10 @@ this file in the same commit.
 
 ### Release kit expectations
 
-- `docs/itch/RELEASE.md` is the source of truth for page fields, copy, tag
-  order, screenshot captions and the publish checklist.
-- Page fields and screenshot paths live in `docs/itch/metadata.json`.
+- `docs/itch/RELEASE.md` is the local source of truth for page fields, copy, tag
+  order, screenshot captions and the publish checklist. It is ignored by git.
+- Page fields and screenshot paths live in `docs/itch/metadata.json`, also
+  local-only.
 - Every store image is a real capture of `dist-single/index.html`; do not paste
   in mock-ups. Change the composition in `scripts/release-media.mjs` instead of
   hand-editing a PNG.
@@ -139,9 +141,9 @@ this file in the same commit.
   reachable.
 - The ZIP must contain exactly `index.html` and `LICENSE.txt`; `itch:dist`
   enforces that and byte-compares the app.
-- Page theme colors live under `theme` in `docs/itch/metadata.json`. Keep the
-  table in `RELEASE.md` in step, and keep the text, link and button pairs at AA
-  contrast.
+- Page theme colors live under `theme` in the local `docs/itch/metadata.json`.
+  Keep the table in `RELEASE.md` in step, and keep the text, link and button
+  pairs at AA contrast.
 
 ## 4. Commit rules
 
