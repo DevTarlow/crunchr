@@ -139,6 +139,9 @@ this file in the same commit.
   reachable.
 - The ZIP must contain exactly `index.html` and `LICENSE.txt`; `itch:dist`
   enforces that and byte-compares the app.
+- Page theme colors live under `theme` in `docs/itch/metadata.json`. Keep the
+  table in `RELEASE.md` in step, and keep the text, link and button pairs at AA
+  contrast.
 
 ## 4. Commit rules
 

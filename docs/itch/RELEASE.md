@@ -69,6 +69,27 @@ audio, sound-effects, gamedev, tool, sound-design, offline, browser, html5, sfx,
 `html5` is right for a browser game. `webgl` is not, because Crunchr is drawn
 with Canvas and has no 3D engine.
 
+### Theme
+
+Set these in the page theme editor. They are the app's own teal and gold tokens.
+
+| Theme field | CSS variable | Value | Where it goes |
+| --- | --- | --- | --- |
+| Background | `--itchio_bg_color` | `#031117` | Page behind everything |
+| Content background | `--itchio_bg2_color` | `#051a21` | Main content column |
+| Subtle background | `--itchio_bg2_sub` | `#07242d` | Quiet panels and dividers |
+| Text | `--itchio_text_color` | `#f1ede5` | Body copy |
+| Link | `--itchio_link_color` | `#ffd166` | Links and gold headings |
+| Border | `--itchio_border_color` | `#114450` | Panel edges |
+| Button | `--itchio_button_color` | `#ffd166` | Buttons and selected states |
+| Button text | `--itchio_button_fg_color` | `#1b1207` | Text on gold |
+| Button shadow | `--itchio_button_shadow_color` | `#6e551a` | Lower edge of buttons |
+| Font | `--itchio_font_family` | `sans-serif` | Page copy |
+
+The text, links and button label clear WCAG AA contrast on these backgrounds.
+Do not substitute pure black or white. The same values are stored under `theme`
+in [`metadata.json`](metadata.json), so the page and the kit cannot drift.
+
 ---
 
 ## 3. The page copy
@@ -366,8 +387,8 @@ Automated checks, run 20 October 2026 against this tree:
 - [x] `npm run release:media` passed. Nine real captures, no console errors and
       no network requests.
 - [x] `npm run release:check` passed. The settings match `package.json`, every
-      image has the right size, the licence is there, and the one-file build
-      makes no network calls.
+      image has the right size, the licence is there, the theme clears AA
+      contrast, and the one-file build makes no network calls.
 - [x] `npm run itch:dist` passed. `dist-itch/Crunchr-1.0.0.zip`, two files, about
       131 kB, `index.html` at the root, and the app matches the build.
 - [x] A local cross-origin frame with itch's `scrolling="no"` attribute got the
@@ -376,6 +397,7 @@ Automated checks, run 20 October 2026 against this tree:
 - [x] Page copy, tags, screenshots, cover, banner, support address and version
       are written down in this kit.
 - [x] The price is free and the app is MIT licensed.
+- [x] Theme colors are written down and checked for AA contrast.
 - [x] Kind of Game is documented as **HTML Game**, not Downloadable.
 
 Still needs a person:

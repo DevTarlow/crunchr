@@ -30,6 +30,18 @@
     "sfx",
     "foley"
   ],
+  "theme": {
+    "background": "#031117",
+    "contentBackground": "#051a21",
+    "subtleBackground": "#07242d",
+    "text": "#f1ede5",
+    "link": "#ffd166",
+    "border": "#114450",
+    "button": "#ffd166",
+    "buttonText": "#1b1207",
+    "buttonShadow": "#6e551a",
+    "font": "sans-serif"
+  },
   "cover": "docs/media/itch/cover-630x500.png",
   "banner": "docs/media/itch/banner-960x400.png",
   "screenshots": [

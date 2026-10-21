@@ -45,6 +45,22 @@ function listedSize(size) {
   return { width: Number(match[1]), height: Number(match[2]) }
 }
 
+function luminance(hex) {
+  const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255)
+  const linear = channels.map((value) =>
+    value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
+  )
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+}
+
+function contrastRatio(foreground, background) {
+  const a = luminance(foreground)
+  const b = luminance(background)
+  const lighter = Math.max(a, b)
+  const darker = Math.min(a, b)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
 function main() {
   const pkg = readJson('package.json')
   const metadata = readJson('docs/itch/metadata.json')
@@ -87,6 +103,40 @@ function main() {
   assert.ok(!metadata.tags.includes('webgl'), 'webgl would suggest a 3D engine this is not')
   assert.ok(metadata.shortDescription.length <= 200, 'The short description must fit itch')
   pass(`${metadata.tags.length} unique tags, includes html5, short description ${metadata.shortDescription.length}/200`)
+
+  const theme = metadata.theme
+  assert.ok(theme && typeof theme === 'object', 'The page theme must be recorded in metadata')
+  const themeKeys = [
+    'background',
+    'contentBackground',
+    'subtleBackground',
+    'text',
+    'link',
+    'border',
+    'button',
+    'buttonText',
+    'buttonShadow',
+  ]
+  for (const key of themeKeys) {
+    assert.match(theme[key], /^#[0-9a-f]{6}$/i, `Theme ${key} must be a six-digit hex color`)
+  }
+  assert.equal(theme.font, 'sans-serif', 'Keep the page theme on the app sans-serif')
+  const contrastPairs = [
+    ['text', 'background'],
+    ['text', 'contentBackground'],
+    ['text', 'subtleBackground'],
+    ['link', 'background'],
+    ['link', 'contentBackground'],
+    ['buttonText', 'button'],
+  ]
+  for (const [foreground, background] of contrastPairs) {
+    const ratio = contrastRatio(theme[foreground], theme[background])
+    assert.ok(
+      ratio >= 4.5,
+      `Theme contrast ${foreground} on ${background} is ${ratio.toFixed(2)}:1, below AA 4.5:1`,
+    )
+  }
+  pass('theme palette is complete and clears AA contrast')
 
   requireFile('docs/itch/RELEASE.md')
   const releaseDoc = readFileSync(resolve('docs/itch/RELEASE.md'), 'utf8')
