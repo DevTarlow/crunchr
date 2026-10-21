@@ -296,12 +296,12 @@ function plateHtml({ width, height, screenshot }) {
         <div class="tagline">Make the small sounds your game is missing.</div>
         <div class="chips">
           <span>11 sounds</span>
-          <span>WAV 44.1 kHz</span>
-          <span>10-version ZIP</span>
+          <span>WAV files</span>
+          <span>10 versions</span>
           <span>Runs offline</span>
         </div>
         <div class="foot">
-          <span><b>Procedural</b> · no samples · no uploads</span>
+          <span><b>Made in your browser</b> · no uploads</span>
           <span>v${pkg.version}</span>
         </div>
       </div>

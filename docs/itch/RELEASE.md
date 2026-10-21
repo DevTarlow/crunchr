@@ -1,157 +1,195 @@
-# itch.io release kit
+# Crunchr 1.0.0 on itch.io
 
-Everything needed to publish **Crunchr 1.0.0** on itch.io. The page copy below
-is ready to paste, the artwork is in [`docs/media/itch/`](../media/itch/), the
-screenshots are in [`docs/screenshots/`](../screenshots/), and the page fields
-live in [`metadata.json`](metadata.json).
+This is the working file for the Crunchr store page. It has the page copy, the
+screenshots, the settings, and the steps to upload the build.
 
-> **Read §1 first.** Crunchr is a **downloadable file**, not an *HTML Game*.
-> The artifact is one self-contained HTML file in a ZIP, and that decides how
-> the page is configured.
+Crunchr is a free download. People unzip it, double-click `crunchr.html`, and
+use it in their browser. There is no account and no server.
 
----
-
-## 1. Downloadable, never "HTML Game"
-
-| Artifact | Built by | Goes to itch as | Who can use it |
-| --- | --- | --- | --- |
-| `Crunchr-1.0.0.zip` (~133 kB) | `npm run itch:dist` | Downloadable file | Anyone |
-| …containing `crunchr.html` (438 kB) | the same build | the app itself | Anyone |
-| …plus `START HERE.txt` and `LICENSE.txt` | the same build | the guide and licence | Anyone |
-
-Crunchr ships as one HTML file the reader unzips and double-clicks: the whole
-instrument, offline, in any current browser. There is nothing to install, no
-account, and no server of ours in the middle.
-
-**Keep "Kind of Game" set to `Downloadable`.** An *HTML Game* page puts the
-instrument inside itch's own frame, where the host controls page scrolling and
-where a cross-origin frame is allowed to block file downloads. Crunchr's whole
-promise is that the button makes a file you keep, so the file is the artifact.
-Shipping it directly also means the offline copy and the store copy are the same
-bytes.
-
-`npm run itch:dist` verifies the archive by reading it back: the three file
-names, the app byte for byte against `dist-single/index.html`, and the
-self-contained no-egress build. A failing check deletes the ZIP so a broken one
-cannot look publishable.
+> Choose **Downloadable** for Kind of Game. Do not choose **HTML Game**.
 
 ---
 
-## 2. Page fields
+## 1. Ship the file
+
+Crunchr is a tool, not a game. The download is a ZIP with one HTML file, a short
+guide and the licence. People unzip it, double-click `crunchr.html`, and it opens
+in their browser. It works offline.
+
+Set **Kind of Game** to `Downloadable`. If you pick *HTML Game*, itch wraps
+Crunchr in its own page layout. That wrapper can block the download button, and
+it controls how the page scrolls. The file is the point, so make the file the
+download.
+
+| What you upload | Size | What people get |
+| --- | --- | --- |
+| `Crunchr-1.0.0.zip` | about 133 kB | The whole download |
+| `crunchr.html` | about 438 kB | The app itself |
+| `START HERE.txt` | about 3 kB | A short guide |
+| `LICENSE.txt` | about 1 kB | The MIT licence |
+
+`npm run itch:dist` checks the ZIP before it leaves the repo. It looks for the
+three files, compares the app with the build, and confirms the app makes no
+network calls. If a check fails, it deletes the ZIP.
+
+---
+
+## 2. Page settings
 
 | Field | Value |
 | --- | --- |
 | **Title** | Crunchr |
-| **Project URL** | `crunchr` → <https://tarlow.itch.io/crunchr> |
-| **Short description / tagline** | Eleven procedural game sounds in one browser tab. Shape them, hear ten versions, and download clean WAVs. No samples, no account, no uploads. |
+| **Project URL** | `crunchr`, at <https://tarlow.itch.io/crunchr> |
+| **Short description** | Eleven game sounds you can shape in your browser. Listen to ten versions, then download the WAV files. No sample packs, no account, nothing uploaded. |
 | **Classification** | Tool |
-| **Kind of Game** | **Downloadable** (see §1) |
-| **Genre** | leave unset — itch's genre list is a game taxonomy |
+| **Kind of Game** | **Downloadable** (see section 1) |
+| **Genre** | Leave it blank. itch's genres are for games. |
 | **Release status** | Released |
-| **Version** | `1.0.0`, from `package.json`; the footer shows `v1.0.0` |
-| **Platforms** | Windows, macOS, Linux (one file; the browser is what matters) |
-| **Pricing** | Free (see §7) |
-| **Cover image** | `docs/media/itch/cover-630x500.png` (630×500, required) |
-| **Banner** | `docs/media/itch/banner-960x400.png` (960×400, optional page header) |
-| **Mobile Friendly** | **On** — the layout stacks into one column at 390 px and 320 px |
-| **Support contact** | `tarlow@mossaistudio.com`, visible on the page and not only in the app |
-| **Tags** | see §3 |
+| **Version** | `1.0.0`, from `package.json`. The footer shows `v1.0.0`. |
+| **Platforms** | Windows, macOS, Linux. One file covers all three. |
+| **Price** | Free (see section 7) |
+| **Cover image** | `docs/media/itch/cover-630x500.png` (630 by 500, required) |
+| **Banner** | `docs/media/itch/banner-960x400.png` (960 by 400, optional) |
+| **Mobile Friendly** | On. The layout works on a phone. |
+| **Support contact** | `tarlow@mossaistudio.com`, shown on the page |
+| **Tags** | See section 3 |
 
 ### Tags
 
-Pick up to 10. Recommended, in priority order:
+Pick up to 10. These are search labels, not sentences:
 
 ```
-audio, sound-effects, gamedev, tool, procedural, offline, browser, no-install, sfx, foley
+audio, sound-effects, gamedev, tool, sound-design, offline, browser, no-install, sfx, foley
 ```
 
-Adjacent tags that also fit: `game-development`, `indie`, `assets`, `utility`.
-Avoid `html5` and `webgl`; itch reads those as a playable build, which this page
-is not.
+`html5` and `webgl` make itch treat the page like a playable game. Skip them.
 
 ---
 
-## 3. Description (paste into the itch description editor)
+## 3. The page copy
 
-itch accepts a limited HTML subset: headings, paragraphs, lists, bold, italic,
-links and images. This is written for that subset.
+This goes in the description box. itch takes headings, paragraphs, lists, bold,
+italic, links and images. The block below is ready to paste.
 
 ```html
-<h2>Small sounds, made in your browser</h2>
+<h2>Small sounds for games, made in your browser</h2>
 
 <p>
-  Crunchr is a tiny sound maker for games. It makes clicks, footsteps, dice,
-  cloth, coins, squishes and crunches, then gives you the WAV files to drop into
-  your project. Everything is synthesized from scratch in the page. There are no
-  sample packs, no accounts and no uploads.
+  Crunchr is a small sound tool I made for game projects. It makes clicks,
+  footsteps, dice, cloth, coins, squishes and crunches. You shape them in the
+  page, then download the WAV files.
+</p>
+
+<p>
+  A prototype can work perfectly and still feel unfinished when every button
+  makes the same dull click, so Crunchr gives you a quick way to replace those
+  sounds without opening a recording program.
+</p>
+
+<p>
+  When a prototype needs a footstep before the art is done, you can pick a sound,
+  move a couple of sliders, and have a file in a minute.
+</p>
+
+<p>
+  No sample packs, no account, and nothing gets uploaded.
 </p>
 
 <h3>Pick a sound, then make it yours</h3>
 
 <p>
   There are eleven sounds in four groups: clicks, footsteps, items and crunches.
-  Pick one and hear it immediately. Six sliders shape it: length, pitch, punch,
-  body, roughness and fade. A variation slider decides how much the ten
-  downloadable versions should differ.
+  Pick one and it plays. Six sliders change the length, pitch, punch, body,
+  roughness and fade. The seventh, Variation, decides how different the ten
+  downloadable takes should be.
 </p>
 
 <p>
-  Tap the sound you already selected and Crunchr rolls a new version with fresh
-  random detail while your sliders stay where they are. <strong>Nudge 10%</strong>
-  moves every control a little; <strong>Surprise me</strong> jumps to a random
-  sound and a new seed. Reset puts the preset back the way it started.
+  Tap the sound you already picked and you get a new take with fresh random
+  detail, while your sliders stay where they are. <strong>Nudge 10%</strong>
+  moves every control a little. <strong>Surprise me</strong> jumps to a random
+  sound. Reset puts the sliders back where they started.
 </p>
 
-<h3>One WAV, or ten versions</h3>
+<h3>One WAV, or ten</h3>
 
 <p>
-  <strong>Download WAV</strong> saves the sound on your sliders as one 44.1 kHz,
-  16-bit stereo WAV. <strong>Download 10 versions</strong> saves a ZIP with ten
-  numbered WAVs, each with small changes, so a row of footsteps does not sound
-  like the same footstep ten times.
+  <strong>Download WAV</strong> saves the sound you're hearing as one file. It's
+  a standard 44.1 kHz, 16-bit stereo WAV, which is what most game engines and
+  editors expect.
 </p>
 
 <p>
-  The preview strip plays all ten in a row. Click a number to hear one version on
-  its own, then <strong>Save vNN</strong> to download just that file. The space
-  between sounds is only a preview setting; the ZIP always has ten separate
-  sounds, so your game decides when to trigger each one.
+  You can keep a single WAV for a button or a coin, or take the ten-version ZIP
+  when you need a row of footsteps that don't repeat. The changes are small,
+  which is what you want for sounds that repeat a lot.
 </p>
 
-<h3>The sound you see is the sound you download</h3>
-
 <p>
-  A live picture of the wave sits beside the controls. It starts as the whole
-  one-shot, switches to the real audio while the sound plays, and shows the time
-  and loudness when you point at it. Preview, single export and batch export all
-  come from the same seeded renderer, so what you auditioned is what lands in
-  the file.
+  The row of numbers under Save plays all ten in order, and clicking one hears it
+  on its own before you decide which file to keep. The gap you set is only for
+  listening and never gets written into the files.
 </p>
 
-<h3>Made for the messy middle of a game</h3>
-
 <p>
-  Crunchr is for the moment a prototype needs a button click, a boot on gravel,
-  a die hitting a table or a coin hitting the floor. It is a focused one-shot
-  instrument, not a full sound library, mixer or DAW. If you need a placeholder
-  that already sounds intentional, or a small final effect, it is built for that.
+  So the ZIP still has ten separate files, and your game decides when each one
+  plays.
 </p>
 
-<h3>Offline, and yours</h3>
+<h3>The picture is the sound</h3>
 
 <p>
-  The app is one HTML file you keep. It opens with the wifi switched off and has
-  no analytics, no telemetry and no network requests. The last sound and slider
-  settings are kept in this browser only; clearing the site data removes them.
-  The sounds you make are yours to use in games, including commercial ones.
+  The wave beside the controls is the sound you're working on. It moves while the
+  sound plays. Point at it and you get the time and loudness at that spot.
+</p>
+
+<p>
+  Crunchr builds the sound in the page when you press Play, so the take you heard
+  is the one that goes into the WAV. Preview, the single WAV and the ten-version
+  ZIP all come from that same take.
+</p>
+
+<h3>Made for the middle of a project</h3>
+
+<p>
+  You know the bit where the prototype works but every button still sounds like a
+  default beep? That's where Crunchr fits. It's also fine for a small final
+  effect when you don't need a whole library.
+</p>
+
+<p>
+  But it isn't a recording program. It won't record, edit or clean up audio you
+  already have, and it doesn't save a project file. The WAVs are what you keep.
+</p>
+
+<p>
+  What's the sound you keep putting off? Make that one first.
+</p>
+
+<h3>Works offline</h3>
+
+<p>
+  The app is one file that opens in your browser. Put it somewhere you'll find it
+  again, double-click it, and it works with the wifi off.
+</p>
+
+<p>
+  When you close the tab and come back later, the sound you were working on and
+  the slider positions are still there, waiting for you. Clear the site data and
+  they're gone.
+</p>
+
+<p>
+  The sounds you make are yours, including in games you sell.
 </p>
 
 <h3>What you need</h3>
 
 <p>
-  Current Chrome, Edge, Firefox or Safari, on Windows, macOS or Linux, with Web
-  Audio. The first click or key press unlocks sound, as browser autoplay rules
-  require. It is free and MIT licensed.
+  A current version of Chrome, Edge, Firefox or Safari on Windows, macOS or
+  Linux. Browsers won't play sound until you click or press a key, so press
+  something first, and after that the Play button, the spacebar and the wave all
+  behave the way you expect. It's free, with the code under the MIT licence.
 </p>
 ```
 
@@ -159,126 +197,130 @@ links and images. This is written for that subset.
 
 ## 4. Screenshots
 
-Upload in this order. itch shows the first one as the page hero. Every file is a
-real capture of the single-file build, not a mock-up, and every one is produced
-by `npm run release:media`.
+Upload them in this order. itch uses the first one as the big image at the top.
+These are real captures of the build, not mock-ups. `npm run release:media`
+makes them.
 
 | # | File | Size | Caption |
 | --- | --- | --- | --- |
-| 1 | [`docs/screenshots/01-instrument.png`](../screenshots/01-instrument.png) | 1600×1000 | The whole instrument: eleven sounds in four groups, seven controls, and a live picture of the wave. |
-| 2 | [`docs/screenshots/02-shape-and-listen.png`](../screenshots/02-shape-and-listen.png) | 1600×1000 | Shape a footstep, then hear it. Length, pitch, punch, body, roughness and fade all update the same renderer that writes the WAV. |
-| 3 | [`docs/screenshots/03-ten-versions.png`](../screenshots/03-ten-versions.png) | 1600×1000 | Save one WAV or ten versions. Preview the batch, hear a single version, and save it on its own. |
-| 4 | [`docs/screenshots/04-help.png`](../screenshots/04-help.png) | 1600×1000 | The built-in manual explains the instrument and the keyboard shortcuts without leaving the page. |
-| 5 | [`docs/screenshots/05-mobile.png`](../screenshots/05-mobile.png) | 390×844 | The one-column phone layout: the full sound bank and instrument, with touch-sized controls. |
+| 1 | [`docs/screenshots/01-instrument.png`](../screenshots/01-instrument.png) | 1600 by 1000 | The whole tool: eleven sounds in four groups, seven controls, and a picture of the wave. |
+| 2 | [`docs/screenshots/02-shape-and-listen.png`](../screenshots/02-shape-and-listen.png) | 1600 by 1000 | Shape a footstep and hear it right away. The sliders change the same sound that gets downloaded. |
+| 3 | [`docs/screenshots/03-ten-versions.png`](../screenshots/03-ten-versions.png) | 1600 by 1000 | Ten versions, one selected. Play the set, hear one on its own, or save a single WAV. |
+| 4 | [`docs/screenshots/04-help.png`](../screenshots/04-help.png) | 1600 by 1000 | The built-in guide, with the keyboard shortcuts. |
+| 5 | [`docs/screenshots/05-mobile.png`](../screenshots/05-mobile.png) | 390 by 844 | The phone layout: one column, big controls, same sounds. |
 
-itch accepts these at 16:10 and scales them; there is no need to re-cut them to
-16:9. The first four are 16:10; the phone shot is portrait on purpose.
+The first four are 1600 by 1000 pixels. itch scales them for the page. The phone
+shot is portrait on purpose.
 
 ### Cover and banner
 
-```bash
-npm run release:media   # rebuilds the single file, then redraws every image
-```
+`npm run release:media` also draws the cover and banner:
 
-* `cover-630x500.png` is required and is what appears in browse listings.
-* `banner-960x400.png` is optional and goes at the top of the page.
+* `cover-630x500.png` is required and appears in browse listings.
+* `banner-960x400.png` is optional and sits at the top of the page.
 
-Both are drawn by `scripts/release-media.mjs` in the same Chrome the browser
-checks use: the words and version come from `package.json`, the panel art is the
-real 1600×1000 hero capture, and the colours are the app's own teal and gold
-tokens. Running it again overwrites the PNGs, so change the composition in the
-script rather than hand-editing the files.
+Both use the real app capture, the app's teal and gold colours, and the version
+from `package.json`. Running the command again overwrites the images, so change
+the layout in `scripts/release-media.mjs` instead of editing a PNG by hand.
 
 ---
 
-## 5. Release notes (paste into the itch devlog post)
+## 5. Launch post
 
-Open the post with `docs/screenshots/01-instrument.png` or the cover. A launch
-post reads better with the product at the top of it.
+Post this with the first screenshot or the cover at the top.
 
 ```html
 <h2>Crunchr 1.0.0 is out</h2>
 
 <p>
-  Crunchr is a tiny sound maker for games: eleven procedural sounds in one browser
-  tab, with the WAV files at the end. No samples, no account, no uploads.
+  I made a small sound tool called Crunchr, and it runs in one browser tab.
 </p>
 
 <p>
-  Pick a click, a footstep, a die, a coin or a squish. Shape it, listen to it, then
-  download one clean WAV or ten slightly different versions. The whole thing is a
-  single HTML file that works offline.
+  You pick a click, a footstep, a die, a coin or a squish. Then you shape it,
+  listen to ten versions, and download the WAVs. It's for the parts of a game
+  that need a sound but don't need a whole sound library.
 </p>
 
 <h3>What's in 1.0.0</h3>
 
 <ul>
-  <li>Eleven sounds in four groups: clicks, footsteps, items and crunches.</li>
-  <li>Seven controls: length, pitch, punch, body, roughness, fade and batch
-      variation.</li>
-  <li>A live scope that shows the whole one-shot, the real waveform while it
-      plays, and the time and loudness under your pointer.</li>
-  <li>One 44.1 kHz, 16-bit stereo WAV, or a ZIP of ten numbered versions.</li>
-  <li>Batch preview with adjustable spacing, per-version audition and Save vNN.</li>
-  <li>Per-sound slider memory and a re-roll that makes a new version without
-      losing your settings.</li>
-  <li>A built-in manual, Spacebar performance key and a mobile layout with
-      touch-sized controls.</li>
-  <li>A deterministic renderer: preview, WAV and ZIP all come from the same
-      seeded code.</li>
-  <li>No samples, no network requests, no analytics. The last session stays in
-      your browser.</li>
+  <li>Eleven sounds: clicks, footsteps, items and crunches.</li>
+  <li>Seven controls: length, pitch, punch, body, roughness, fade and Variation.</li>
+  <li>A live wave that shows the sound while it plays, plus the time and loudness
+      under your pointer.</li>
+  <li>One WAV file, or a ZIP of ten numbered versions.</li>
+  <li>A preview row that plays all ten, with its own spacing and a button to save
+      the version you picked.</li>
+  <li>Each sound remembers its slider positions, and tapping it again makes a new
+      take without losing them.</li>
+  <li>A built-in guide, the Spacebar shortcut, and a phone layout with buttons
+      you can actually hit.</li>
+  <li>It doesn't connect to the internet or collect anything about you. The sound
+      you were working on stays in your browser.</li>
+  <li>One file that works offline.</li>
 </ul>
 
 <p>
-  It is free and MIT licensed, and the sounds you make are yours. If it earns a
-  place in your project, tell me what is missing.
+  Every sound is built from scratch in the browser, so there are no sample files
+  to hunt down, no licences to track, and nothing extra to ship with your game.
 </p>
+
+<p>
+  There's no account and nothing gets uploaded. The sounds are yours, including
+  in games you sell.
+</p>
+
+<p>
+  It's free and MIT licensed, and if a sound you need isn't here, tell me what's
+  missing.
+</p>
+
+<p>
+  What are you building next? Go make the sound it's missing.
+</p>
+
+<p>~ Tarlow</p>
 ```
 
 ---
 
-## 6. What 1.0 deliberately is not
+## 6. What it does not do
 
-Keeping the page honest is part of the release:
+Crunchr makes one sound at a time. It doesn't record, edit or clean up audio you
+already have, and it doesn't save a project file. The WAVs are what you keep.
 
-* It is not a general-purpose synthesizer, sequencer or DAW.
-* It does not import, edit or normalize existing audio files.
-* It does not save a project file; the WAVs are the output.
-* It does not upload, sync or share sounds between devices.
-* It does not claim to replace a recorded foley library. It is for fast,
-  characterful one-shots and placeholders that already sound like something.
+It isn't a full sound library, a mixer or a recording program. It doesn't sync
+sounds between devices.
 
 ---
 
-## 7. Pricing and licence
+## 7. Price and licence
 
-**Free.** Crunchr is MIT licensed, and the same build is intended to be
-available from the repository as well as itch. Charging here would only make the
-itch copy the lesser one.
+Free. The code is MIT licensed, and the sounds you make are yours, including in
+games you sell.
 
-itch can take donations on a free page if you want the option. Leave the
-minimum at zero: the page copy promises a free file, and a price takes the page
-out of "Downloadable" and into a payment flow it does not need.
+itch can take donations on a free page. Leave the minimum at zero. The page copy
+promises a free file, and a price would turn a simple download into a checkout.
 
 Support address on the page: `tarlow@mossaistudio.com`.
 
-The ZIP ships `LICENSE.txt`. `package.json` declares `MIT`, and
-`npm run release:check` fails if that drifts.
+The ZIP includes `LICENSE.txt`. `package.json` declares MIT, and
+`npm run release:check` fails if those drift.
 
 ---
 
-## 8. Build the upload
+## 8. Build and upload
 
 ```bash
-npm run verify          # typecheck, 32 unit tests, both builds, 28 browser checks
-npm run release:media   # redraw screenshots, cover and banner from the built app
-npm run release:check   # validate fields, image sizes, licence and self-contained HTML
-npm run itch:dist       # package and byte-verify dist-itch/Crunchr-1.0.0.zip
+npm run verify          # code check, unit tests, builds, browser checks
+npm run release:media   # redraw the screenshots, cover and banner
+npm run release:check   # check the settings, images, licence and one-file build
+npm run itch:dist       # build and check dist-itch/Crunchr-1.0.0.zip
 ```
 
-`release:media` and `itch:dist` rebuild `dist-single/index.html` first, so no
-old app can sneak into the artwork or the archive. `release:check` never writes.
+`release:media` and `itch:dist` rebuild the app first, so the pictures and the
+ZIP can't come from an old build. `release:check` only reads.
 
 ### Upload in the browser
 
@@ -286,64 +328,61 @@ old app can sneak into the artwork or the archive. `release:check` never writes.
 2. Set **Classification** to `Tool` and **Kind of Game** to **Downloadable**.
 3. Upload `dist-itch/Crunchr-1.0.0.zip` as the Windows, macOS and Linux download.
    One file covers all three.
-4. Upload `cover-630x500.png`; optionally upload `banner-960x400.png`.
-5. Add the five screenshots in the order and with the captions in §4.
-6. Paste the description from §3 and the tags from §2.
+4. Upload `cover-630x500.png`. The banner is optional.
+5. Add the five screenshots in the order and with the captions in section 4.
+6. Paste the description from section 3 and the tags from section 2.
 7. Set the price to **Free**, add `tarlow@mossaistudio.com` as the support
-   contact, and set **Mobile Friendly** on.
-8. Tick **Released**, save, and do the post-upload check in §10.
+   contact, and turn **Mobile Friendly** on.
+8. Tick **Released**, save, and run the checks in section 10.
 
-There is no butler script in this repository; the browser upload is the
-supported path. The ZIP is small enough that re-uploading a new build is not
-worth automating for 1.0.
+There is no command-line uploader in this repo. Upload in the browser. The ZIP
+is small, so re-uploading a new build by hand is fine for 1.0.
 
 ---
 
 ## 9. Versioning
 
-When the next release is cut:
+When you cut the next release:
 
 1. Bump `version` in `package.json`.
-2. Update the footer in `src/App.tsx` (`v1.0.0`) — `release:check` verifies both
-   places agree.
-3. Update `version` in `docs/itch/metadata.json` and the title of this document.
-4. Run `npm run release:media` so the cover plate carries the new number.
-5. Run the §8 chain again and upload a new ZIP.
+2. Change the footer in `src/App.tsx` to match.
+3. Update `version` in `docs/itch/metadata.json` and the title of this file.
+4. Run `npm run release:media` so the cover shows the new number.
+5. Run the section 8 commands and upload the new ZIP.
 
-The archive name comes from `package.json`, so a version bump renames the ZIP
-automatically.
+`release:check` catches a mismatch between `package.json`, the page settings and
+the footer. The ZIP name comes from `package.json`, so it changes automatically.
 
 ---
 
-## 10. Before you hit publish
+## 10. Before you publish
 
-Automated gates, run 20 October 2026 against this tree:
+Automated checks, run 20 October 2026 against this tree:
 
-- [x] `npm run verify` green — typecheck, 32 unit tests, `dist/`, `dist-single/`
-      and 28 real-Chrome checks, including WAV/ZIP validity, per-sound memory,
-      the manual, reduced motion, touch targets and 1440/390/320 px overflow.
-- [x] `npm run release:media` green — nine real captures, no console errors and
+- [x] `npm run verify` passed. It ran the code check, 32 unit tests, both builds
+      and 28 browser checks. Those cover WAV and ZIP downloads, each sound's
+      saved sliders, the guide, the setting that turns off animation, button
+      sizes, and layouts at 1440, 390 and 320 pixels.
+- [x] `npm run release:media` passed. Nine real captures, no console errors and
       no network requests.
-- [x] `npm run release:check` green — page fields match `package.json`, every
-      screenshot and plate has the expected dimensions, the licence is present,
-      and the single-file build is self-contained with `connect-src 'none'`.
-- [x] `npm run itch:dist` green — `dist-itch/Crunchr-1.0.0.zip`, three files,
-      ~133 kB, `crunchr.html` byte-identical to `dist-single/index.html`.
-- [x] Description, tags, screenshots, cover, banner, support address and
-      version are written down in this kit.
-- [x] Price is free and the app is MIT licensed.
-- [x] `Kind of Game` is documented as **Downloadable**, not HTML Game.
+- [x] `npm run release:check` passed. The settings match `package.json`, every
+      image has the right size, the licence is there, and the one-file build
+      makes no network calls.
+- [x] `npm run itch:dist` passed. `dist-itch/Crunchr-1.0.0.zip`, three files,
+      about 133 kB, and the app matches the build.
+- [x] Page copy, tags, screenshots, cover, banner, support address and version
+      are written down in this kit.
+- [x] The price is free and the app is MIT licensed.
+- [x] Kind of Game is documented as **Downloadable**, not HTML Game.
 
 Still needs a person:
 
-- [ ] Listen to every one of the eleven presets on headphones and on a phone
-      speaker. The automated suite checks levels, finiteness, determinism and
-      WAV validity, not whether the sounds are good.
-- [ ] Upload the ZIP, then download it from the public page, unzip it and
-      double-click `crunchr.html`. Export one WAV and the 10-version ZIP, reload
-      the page and confirm the session comes back.
-- [ ] Confirm the project URL `tarlow/crunchr` is the intended target, then set
-      the page to Released and publish.
-- [ ] Re-check the page at 390 px and on one non-Chrome browser. The browser
-      suite runs Chrome only; the app uses standard Web Audio, Canvas and native
-      range inputs, but it has not been smoke-tested in Firefox or Safari here.
+- [ ] Listen to all eleven sounds on headphones and on a phone speaker. The
+      tests check levels and file validity, not whether the sounds are good.
+- [ ] Upload the ZIP, download it from the public page, unzip it and open
+      `crunchr.html`. Save one WAV and the ten-version ZIP, reload the page, and
+      check that the sound you were working on comes back.
+- [ ] Confirm that the project URL `tarlow/crunchr` is the intended target, then
+      set the page to Released and publish.
+- [ ] Check the page on a phone and in one browser that isn't Chrome. The test
+      suite only runs Chrome.

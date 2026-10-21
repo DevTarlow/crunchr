@@ -11,10 +11,10 @@
   "releaseStatus": "Released",
   "platforms": ["Windows", "macOS", "Linux"],
   "mobileFriendly": true,
-  "shortDescription": "Eleven procedural game sounds in one browser tab. Shape them, hear ten versions, and download clean WAVs. No samples, no account, no uploads.",
+  "shortDescription": "Eleven game sounds you can shape in your browser. Listen to ten versions, then download the WAV files. No sample packs, no account, nothing uploaded.",
   "pricing": {
     "model": "free",
-    "note": "MIT licensed and free to download. itch can take donations; the file stays free either way."
+    "note": "MIT licensed and free to download. itch can take donations, but the file stays free either way."
   },
   "support": "tarlow@mossaistudio.com",
   "refundPolicy": "Nothing to refund: the download is free.",
@@ -23,7 +23,7 @@
     "sound-effects",
     "gamedev",
     "tool",
-    "procedural",
+    "sound-design",
     "offline",
     "browser",
     "no-install",
@@ -36,27 +36,27 @@
     {
       "file": "docs/screenshots/01-instrument.png",
       "size": "1600x1000",
-      "caption": "The whole instrument: eleven sounds in four groups, seven controls, and a live picture of the wave."
+      "caption": "The whole tool: eleven sounds in four groups, seven controls, and a picture of the wave."
     },
     {
       "file": "docs/screenshots/02-shape-and-listen.png",
       "size": "1600x1000",
-      "caption": "Shape a footstep, then hear it. Length, pitch, punch, body, roughness and fade all update the same renderer that writes the WAV."
+      "caption": "Shape a footstep and hear it right away. The sliders change the same sound that gets downloaded."
     },
     {
       "file": "docs/screenshots/03-ten-versions.png",
       "size": "1600x1000",
-      "caption": "Save one WAV or ten versions. Preview the batch, hear a single version, and save it on its own."
+      "caption": "Ten versions, one selected. Play the set, hear one on its own, or save a single WAV."
     },
     {
       "file": "docs/screenshots/04-help.png",
       "size": "1600x1000",
-      "caption": "The built-in manual explains the instrument and the keyboard shortcuts without leaving the page."
+      "caption": "The built-in guide, with the keyboard shortcuts."
     },
     {
       "file": "docs/screenshots/05-mobile.png",
       "size": "390x844",
-      "caption": "The one-column phone layout: the full sound bank and instrument, with touch-sized controls."
+      "caption": "The phone layout: one column, big controls, same sounds."
     }
   ]
 }

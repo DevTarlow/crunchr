@@ -3,75 +3,85 @@ CRUNCHR 1.0.0
 
 HOW TO OPEN IT
 --------------
-Unzip this folder, then double-click "crunchr.html".
+Unzip the folder, then double-click "crunchr.html".
 
-It opens in your browser. There is nothing to install, no account to make, and
-no server involved. Chrome, Edge, Firefox and Safari all work.
+It opens in your browser. There's nothing to install and no account to make.
+Chrome, Edge, Firefox and Safari all work.
 
-If double-clicking opens the wrong app, right-click the file, choose "Open with",
-and pick your browser.
+If double-clicking opens the wrong app, right-click the file, choose "Open
+with", and pick your browser.
 
 
 WHAT IT IS
 ----------
-Crunchr is a small instrument for making game sound effects: clicks, footsteps,
-dice, cloth, coins, squishes and crunches.
+Crunchr is a small sound tool for games. It makes clicks, footsteps, dice,
+cloth, coins, squishes and crunches.
 
-Pick one of the 11 sounds at the top. Click it again to roll a fresh version
-with new random detail. Shape it with the seven controls, then listen. Every
-sound is synthesized from scratch in your browser, so there are no sample files
-and nothing to download from us.
+Pick one of the 11 sounds at the top, click it again when you want a fresh take,
+and shape it with the controls until it sits right under the action in your
+game. Every sound is built from scratch in the page, so there are no sample
+files to keep track of.
 
 
 MAKE IT YOURS
 -------------
-The big gold Play button, the Spacebar and the sound wave all replay the current
-sound. Shape it with Length, Pitch, Punch, Body, Roughness and Fade. Variation
-changes how much the ten downloadable versions differ from one another. Reset in
-the Shape section returns the sliders to the preset defaults. Nudge 10% and
-Surprise me are in the sound bank at the top.
+The gold Play button, the Spacebar and the sound wave all play the current
+sound. The sliders change Length, Pitch, Punch, Body, Roughness and Fade.
+Variation changes how different the ten downloadable versions are from one
+another.
+
+Reset in the Shape section puts the sliders back where they started. Nudge 10%
+and Surprise me are at the top.
 
 
 DOWNLOADING
 -----------
-"Download WAV" saves the sound on your sliders as one 44.1 kHz, 16-bit stereo
-WAV file.
+"Download WAV" saves the sound you're hearing as one standard WAV file, and
+it's 44.1 kHz, 16-bit stereo, which is what most game engines and editors
+expect.
 
-"Download 10 versions" saves a ZIP containing ten numbered WAVs, with small
-differences between them. Those are useful for footsteps and clicks that should
-not repeat identically.
+"Download 10 versions" saves a ZIP with ten numbered WAVs and small differences
+between them. If you need a row of footsteps that don't repeat, the ZIP gives
+you ten versions to scatter through the level instead of one file playing again
+and again.
 
-The numbered strip under Save previews those ten versions. Click a number to hear
-one, then "Save vNN" to download just that file. The "Space between sounds"
-slider only changes the preview; the ZIP always contains ten separate files, so
-your game decides when to trigger each one.
+The row of numbers under Save plays the ten versions. Not sure which one to
+keep? Click through the numbers and listen before you save. "Save vNN" keeps
+just that file. The "Space between sounds" slider only changes the preview. But
+the ZIP always has ten separate files, so your game decides when each one
+plays.
 
 
 IT WORKS OFFLINE
 ----------------
-Everything the app needs is inside that one HTML file. It opens on a plane or
-with the wifi switched off.
+Everything the app needs is inside that one file. It opens on a plane or with
+the wifi switched off.
 
-Your last session (the selected sound, its sliders, version and preview gap) is
-kept in this browser. Nothing is uploaded, there are no accounts, no analytics
-and no network requests. Clearing the site data removes the saved session.
+When you close the tab and come back later, the sound you were working on and
+the slider positions are still there, so you can pick up where you left off.
+Nothing is uploaded, there are no accounts, and the app doesn't connect to the
+internet. Clearing the site data removes the saved sound.
 
 
 BROWSER SUPPORT
 ---------------
-Current Chrome, Edge, Firefox and Safari with Web Audio support. Browsers only
-allow sound to start after a click or key press, so press a button first. On
-phones and tablets the layout stacks into one column, and tapping a sound
-auditions it.
+Current Chrome, Edge, Firefox and Safari. Browsers only allow sound after a
+click or key press, so press something first. On a phone or tablet the layout
+stacks into one column, the controls get bigger, and tapping a sound plays it
+right away, so it stays usable on a small screen.
 
 
 LICENCE
 -------
 Crunchr is released under the MIT licence. See LICENSE.txt.
 
-The sounds you make with it are yours, including in commercial games.
+The sounds you make are yours, including in games you sell.
 
 
 SUPPORT
 -------
 tarlow@mossaistudio.com
+
+Go make your game sound better.
+
+~ Tarlow
