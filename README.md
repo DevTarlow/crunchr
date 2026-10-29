@@ -74,10 +74,10 @@ short manual for the rest.
 | Replay | Click the sound wave or the large **Play** button |
 | Make a new version | Click the active sound chip again |
 | Reset the sliders | Click **Reset** in the Shape section |
-| Tune a control | Drag or use arrow keys on any slider |
+| Tune a control | Drag, use the arrow keys, or type an exact value in the box |
 | Select a sound | Click a group, then a sound chip |
 | Preview the 10 versions | **Play all 10** in the Save section |
-| Change the preview spacing | Drag **Space between sounds** |
+| Change the preview spacing | Drag or type into **Space between sounds** |
 | Open the manual | Click the **Help** button in the top right |
 
 Space stays a performance key where it matters: from the page, a slider, the
@@ -87,6 +87,11 @@ other button is focused, Space activates that button natively — Help opens,
 downloads start, Reset resets, and a non-active sound chip is selected. **Enter**
 always activates the focused control. Space does not fire while a text field,
 select or contenteditable element has focus.
+
+Every slider also has a small value box. Type the value in the control's own
+unit — milliseconds, hertz, `%`, or bare Q for Body — and it updates the sound
+as you type. Values outside the control's range are clamped on **Enter** or when
+the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 
 ## Controls
 
@@ -136,7 +141,8 @@ changing a slider mid-export cannot corrupt the package.
 them back to back on the AudioContext clock. Click one of the ten numbered
 buttons to audition that version on its own; **Save vNN** downloads just that
 file as `crunchr_<preset_slug>_vNN.wav` or `.mp3`, matching the chosen format.
-The **Space between sounds** slider sets a preview-only gap from 0 to 600 ms.
+The **Space between sounds** slider (or its value box) sets a preview-only gap
+from 0 to 600 ms in 20 ms steps.
 Changing the gap while a preview is playing stops it so the next run uses the
 new spacing. The gap is not written into the ZIP: the ten files stay separate,
 and the game decides when to trigger each one.
@@ -187,7 +193,7 @@ src/
     engine.ts       lazy Web Audio playback and AnalyserNode
   components/       hardware UI, scope, presets, export dock, toasts
   hooks/            audio engine lifecycle, memoized rendering
-  lib/format.ts     display formatting
+  lib/format.ts     display formatting and typed-value parsing
   lib/session.ts    browser-local session memory (per-sound drafts)
   App.tsx           instrument state and interactions
   styles.css        design tokens, hardware styling, responsive rules

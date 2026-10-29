@@ -311,6 +311,98 @@ async function main() {
     await waitForPlayback(page, false)
     pass('per-sound memory and Reset preserve and restore slider settings')
 
+    const lengthValueBeforeEdit = await page.locator('#param-durationMs-value').inputValue()
+    assert.equal(
+      await page.locator('.param-number').count(),
+      8,
+      'Every slider must expose a typed value box',
+    )
+    assert.equal(
+      await page.locator('#param-durationMs-value').getAttribute('aria-label'),
+      'Length in milliseconds',
+    )
+
+    await page.locator('#param-durationMs-value').fill('21')
+    await page.locator('#param-durationMs-value').press('Enter')
+    assert.equal(
+      await page.locator('#param-durationMs-value').inputValue(),
+      '21',
+      'A typed length must stay in the box',
+    )
+    assert.notEqual(
+      await page.locator('#param-durationMs').inputValue(),
+      defaultLengthPosition,
+      'A typed length must move the slider',
+    )
+    assert.match(
+      (await page.locator('.export-single-card .export-button-copy span').textContent()) ?? '',
+      /^21 ms · /,
+      'The download metadata must follow the typed length',
+    )
+
+    await page.locator('#param-durationMs-value').focus()
+    await page.keyboard.press('Space')
+    assert.equal(
+      await page.locator('.app-root').getAttribute('data-playing'),
+      'false',
+      'Space in a value box must not play the sound',
+    )
+
+    await page.locator('#param-durationMs-value').fill('5000')
+    await page.locator('#param-durationMs-value').press('Tab')
+    assert.equal(
+      await page.locator('#param-durationMs-value').inputValue(),
+      '800',
+      'A typed value above the range must clamp on blur',
+    )
+
+    await page.locator('#param-durationMs-value').fill('')
+    await page.locator('#param-durationMs-value').press('Tab')
+    assert.equal(
+      await page.locator('#param-durationMs-value').inputValue(),
+      '800',
+      'An empty value box must revert on blur',
+    )
+
+    await page.locator('#param-durationMs-value').focus()
+    await page.keyboard.press('ArrowDown')
+    assert.equal(
+      await page.locator('#param-durationMs-value').inputValue(),
+      '799',
+      'Arrow keys must step a typed value',
+    )
+
+    await page.locator('#param-resonance-value').fill('4,5')
+    await page.locator('#param-resonance-value').press('Enter')
+    assert.equal(
+      await page.locator('#param-resonance-value').inputValue(),
+      '4.5',
+      'A comma must be accepted as a decimal separator',
+    )
+
+    await page.locator('#param-pitchHz').focus()
+    await page.keyboard.press('ArrowRight')
+    const fractionalPitchPosition = await page.locator('#param-pitchHz').inputValue()
+    await page.locator('#param-pitchHz-value').focus()
+    await page.keyboard.press('Tab')
+    assert.equal(
+      await page.locator('#param-pitchHz').inputValue(),
+      fractionalPitchPosition,
+      'An unedited value box must not re-round the slider value',
+    )
+
+    await page.locator('.reset-button').click()
+    await page.waitForFunction(
+      () => document.querySelectorAll('.modified-label').length === 0,
+    )
+    await waitForPlayback(page, false)
+    assert.equal(
+      await page.locator('#param-durationMs-value').inputValue(),
+      lengthValueBeforeEdit,
+      'Reset must restore the value boxes',
+    )
+    pass('typed value boxes stay in step with the sliders')
+
     const versionBeforeCategoryClick = await page.locator('.version-readout').innerText()
     await page.locator('.category-button').filter({ hasText: 'Items' }).click()
     await page.waitForTimeout(150)
@@ -610,7 +702,14 @@ async function main() {
     await page.locator('#batch-gap').focus()
     await page.keyboard.press('Home')
     assert.equal(await page.locator('#batch-gap').inputValue(), '0')
-    assert.equal(await page.locator('.batch-preview-gap output').innerText(), '0 ms')
+    await page.waitForFunction(() => document.querySelector('#batch-gap-value')?.value === '0')
+    assert.equal(await page.locator('#batch-gap-value').inputValue(), '0')
+    await page.locator('#batch-gap-value').fill('300')
+    await page.locator('#batch-gap-value').press('Enter')
+    assert.equal(await page.locator('#batch-gap').inputValue(), '300')
+    await page.locator('#batch-gap-value').fill('0')
+    await page.locator('#batch-gap-value').press('Enter')
+    assert.equal(await page.locator('#batch-gap').inputValue(), '0')
     await page.getByRole('button', { name: 'Play all 10 versions' }).click()
     await page.waitForFunction(
       () => document.querySelector('.batch-preview-button')?.getAttribute('aria-pressed') === 'true',

@@ -65,6 +65,8 @@ export interface ParamRange {
   max: number
   step: number
   log: boolean
+  /** Short unit shown beside the typed value: ms, Hz, % or empty for Q. */
+  unit: string
   minLabel: string
   maxLabel: string
 }

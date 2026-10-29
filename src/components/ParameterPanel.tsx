@@ -63,6 +63,7 @@ export function ParameterPanel({
             max={range.max}
             step={range.step}
             log={range.log}
+            unit={range.unit}
             value={params[range.key]}
             valueLabel={readoutForParam(range.key, params[range.key])}
             minLabel={range.minLabel}
@@ -97,6 +98,7 @@ export function ParameterPanel({
             max={HUMANIZE_MAX}
             step={1}
             log={false}
+            unit="%"
             value={humanize}
             valueLabel={readoutForHumanize(humanize)}
             minLabel="Same"

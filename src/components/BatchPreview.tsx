@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { ExportFormat } from '../audio/types'
 import { BATCH_GAP_MAX, BATCH_GAP_STEP, BATCH_PREVIEW_COUNT } from '../audio/params'
 import { PlayIcon, StopIcon } from './Icons'
+import { NumberField } from './NumberField'
 
 interface BatchPreviewProps {
   playing: boolean
@@ -100,7 +101,18 @@ export function BatchPreview({
         <div className="batch-preview-gap">
           <div className="batch-preview-gap-head">
             <label htmlFor="batch-gap">Space between sounds</label>
-            <output htmlFor="batch-gap">{gapMs} ms</output>
+            <NumberField
+              id="batch-gap-value"
+              label="Space between sounds"
+              value={gapMs}
+              valueText={`${gapMs} milliseconds`}
+              min={0}
+              max={BATCH_GAP_MAX}
+              step={BATCH_GAP_STEP}
+              unit="ms"
+              disabled={disabled}
+              onValueChange={onGapChange}
+            />
           </div>
           <input
             id="batch-gap"

@@ -22,11 +22,11 @@ const STEPS = [
   },
   {
     title: 'Shape it.',
-    body: 'Six sliders shape the sound as you drag. Nudge 10% moves all six; Surprise me picks a random sound. Reset restores the preset defaults.',
+    body: 'Six sliders shape the sound as you drag, or type an exact value in the box beside each slider. Nudge 10% moves all six; Surprise me picks a random sound. Reset restores the preset defaults.',
   },
   {
     title: 'Listen to 10 versions.',
-    body: 'The Variation slider changes each of the 10 downloaded sounds. Play all 10 hears them in a row; click a number to hear one, then Save vNN to download it. This preview is only for the ten versions; the single sound is in the One sound card. The spacing is only a preview; your game sets it for the ten files.',
+    body: 'The Variation slider (or its value box) changes each of the 10 downloaded sounds. Play all 10 hears them in a row; click a number to hear one, then Save vNN to download it. This preview is only for the ten versions; the single sound is in the One sound card. The spacing is only a preview; your game sets it for the ten files.',
   },
   {
     title: 'Download it.',
@@ -38,6 +38,7 @@ const KEYS = [
   { key: 'Space', action: 'Play the sound' },
   { key: 'Enter', action: 'Press the selected button' },
   { key: '← →', action: 'Change a slider' },
+  { key: '↑ ↓', action: 'Step a typed value' },
   { key: 'Esc', action: 'Close this window' },
 ]
 

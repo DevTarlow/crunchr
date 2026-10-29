@@ -1,5 +1,6 @@
 import type { ChangeEvent, CSSProperties, ReactNode } from 'react'
 import { positionToValue, valueToPosition } from '../audio/params'
+import { NumberField } from './NumberField'
 
 interface HardwareSliderProps {
   id: string
@@ -9,6 +10,7 @@ interface HardwareSliderProps {
   max: number
   step: number
   log: boolean
+  unit: string
   value: number
   valueLabel: string
   minLabel: string
@@ -26,6 +28,7 @@ export function HardwareSlider({
   max,
   step,
   log,
+  unit,
   value,
   valueLabel,
   minLabel,
@@ -58,9 +61,18 @@ export function HardwareSlider({
         </label>
         <div className="param-readout-wrap">
           {badge}
-          <output htmlFor={id} className="param-readout">
-            {valueLabel}
-          </output>
+          <NumberField
+            id={`${id}-value`}
+            label={label}
+            value={value}
+            valueText={valueLabel}
+            min={min}
+            max={max}
+            step={step}
+            unit={unit}
+            describedBy={`${id}-helper`}
+            onValueChange={onChange}
+          />
         </div>
       </div>
       <input

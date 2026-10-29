@@ -85,6 +85,8 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
   live scope;
 - switching sounds restores each sound's saved sliders and Reset returns them
   to the preset defaults; clicking the active category does not re-roll;
+- every slider has a value box that accepts a typed number, clamps it to the
+  range on blur, stays in step with the slider, and does not play on Space;
 - tapping the active sound rolls a new version without losing the sliders;
 - a reload restores the last session without creating the AudioContext;
 - Space on Help opens the manual instead of playing, a non-active chip is
