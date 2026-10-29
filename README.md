@@ -172,6 +172,10 @@ sliders; the ten-version card only saves the batch and its individual takes.
 - WAV is lossless and frame-accurate. MP3 is much smaller and plays everywhere,
   but its encoder adds a short delay and padding at the start; use WAV for very
   short clicks or frame-accurate game sync.
+- The WAV `RIFF`, `fmt ` and `data` sizes are derived from the rendered frame
+  count, not fixed. 16-bit frames keep the data chunk frame-aligned, so a clip
+  as short as 10 ms needs no pad byte; a 21 ms stereo clip is exactly 3,748
+  bytes. The smoke test checks those sizes byte for byte.
 - All processing is local. Object URLs are revoked after download.
 - Exports work even if the browser blocks live audio playback.
 

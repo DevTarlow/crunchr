@@ -147,21 +147,34 @@ function readWav(buffer) {
   assert.ok(buffer.length > 44, 'WAV must contain a header and PCM data')
   const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
   assert.equal(buffer.toString('ascii', 0, 4), 'RIFF', 'WAV must start with RIFF')
+  assert.equal(view.getUint32(4, true), buffer.length - 8, 'RIFF chunk size must match the file')
   assert.equal(buffer.toString('ascii', 8, 12), 'WAVE', 'WAV must be a WAVE file')
+  assert.equal(buffer.toString('ascii', 12, 16), 'fmt ', 'WAV must have an fmt chunk first')
+  assert.equal(view.getUint32(16, true), 16, 'PCM fmt chunk must be 16 bytes')
   assert.equal(view.getUint16(20, true), 1, 'WAV must use PCM format 1')
-  assert.equal(view.getUint16(22, true), 2, 'WAV must be stereo')
-  assert.equal(view.getUint32(24, true), 44_100, 'WAV must be 44.1 kHz')
+  const channels = view.getUint16(22, true)
+  const sampleRate = view.getUint32(24, true)
+  const blockAlign = view.getUint16(32, true)
+  assert.equal(channels, 2, 'WAV must be stereo')
+  assert.equal(sampleRate, 44_100, 'WAV must be 44.1 kHz')
+  assert.equal(blockAlign, channels * 2, 'WAV block align must match its channels')
+  assert.equal(
+    view.getUint32(28, true),
+    sampleRate * blockAlign,
+    'WAV byte rate must match its rate and block align',
+  )
   assert.equal(view.getUint16(34, true), 16, 'WAV must be 16-bit')
+  assert.equal(buffer.toString('ascii', 36, 40), 'data', 'WAV must have a data chunk')
   const dataBytes = view.getUint32(40, true)
   assert.equal(dataBytes, buffer.length - 44, 'WAV data chunk size must match the file')
-  assert.equal(dataBytes % 4, 0, 'Stereo 16-bit data must be frame-aligned')
+  assert.equal(dataBytes % blockAlign, 0, 'WAV data must be frame-aligned')
 
   let peak = 0
   for (let offset = 44; offset + 1 < buffer.length; offset += 2) {
     peak = Math.max(peak, Math.abs(buffer.readInt16LE(offset)))
   }
   assert.ok(peak > 1_000, `WAV must contain audible PCM (peak=${peak})`)
-  return { dataBytes, peak }
+  return { dataBytes, peak, riffChunkSize: view.getUint32(4, true) }
 }
 
 async function loadApp(page) {
@@ -531,6 +544,40 @@ async function main() {
       .evaluate((element) => element.getBoundingClientRect().height)
     assert.ok(toastCloseHeight >= 28, `The toast close target is too small (${toastCloseHeight}px)`)
     pass(`WAV export is valid 44.1 kHz / 16-bit stereo (${wavInfo.dataBytes} data bytes, peak ${wavInfo.peak})`)
+
+    // The reported short-clip case: a 21 ms file must still carry exact,
+    // frame-aligned chunk sizes. Type the length, export and inspect the bytes
+    // a strict decoder receives.
+    const lengthBeforeShortClip = await page.locator('#param-durationMs-value').inputValue()
+    await page.locator('#param-durationMs-value').fill('21')
+    await page.locator('#param-durationMs-value').press('Enter')
+    assert.match(
+      (await page.locator('.export-single-card .export-button-copy span').textContent()) ?? '',
+      /^21 ms · /,
+      'The download metadata must show the typed 21 ms length',
+    )
+    const shortDownloadPromise = page.waitForEvent('download', { timeout: 15_000 })
+    await page
+      .locator('.export-single-card')
+      .getByRole('button', { name: /DOWNLOAD WAV/ })
+      .click()
+    const shortDownload = await shortDownloadPromise
+    const shortPath = path.join(downloadsDir, 'short-21ms.wav')
+    await shortDownload.saveAs(shortPath)
+    const shortBytes = readFileSync(shortPath)
+    const shortInfo = readWav(shortBytes)
+    assert.equal(shortBytes.length, 3_748, 'A 21 ms stereo clip must be exactly 3,748 bytes')
+    assert.equal(shortInfo.riffChunkSize, 3_740, 'The RIFF chunk size must match the file')
+    assert.equal(shortInfo.dataBytes, 3_704, 'The data chunk size must match the frames')
+    pass('a 21 ms clip exports a canonical 3,748-byte WAV with matching chunk sizes')
+
+    await page.locator('#param-durationMs-value').fill(lengthBeforeShortClip)
+    await page.locator('#param-durationMs-value').press('Enter')
+    assert.equal(
+      await page.locator('#param-durationMs-value').inputValue(),
+      lengthBeforeShortClip,
+      'The preset length must be restored after the short-clip check',
+    )
 
     const zipDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
     await page

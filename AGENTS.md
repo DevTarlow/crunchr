@@ -93,7 +93,9 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
   selected with Space, and the active chip/slider still replay the sound;
 - the header support link points at the itch donation page and opens it in a
   new tab with `noopener`/`noreferrer`;
-- WAV export is valid RIFF/PCM, 44.1 kHz, 16-bit, stereo and non-silent;
+- WAV export is valid RIFF/PCM with matching RIFF, `fmt ` and `data` chunk
+  sizes, 44.1 kHz, 16-bit, stereo and non-silent, including a 21 ms clip that
+  is exactly 3,748 bytes;
 - MP3 export is valid MPEG-1 Layer III, 44.1 kHz, 192 kbps, stereo and decodes
   to audible audio in the browser;
 - the Save section separates the one-sound card from the ten-version preview and

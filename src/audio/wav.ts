@@ -37,6 +37,9 @@ export function encodeWav(channels: readonly Float32Array[], sampleRate = SAMPLE
 
   const channelCount = channels.length
   const blockAlign = channelCount * (WAV_BIT_DEPTH / 8)
+  // 16-bit frames make the block size even (2 bytes mono, 4 bytes stereo), so
+  // the data chunk is always a whole number of frames and RIFF never needs a
+  // trailing pad byte, even for a 10 ms clip.
   const dataByteLength = frameCount * blockAlign
   const buffer = new ArrayBuffer(44 + dataByteLength)
   const view = new DataView(buffer)

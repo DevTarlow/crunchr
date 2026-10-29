@@ -92,6 +92,21 @@ describe('batch ZIP export', () => {
 })
 
 describe('format-aware file export', () => {
+  it('exports a 21 ms sound as a canonical 3,748-byte WAV', async () => {
+    const preset = getPresetById('dice-roll')
+    const sound = synthesize(preset.model, { ...preset.defaults, durationMs: 21 }, 7)
+    expect(sound.channels[0].length).toBe(926)
+
+    const file = await singleFileFor(preset, sound, 'wav')
+    expect(file.filename).toBe('crunchr_dice_roll.wav')
+    expect(file.blob.size).toBe(3_748)
+
+    const view = new DataView(await file.blob.arrayBuffer())
+    expect(view.getUint32(4, true)).toBe(3_740)
+    expect(view.getUint32(40, true)).toBe(3_704)
+    expect(view.getUint16(32, true)).toBe(4)
+  })
+
   it('names and types single WAV and MP3 files correctly', async () => {
     const preset = getPresetById('dice-roll')
     const sound = synthesize(preset.model, preset.defaults, 99)
