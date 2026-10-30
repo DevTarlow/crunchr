@@ -29,7 +29,9 @@ the browser. There are zero audio samples, zero network calls and no backend.
 - **Audition as you go**: picking a sound, re-rolling it, nudging, surprising or
   resetting plays the result immediately.
 - **Per-sound memory**: each sound remembers its sliders, version and random
-  seed in this browser, and reloading restores your last session.
+  seed in this browser, and reloading restores your last session. When a preset's
+  factory defaults change, a draft that still exactly matches the old defaults
+  updates automatically; hand-edited drafts are left alone.
 - **Re-rollable versions**: tap the sound you already selected to make a new
   version with fresh random details without losing your slider settings.
 - **An in-app manual**: the info button in the top right explains the whole
@@ -109,7 +111,7 @@ the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 
 | Category | Presets | Synthesis approach |
 | --- | --- | --- |
-| Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Sub-2 ms contact impulses, short damped plastic/switch modes, low body knocks, inharmonic timber modes |
+| Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Two-stage switch contact ticks, low plastic body knocks, card flex crackle with a flutter tail, inharmonic timber modes |
 | Footsteps | Gravel Crunch, Wood Thud/Creak, Stone/Concrete | Granular band-passed noise clusters, low pitch-bent thumps with brief FM, swept-noise grit scuffs with short slap reflections |
 | Items | Dice Roll, Cloth/Backpack Rustle, Coin Clink | 3–5 gravity-shaped bounce impacts, pink-noise fabric through modulated low-pass filters, dual inharmonic metal partials |
 | Crunches | Flesh Squish, Bone Crunch | Swept wet noise with bubble grains and a low impact, and layered pink noise with abrupt gate jumps and high-pass snaps |

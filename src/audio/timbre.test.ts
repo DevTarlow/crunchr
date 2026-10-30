@@ -105,17 +105,22 @@ function median(values: readonly number[]): number {
 }
 
 function tailEnergyShare(sound: RenderedSound, fromFraction: number): number {
-  const cut = Math.floor(sound.channels[0].length * fromFraction)
+  return windowEnergyShare(sound, fromFraction, 1)
+}
+
+function windowEnergyShare(sound: RenderedSound, fromFraction: number, toFraction: number): number {
+  const start = Math.floor(sound.channels[0].length * fromFraction)
+  const end = Math.floor(sound.channels[0].length * toFraction)
   let total = 0
-  let tail = 0
+  let windowed = 0
   for (let i = 0; i < sound.channels[0].length; i += 1) {
     const energy =
       sound.channels[0][i] * sound.channels[0][i] +
       sound.channels[1][i] * sound.channels[1][i]
     total += energy
-    if (i >= cut) tail += energy
+    if (i >= start && i < end) windowed += energy
   }
-  return tail / total
+  return windowed / total
 }
 
 function bandEnergyShare(sound: RenderedSound, minHz: number, maxHz: number): number {
@@ -167,21 +172,31 @@ function checksum(sound: RenderedSound): number {
 }
 
 describe('retuned preset timbres', () => {
-  it('keeps Mechanical Click transient-led instead of ringing through the tail', () => {
+  it('gives Mechanical Click an audible two-stage body without a high ring', () => {
     const preset = getPresetById('mechanical-click')
     const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+    const late = framesBetween(sound, 0.3, 0.6, 800, 8000)
 
-    expect(tailEnergyShare(sound, 0.35)).toBeLessThan(0.02)
+    // The switch body and housing tail must be audible for longer than the
+    // original ~20 ms tick, but the sound must still die before the file ends.
+    expect(windowEnergyShare(sound, 0.2, 0.6)).toBeGreaterThan(0.01)
+    expect(tailEnergyShare(sound, 0.85)).toBeLessThan(0.03)
+    expect(late.length).toBeGreaterThan(2)
+    expect(median(late.map((frame) => frame.maxShare))).toBeLessThan(0.4)
+    expect(median(late.map((frame) => frame.flatness))).toBeGreaterThan(0.02)
   })
 
-  it('keeps Card / Plastic Snap noise-led instead of gliding like a laser', () => {
+  it('gives Card / Plastic Snap a flex-snap-settle gesture instead of a chirp', () => {
     const preset = getPresetById('card-snap')
     const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
     const early = framesBetween(sound, 0.05, 0.35)
 
-    expect(early.length).toBeGreaterThan(0)
+    // The card must keep moving after the crack, and the flex/snap must remain
+    // noise-led rather than turning back into a pitched sweep.
+    expect(windowEnergyShare(sound, 0.2, 0.8)).toBeGreaterThan(0.01)
+    expect(tailEnergyShare(sound, 0.85)).toBeLessThan(0.03)
+    expect(early.length).toBeGreaterThan(1)
     expect(median(early.map((frame) => frame.flatness))).toBeGreaterThan(0.05)
-    expect(tailEnergyShare(sound, 0.4)).toBeLessThan(0.03)
   })
 
   it('gives Stone / Concrete a noise-led gritty tail instead of a pitched ring', () => {
@@ -218,6 +233,18 @@ describe('retuned preset robustness', () => {
         expect(Math.abs(sound.channels[0][sound.channels[0].length - 1])).toBeLessThan(0.02)
         expect(Math.abs(sound.channels[1][sound.channels[1].length - 1])).toBeLessThan(0.02)
       }
+    }
+  })
+
+  it('keeps the click and snap gestures audible past their initial tick across seeds', () => {
+    for (let seed = 0; seed < 8; seed += 1) {
+      const mechanicalPreset = getPresetById('mechanical-click')
+      const mechanical = synthesize(mechanicalPreset.model, mechanicalPreset.defaults, seed * 7919 + 1)
+      expect(windowEnergyShare(mechanical, 0.2, 0.6)).toBeGreaterThan(0.005)
+
+      const cardPreset = getPresetById('card-snap')
+      const card = synthesize(cardPreset.model, cardPreset.defaults, seed * 7919 + 1)
+      expect(windowEnergyShare(card, 0.2, 0.8)).toBeGreaterThan(0.005)
     }
   })
 

@@ -65,22 +65,27 @@ function makeContext(model: ModelId, params: SynthParams, seed: number, length: 
 
 function mechanicalClick(ctx: ModelContext): void {
   const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
-  const transientDur = clamp(0.0011 + (1 - punch) * 0.0015, 0.0005, 0.0026)
-  const bodyFreq = clamp(pitch * 0.06, 90, 220)
-  const knockFreq = clamp(pitch * 0.24, 300, 1100)
-  const shellFreq = clamp(pitch * 0.82, 900, 3600)
-  const shellOvertone = clamp(pitch * 1.32, 1400, 5200)
   const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
-  const bodyDur = clamp(0.022 - decayCurve * 0.01, 0.009, 0.024)
-  const shellDur = clamp(0.005 + qNorm * 0.008, 0.005, 0.013)
-  const bodyAttack = clamp(attack * 0.4, 0.0002, 0.003)
-  const knockAttack = clamp(attack * 0.5, 0.0002, 0.002)
+  const transientDur = clamp(0.0012 + (1 - punch) * 0.0015, 0.0006, 0.0028)
+  const contactFreq = clamp(pitch * 1.2, 2200, 7000)
+  const capFreq = clamp(pitch * 0.5, 500, 2400)
+  const bodyFreq = clamp(pitch * 0.15, 160, 420)
+  const bodyOvertone = bodyFreq * 2.05
+  const clackFreq = clamp(pitch * 0.28, 280, 720)
+  const tailFreq = clamp(pitch * 0.7, 900, 2600)
+  const bodyDur = clamp(0.045 + qNorm * 0.03 - decayCurve * 0.01, 0.035, 0.085)
+  const clackStart = clamp(0.012 + (1 - punch) * 0.006, 0.008, 0.02)
+  const clackDur = clamp(0.034 - decayCurve * 0.01, 0.02, 0.045)
+  const tailStart = clamp(bodyDur * 0.55, 0.025, 0.05)
+  const tailDur = clamp(0.075 - decayCurve * 0.015, 0.045, 0.085)
+  const bodyAttack = clamp(attack * 0.5, 0.0003, 0.004)
+  const clackAttack = clamp(attack * 0.6, 0.0004, 0.005)
 
-  // Broad contact tick: a switch makes a short broadband snap, not a tone.
+  // Contact tick. A switch begins with a short broadband snap, not a tone.
   addNoise(bus, {
     startSec: 0,
     durationSec: transientDur,
-    cutoffHz: clamp(pitch * 1.25, 2200, 7000),
+    cutoffHz: contactFreq,
     filter: 'bandpass',
     q: 0.9,
     gain: 1.3 + punch * 0.4,
@@ -89,24 +94,24 @@ function mechanicalClick(ctx: ModelContext): void {
     pan: randomBetween(rng, -0.05, 0.05),
     seed: ctx.nextSeed(),
   })
-  // A little air above the contact keeps the click crisp on small speakers.
   addNoise(bus, {
     startSec: 0,
     durationSec: Math.min(0.0006, dur * 0.01),
     cutoffHz: 6000,
     filter: 'highpass',
     q: 0.7,
-    gain: 0.2 + punch * 0.12,
+    gain: 0.18 + punch * 0.1,
     attackSec: 0.00005,
     decay: 0.98,
     pan: randomBetween(rng, -0.08, 0.08),
     seed: ctx.nextSeed(),
   })
-  // Mid and low-mid contact cracks give the plastic cap its "thock".
+
+  // Two cap cracks: the bright first contact and the darker seat behind it.
   addNoise(bus, {
     startSec: 0.00015,
-    durationSec: Math.min(0.003, dur * 0.05),
-    cutoffHz: clamp(pitch * 0.5, 500, 2400),
+    durationSec: Math.min(0.004, dur * 0.03),
+    cutoffHz: capFreq,
     filter: 'bandpass',
     q: 1.2,
     gain: 0.55 + punch * 0.2,
@@ -116,8 +121,8 @@ function mechanicalClick(ctx: ModelContext): void {
     seed: ctx.nextSeed(),
   })
   addNoise(bus, {
-    startSec: 0.0002,
-    durationSec: Math.min(0.0025, dur * 0.05),
+    startSec: 0.00035,
+    durationSec: Math.min(0.003, dur * 0.025),
     cutoffHz: clamp(pitch * 0.26, 300, 1100),
     filter: 'bandpass',
     q: 1.4,
@@ -128,103 +133,111 @@ function mechanicalClick(ctx: ModelContext): void {
     seed: ctx.nextSeed(),
   })
 
-  // Small, short low body. The old model kept a high sine alive for the whole
-  // clip; this is deliberately a damped thump, not a ring.
+  // The low plastic body is what makes the gesture read as a button rather
+  // than a generic noise tick. It is damped and low-mid, not a high ring.
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(bodyDur * 0.7, dur),
+    cutoffHz: bodyFreq,
+    filter: 'bandpass',
+    q: clamp(1.8 + q * 0.08, 1.8, 3.5),
+    gain: 0.5 + punch * 0.1,
+    attackSec: bodyAttack,
+    decay: 0.5,
+    pan: 0.02,
+    seed: ctx.nextSeed(),
+  })
   addSine(bus, {
     startSec: 0,
     durationSec: Math.min(bodyDur, dur),
     freqHz: bodyFreq,
-    endFreqHz: bodyFreq * 0.82,
-    gain: 0.06 + punch * 0.04,
+    endFreqHz: bodyFreq * 0.84,
+    gain: 0.3 + punch * 0.08,
     attackSec: bodyAttack,
-    decay: 0.68 + decayCurve * 0.18,
+    decay: 0.45 + decayCurve * 0.2,
     phase: 0.2,
-  })
-  addSine(bus, {
-    startSec: 0.0002,
-    durationSec: Math.min(0.012, dur * 0.18),
-    freqHz: knockFreq,
-    endFreqHz: knockFreq * 0.96,
-    gain: 0.18 + punch * 0.08,
-    attackSec: knockAttack,
-    decay: 0.85,
-    phase: 0.4,
-  })
-
-  // Plastic housing modes. Resonance changes their length, but the cap damps
-  // them before they can turn into a metal-like ring.
-  addNoise(bus, {
-    startSec: 0.00025,
-    durationSec: Math.min(shellDur, dur),
-    cutoffHz: shellFreq,
-    filter: 'bandpass',
-    q: clamp(2 + q * 0.3, 2, 9),
-    gain: 0.8 + grit * 0.2,
-    attackSec: 0.0002,
-    decay: 0.9,
-    pan: 0.04,
-    seed: ctx.nextSeed(),
-  })
-  addSine(bus, {
-    startSec: 0.0003,
-    durationSec: Math.min(shellDur * 0.9, dur),
-    freqHz: shellFreq,
-    gain: 0.14,
-    attackSec: 0.0002,
-    decay: 0.92,
-    phase: 0.7,
-    pan: 0.03,
+    pan: 0.01,
   })
   addSine(bus, {
     startSec: 0.0004,
-    durationSec: Math.min(shellDur * 0.55, dur),
-    freqHz: shellOvertone,
-    gain: 0.07,
-    attackSec: 0.0002,
-    decay: 0.95,
-    phase: 0.2,
-    pan: -0.03,
+    durationSec: Math.min(bodyDur * 0.55, dur),
+    freqHz: bodyOvertone,
+    gain: 0.09,
+    attackSec: 0.001,
+    decay: 0.65,
+    phase: 0.7,
+    pan: -0.04,
   })
 
-  // A quieter second contact as the switch bottoms out.
-  const second = Math.min(0.008 + (1 - punch) * 0.004, dur * 0.18)
-  if (second < dur) {
+  // The switch bottoms out a few milliseconds later. This second, darker clack
+  // gives the sound a mechanical two-stage identity.
+  if (clackStart < dur) {
     addNoise(bus, {
-      startSec: second,
-      durationSec: fitDuration(second, 0.0016, dur),
-      cutoffHz: clamp(pitch * 0.9, 1200, 7000),
-      filter: 'highpass',
-      q: 0.8,
-      gain: 0.16 + punch * 0.18,
-      attackSec: 0.00008,
-      decay: 0.94,
-      pan: randomBetween(rng, -0.15, 0.15),
+      startSec: clackStart,
+      durationSec: fitDuration(clackStart, clackDur * 0.65, dur),
+      cutoffHz: clackFreq,
+      filter: 'bandpass',
+      q: 1.4,
+      gain: 0.42 + punch * 0.15,
+      attackSec: clackAttack,
+      decay: 0.78,
+      pan: -0.03,
       seed: ctx.nextSeed(),
     })
     addSine(bus, {
-      startSec: second,
-      durationSec: fitDuration(second, 0.005, dur),
-      freqHz: clamp(pitch * 0.55, 300, 1800),
-      gain: 0.05,
-      attackSec: 0.0002,
-      decay: 0.92,
-      phase: 0.5,
+      startSec: clackStart,
+      durationSec: fitDuration(clackStart, clackDur, dur),
+      freqHz: clackFreq,
+      endFreqHz: clackFreq * 0.9,
+      gain: 0.18,
+      attackSec: clackAttack,
+      decay: 0.72,
+      phase: 0.4,
+      pan: -0.02,
+    })
+  }
+
+  // A quiet, noise-only housing tail extends the sound without adding pitch.
+  if (tailStart < dur) {
+    addNoise(bus, {
+      startSec: tailStart,
+      durationSec: fitDuration(tailStart, tailDur, dur),
+      cutoffHz: tailFreq,
+      filter: 'bandpass',
+      q: clamp(1.6 + q * 0.06, 1.6, 2.8),
+      gain: 0.2 + grit * 0.12,
+      attackSec: 0.006,
+      decay: 0.55,
+      pan: randomBetween(rng, -0.08, 0.08),
+      seed: ctx.nextSeed(),
+    })
+    addNoise(bus, {
+      startSec: tailStart,
+      durationSec: fitDuration(tailStart, tailDur * 0.7, dur),
+      cutoffHz: clamp(tailFreq * 1.6, 1400, 5000),
+      filter: 'bandpass',
+      q: 2.2,
+      gain: 0.07 + grit * 0.04,
+      attackSec: 0.008,
+      decay: 0.6,
+      pan: randomBetween(rng, -0.2, 0.2),
+      seed: ctx.nextSeed(),
     })
   }
 
   if (grit > 0.08 && dur > 0.02) {
     const tickCount = randomInt(rng, 1, 3)
     for (let i = 0; i < tickCount; i += 1) {
-      const start = randomBetween(rng, 0.004, Math.min(0.03, dur * 0.35))
+      const start = randomBetween(rng, 0.006, Math.min(0.05, dur * 0.32))
       addNoise(bus, {
         startSec: start,
-        durationSec: fitDuration(start, randomBetween(rng, 0.0008, 0.0025), dur),
-        cutoffHz: randomBetween(rng, 3000, 8000),
+        durationSec: fitDuration(start, randomBetween(rng, 0.0012, 0.0035), dur),
+        cutoffHz: randomBetween(rng, 2500, 7000),
         filter: 'bandpass',
         q: randomBetween(rng, 2, 8),
-        gain: (0.02 + grit * 0.055) * (1 - i / (tickCount + 1)),
-        attackSec: 0.0001,
-        decay: 0.95,
+        gain: (0.02 + grit * 0.045) * (1 - i / (tickCount + 1)),
+        attackSec: 0.00012,
+        decay: 0.94,
         pan: randomBetween(rng, -0.4, 0.4),
         seed: ctx.nextSeed(),
       })
@@ -234,44 +247,80 @@ function mechanicalClick(ctx: ModelContext): void {
 
 function cardSnap(ctx: ModelContext): void {
   const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
-  const snapDur = clamp(0.001 + (1 - punch) * 0.0012, 0.0008, 0.0024)
-  const crackFreq = clamp(pitch * 1.15, 700, 4200)
-  const overtoneFreq = clamp(pitch * 1.65, 1000, 6000)
-  const midFreq = clamp(pitch * 0.65, 700, 2600)
-  const flexFreq = clamp(pitch * 0.7, 300, 2200)
+  const snapTime = clamp(dur * 0.09, 0.012, 0.024)
+  const snapDur = clamp(0.0015 + (1 - punch) * 0.0015, 0.001, 0.003)
+  const flexFreq = clamp(pitch * 0.6, 500, 2000)
+  const snapFreq = clamp(pitch * 1.2, 1500, 4000)
+  const midFreq = clamp(pitch * 0.75, 800, 2600)
+  const plasticFreq = clamp(pitch * 0.55, 600, 1600)
   const lowFreq = clamp(pitch * 0.22, 180, 700)
+  const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
+  const plasticDur = clamp(0.04 + qNorm * 0.035 - decayCurve * 0.01, 0.03, 0.08)
+  const flutterStart = snapTime + 0.02
+  const flutterEnd = Math.min(dur * 0.78, 0.17)
   const modeAttack = clamp(attack * 0.3, 0.0001, 0.002)
 
-  // Main plastic crack: bright but band-limited, with no pitch glide.
+  // A short rising flex creak before the snap tells the ear that the card is
+  // being bent. It is made from little filtered-noise grains, not a pitch sweep.
   addNoise(bus, {
     startSec: 0,
-    durationSec: snapDur,
-    cutoffHz: clamp(pitch * 1.05, 1500, 3600),
+    durationSec: Math.min(0.0008, dur * 0.01),
+    cutoffHz: 3500,
+    filter: 'highpass',
+    q: 0.7,
+    gain: 0.06,
+    attackSec: 0.00005,
+    decay: 0.96,
+    pan: randomBetween(rng, -0.08, 0.08),
+    seed: ctx.nextSeed(),
+  })
+  const creakCount = randomInt(rng, 3, 5)
+  for (let i = 0; i < creakCount; i += 1) {
+    const fraction = 0.15 + (i / Math.max(1, creakCount - 1)) * 0.7
+    const start = Math.max(0, snapTime * fraction - randomBetween(rng, 0.001, 0.004))
+    const cutoff = clamp(flexFreq * (0.7 + fraction * 1.1), 500, 2600)
+    addNoise(bus, {
+      startSec: start,
+      durationSec: Math.min(randomBetween(rng, 0.005, 0.012), Math.max(0.003, snapTime - start + 0.004)),
+      cutoffHz: cutoff,
+      filter: 'bandpass',
+      q: randomBetween(rng, 2, 5),
+      gain: (0.2 + grit * 0.1) * (0.7 + fraction * 0.8),
+      attackSec: 0.002,
+      decay: 0.55,
+      pan: randomBetween(rng, -0.35, 0.35),
+      seed: ctx.nextSeed(),
+    })
+  }
+
+  // The snap itself: a bright band-limited crack plus mid and low body.
+  addNoise(bus, {
+    startSec: snapTime,
+    durationSec: fitDuration(snapTime, snapDur, dur),
+    cutoffHz: snapFreq,
     filter: 'bandpass',
     q: 1.2,
-    gain: 1.35 + punch * 0.35,
+    gain: 1.5 + punch * 0.3,
     attackSec: 0.00006,
     decay: 0.97,
     pan: randomBetween(rng, -0.05, 0.05),
     seed: ctx.nextSeed(),
   })
-  // A tiny high tick gives the card edge its snap.
   addNoise(bus, {
-    startSec: 0,
-    durationSec: Math.min(0.0006, dur * 0.01),
-    cutoffHz: clamp(pitch * 3.2, 5500, 12_000),
+    startSec: snapTime,
+    durationSec: fitDuration(snapTime, Math.min(0.0006, dur * 0.01), dur),
+    cutoffHz: clamp(pitch * 3, 5500, 12_000),
     filter: 'highpass',
     q: 0.7,
-    gain: 0.2 + punch * 0.1,
+    gain: 0.16 + punch * 0.08,
     attackSec: 0.00005,
     decay: 0.98,
     pan: randomBetween(rng, -0.08, 0.08),
     seed: ctx.nextSeed(),
   })
-  // The hollow mid crack is the plastic body of the snap.
   addNoise(bus, {
-    startSec: 0.00025,
-    durationSec: Math.min(0.002, dur * 0.035),
+    startSec: snapTime + 0.0003,
+    durationSec: fitDuration(snapTime + 0.0003, Math.min(0.003, dur * 0.025), dur),
     cutoffHz: midFreq,
     filter: 'bandpass',
     q: 1,
@@ -282,110 +331,93 @@ function cardSnap(ctx: ModelContext): void {
     seed: ctx.nextSeed(),
   })
   addNoise(bus, {
-    startSec: 0.0003,
-    durationSec: Math.min(0.0012, dur * 0.02),
-    cutoffHz: clamp(pitch * 1.7, 2600, 6000),
+    startSec: snapTime + 0.0004,
+    durationSec: fitDuration(snapTime + 0.0004, Math.min(0.004, dur * 0.03), dur),
+    cutoffHz: clamp(pitch * 0.35, 300, 1200),
     filter: 'bandpass',
-    q: 1,
-    gain: 0.5 + punch * 0.2,
-    attackSec: 0.00007,
-    decay: 0.94,
-    pan: randomBetween(rng, -0.12, 0.12),
+    q: 1.2,
+    gain: 0.35 + punch * 0.12,
+    attackSec: 0.0001,
+    decay: 0.9,
+    pan: 0.04,
     seed: ctx.nextSeed(),
   })
-
-  // Short body modes. They decay in milliseconds, so they never read as a tone.
   addSine(bus, {
-    startSec: 0,
-    durationSec: Math.min(0.012, dur * 0.16),
+    startSec: snapTime,
+    durationSec: fitDuration(snapTime, 0.022, dur),
     freqHz: lowFreq,
     endFreqHz: lowFreq * 0.92,
-    gain: 0.26 + punch * 0.1,
+    gain: 0.26 + punch * 0.08,
     attackSec: modeAttack,
-    decay: 0.82,
+    decay: 0.78,
     phase: 0.2,
   })
-  addSine(bus, {
-    startSec: 0.0002,
-    durationSec: Math.min(0.009, dur * 0.13),
-    freqHz: crackFreq,
-    gain: 0.2,
-    attackSec: 0.00015,
-    decay: 0.9,
-    phase: 0.28,
-    pan: 0.04,
-  })
-  addSine(bus, {
-    startSec: 0.0003,
-    durationSec: Math.min(0.006, dur * 0.09),
-    freqHz: overtoneFreq,
-    gain: 0.09,
-    attackSec: 0.00015,
-    decay: 0.94,
-    phase: 0.8,
-    pan: -0.04,
-  })
 
-  // The card's flex and cavity: a short filtered breath, not a resonant sweep.
+  // A damped plastic body holds the sound together after the crack. It is
+  // deliberately low-mid so it reads as a card, not as a high ping.
   addNoise(bus, {
-    startSec: 0.0005,
-    durationSec: Math.min(0.026, dur * 0.36),
-    cutoffHz: flexFreq,
+    startSec: snapTime + 0.0005,
+    durationSec: fitDuration(snapTime + 0.0005, plasticDur, dur),
+    cutoffHz: plasticFreq,
     filter: 'bandpass',
-    q: clamp(1.1 + q * 0.2, 1, 3.5),
-    gain: 0.26 + grit * 0.12,
-    attackSec: 0.0006,
-    decay: 0.62 + decayCurve * 0.2,
-    pan: 0.06,
+    q: clamp(2.2 + q * 0.15, 2.2, 4.5),
+    gain: 0.45 + grit * 0.08,
+    attackSec: 0.001,
+    decay: 0.55,
+    pan: 0.05,
     seed: ctx.nextSeed(),
   })
-  addNoise(bus, {
-    startSec: 0.0008,
-    durationSec: Math.min(0.022, dur * 0.3),
-    cutoffHz: clamp(pitch * 0.32, 150, 850),
-    filter: 'lowpass',
-    q: 0.7,
-    gain: 0.1 + grit * 0.08,
-    attackSec: 0.001,
-    decay: 0.6,
-    pan: -0.05,
-    seed: ctx.nextSeed(),
+  addSine(bus, {
+    startSec: snapTime + 0.0006,
+    durationSec: fitDuration(snapTime + 0.0006, plasticDur * 0.8, dur),
+    freqHz: plasticFreq,
+    endFreqHz: plasticFreq * 0.96,
+    gain: 0.15,
+    attackSec: 0.0015,
+    decay: 0.65,
+    phase: 0.7,
+    pan: -0.03,
   })
 
-  if (grit > 0.1) {
-    const tickCount = randomInt(rng, 2, 5)
-    for (let i = 0; i < tickCount; i += 1) {
-      const start = randomBetween(rng, dur * 0.07, dur * 0.38)
+  // The card flutters and settles. Irregular little flaps after the snap are
+  // what make it read as a thin, flexible card rather than a generic click.
+  if (flutterStart < flutterEnd) {
+    addNoise(bus, {
+      startSec: flutterStart,
+      durationSec: fitDuration(flutterStart, Math.min(flutterEnd - flutterStart, 0.12), dur),
+      cutoffHz: 1800,
+      filter: 'bandpass',
+      q: 0.8,
+      gain: 0.12 + grit * 0.05,
+      attackSec: 0.01,
+      decay: 0.4,
+      pan: 0.06,
+      seed: ctx.nextSeed(),
+      pink: true,
+    })
+    const flutterCount = randomInt(rng, 5, 9)
+    const flutterTimes: number[] = []
+    for (let i = 0; i < flutterCount; i += 1) {
+      flutterTimes.push(randomBetween(rng, flutterStart, flutterEnd))
+    }
+    flutterTimes.sort((a, b) => a - b)
+    for (let i = 0; i < flutterTimes.length; i += 1) {
+      const start = flutterTimes[i]
+      const cutoff = randomBetween(rng, 1200, 4500)
+      const taper = 1 - (i / (flutterTimes.length + 1)) * 0.8
       addNoise(bus, {
         startSec: start,
-        durationSec: fitDuration(start, randomBetween(rng, 0.0015, 0.005), dur),
-        cutoffHz: randomBetween(rng, 2000, 6000),
-        filter: 'highpass',
-        q: 0.9,
-        gain: (0.025 + grit * 0.055) * (1 - i / (tickCount + 2)),
-        attackSec: 0.00012,
-        decay: 0.92,
+        durationSec: fitDuration(start, randomBetween(rng, 0.004, 0.012), dur),
+        cutoffHz: cutoff,
+        filter: 'bandpass',
+        q: randomBetween(rng, 1, 4),
+        gain: (0.14 + grit * 0.12) * taper,
+        attackSec: randomBetween(rng, 0.0004, 0.002),
+        decay: randomBetween(rng, 0.45, 0.8),
         pan: randomBetween(rng, -0.6, 0.6),
         seed: ctx.nextSeed(),
       })
     }
-  }
-
-  // A very quiet late flap suggests the card settling after the snap.
-  if (dur > 0.05) {
-    const start = dur * randomBetween(rng, 0.45, 0.62)
-    addNoise(bus, {
-      startSec: start,
-      durationSec: fitDuration(start, randomBetween(rng, 0.006, 0.012), dur),
-      cutoffHz: clamp(pitch * 0.8, 500, 2600),
-      filter: 'lowpass',
-      q: 1.1,
-      gain: 0.035 + grit * 0.02,
-      attackSec: 0.001,
-      decay: 0.7,
-      pan: randomBetween(rng, -0.2, 0.2),
-      seed: ctx.nextSeed(),
-    })
   }
 }
 

@@ -5,6 +5,7 @@ import {
   BATCH_GAP_MAX,
   BATCH_GAP_STEP,
   DEFAULT_HUMANIZE,
+  paramsEqual,
   sanitizeHumanize,
   sanitizeParams,
 } from '../audio/params'
@@ -40,6 +41,7 @@ export interface SessionStorage {
 }
 
 const PRESET_IDS = new Set(PRESETS.map((preset) => preset.id))
+const PRESET_DEFAULTS = new Map(PRESETS.map((preset) => [preset.id, preset.defaults]))
 const PARAM_KEYS: readonly ParamKey[] = [
   'durationMs',
   'pitchHz',
@@ -48,6 +50,37 @@ const PARAM_KEYS: readonly ParamKey[] = [
   'grit',
   'decay',
 ]
+
+/**
+ * The click and card presets became longer after their models were retuned.
+ * A draft that still holds the exact old defaults was never hand-edited, so it
+ * should hear the new default gesture. Any changed slider is preserved.
+ */
+const LEGACY_DEFAULT_PARAMS: Readonly<Record<string, SynthParams>> = {
+  'mechanical-click': {
+    durationMs: 80,
+    pitchHz: 2300,
+    punch: 92,
+    resonance: 15,
+    grit: 38,
+    decay: 30,
+  },
+  'card-snap': {
+    durationMs: 82,
+    pitchHz: 1700,
+    punch: 88,
+    resonance: 4.5,
+    grit: 68,
+    decay: 28,
+  },
+}
+
+function migratePresetDefaults(id: string, draft: SoundDraft): SoundDraft {
+  const legacy = LEGACY_DEFAULT_PARAMS[id]
+  const defaults = PRESET_DEFAULTS.get(id)
+  if (!legacy || !defaults || !paramsEqual(draft.params, legacy)) return draft
+  return { params: { ...defaults }, seed: draft.seed, take: draft.take }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -88,7 +121,7 @@ function parseDrafts(value: unknown): Record<string, SoundDraft> {
   for (const [id, raw] of Object.entries(value)) {
     if (!PRESET_IDS.has(id)) continue
     const draft = parseDraft(raw)
-    if (draft) drafts[id] = draft
+    if (draft) drafts[id] = migratePresetDefaults(id, draft)
   }
   return drafts
 }

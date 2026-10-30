@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_PRESET_ID } from '../audio/presets'
+import { DEFAULT_PRESET_ID, getPresetById } from '../audio/presets'
 import {
   MAX_TAKE,
   SESSION_STORAGE_KEY,
@@ -53,6 +53,77 @@ describe('session parsing', () => {
     const snapshot = validSnapshot()
     const parsed = parseSession(JSON.stringify(snapshot))
     expect(parsed).toEqual(snapshot)
+  })
+
+  it('migrates untouched legacy click and card lengths to the new defaults', () => {
+    const parsed = parseSession(
+      JSON.stringify({
+        version: SESSION_VERSION,
+        activePresetId: 'mechanical-click',
+        drafts: {
+          'mechanical-click': {
+            params: {
+              durationMs: 80,
+              pitchHz: 2300,
+              punch: 92,
+              resonance: 15,
+              grit: 38,
+              decay: 30,
+            },
+            seed: 11,
+            take: 2,
+          },
+          'card-snap': {
+            params: {
+              durationMs: 82,
+              pitchHz: 1700,
+              punch: 88,
+              resonance: 4.5,
+              grit: 68,
+              decay: 28,
+            },
+            seed: 22,
+            take: 3,
+          },
+        },
+      }),
+    )
+
+    expect(parsed?.drafts['mechanical-click']).toEqual({
+      params: getPresetById('mechanical-click').defaults,
+      seed: 11,
+      take: 2,
+    })
+    expect(parsed?.drafts['card-snap']).toEqual({
+      params: getPresetById('card-snap').defaults,
+      seed: 22,
+      take: 3,
+    })
+  })
+
+  it('keeps a hand-edited legacy click draft unchanged', () => {
+    const parsed = parseSession(
+      JSON.stringify({
+        version: SESSION_VERSION,
+        activePresetId: 'mechanical-click',
+        drafts: {
+          'mechanical-click': {
+            params: {
+              durationMs: 120,
+              pitchHz: 2300,
+              punch: 92,
+              resonance: 15,
+              grit: 38,
+              decay: 30,
+            },
+            seed: 11,
+            take: 2,
+          },
+        },
+      }),
+    )
+
+    expect(parsed?.drafts['mechanical-click']?.params.durationMs).toBe(120)
   })
 
   it('rejects missing, non-JSON and wrong-version payloads', () => {
