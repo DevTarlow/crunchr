@@ -111,7 +111,7 @@ the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 
 | Category | Presets | Synthesis approach |
 | --- | --- | --- |
-| Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Two-stage switch contact ticks, low plastic body knocks, card flex crackle with a flutter tail, inharmonic timber modes |
+| Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Two-stage switch contact ticks, high-mid plastic resonance, card flex crackle with a flutter tail, inharmonic timber modes |
 | Footsteps | Gravel Crunch, Wood Thud/Creak, Stone/Concrete | Granular band-passed noise clusters, low pitch-bent thumps with brief FM, swept-noise grit scuffs with short slap reflections |
 | Items | Dice Roll, Cloth/Backpack Rustle, Coin Clink | 3–5 gravity-shaped bounce impacts, pink-noise fabric through modulated low-pass filters, dual inharmonic metal partials |
 | Crunches | Flesh Squish, Bone Crunch | Swept wet noise with bubble grains and a low impact, and layered pink noise with abrupt gate jumps and high-pass snaps |

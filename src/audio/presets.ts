@@ -36,7 +36,7 @@ export const PRESETS: readonly Preset[] = [
     slug: 'mechanical_click',
     category: 'ui',
     model: 'mechanicalClick',
-    description: 'A two-stage switch click with a low plastic body.',
+    description: 'A two-stage switch click with a high-mid plastic snap.',
     tags: ['CLICK', 'PLASTIC'],
     defaults: {
       durationMs: 180,

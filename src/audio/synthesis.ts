@@ -66,29 +66,29 @@ function makeContext(model: ModelId, params: SynthParams, seed: number, length: 
 function mechanicalClick(ctx: ModelContext): void {
   const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
   const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
-  const transientDur = clamp(0.0012 + (1 - punch) * 0.0015, 0.0006, 0.0028)
-  const contactFreq = clamp(pitch * 1.2, 2200, 7000)
-  const capFreq = clamp(pitch * 0.5, 500, 2400)
-  const bodyFreq = clamp(pitch * 0.15, 160, 420)
-  const bodyOvertone = bodyFreq * 2.05
-  const clackFreq = clamp(pitch * 0.28, 280, 720)
-  const tailFreq = clamp(pitch * 0.7, 900, 2600)
-  const bodyDur = clamp(0.045 + qNorm * 0.03 - decayCurve * 0.01, 0.035, 0.085)
-  const clackStart = clamp(0.012 + (1 - punch) * 0.006, 0.008, 0.02)
-  const clackDur = clamp(0.034 - decayCurve * 0.01, 0.02, 0.045)
-  const tailStart = clamp(bodyDur * 0.55, 0.025, 0.05)
-  const tailDur = clamp(0.075 - decayCurve * 0.015, 0.045, 0.085)
-  const bodyAttack = clamp(attack * 0.5, 0.0003, 0.004)
-  const clackAttack = clamp(attack * 0.6, 0.0004, 0.005)
+  const preFreq = clamp(pitch * 1.7, 3200, 9000)
+  const mainFreq = clamp(pitch, 1200, 5000)
+  const midFreq = clamp(pitch * 0.5, 600, 2000)
+  const resonanceFreq = clamp(pitch * 0.98, 1200, 5000)
+  const tailFreq = clamp(pitch * 1.5, 2200, 6500)
+  const preDur = clamp(0.001 + (1 - punch) * 0.001, 0.0008, 0.0025)
+  const mainDur = clamp(0.0015 + (1 - punch) * 0.0015, 0.001, 0.003)
+  const resonanceDur = clamp(0.012 + qNorm * 0.02 - decayCurve * 0.005, 0.01, 0.035)
+  const mainStart = 0.012
+  const tailStart = mainStart + 0.006
+  const tailDur = clamp(0.075 - decayCurve * 0.02, 0.05, 0.09)
+  const bodyAttack = clamp(attack * 0.4, 0.0002, 0.002)
 
-  // Contact tick. A switch begins with a short broadband snap, not a tone.
+  // The small precursor tick starts the gesture. The main contact lands a few
+  // milliseconds later, so the sound has a mechanical two-part action instead
+  // of one drum-like downbeat.
   addNoise(bus, {
     startSec: 0,
-    durationSec: transientDur,
-    cutoffHz: contactFreq,
+    durationSec: preDur,
+    cutoffHz: preFreq,
     filter: 'bandpass',
     q: 0.9,
-    gain: 1.3 + punch * 0.4,
+    gain: 0.7 + punch * 0.3,
     attackSec: 0.00006,
     decay: 0.96,
     pan: randomBetween(rng, -0.05, 0.05),
@@ -96,130 +96,157 @@ function mechanicalClick(ctx: ModelContext): void {
   })
   addNoise(bus, {
     startSec: 0,
-    durationSec: Math.min(0.0006, dur * 0.01),
-    cutoffHz: 6000,
+    durationSec: Math.min(0.0005, dur * 0.01),
+    cutoffHz: 7000,
     filter: 'highpass',
     q: 0.7,
-    gain: 0.18 + punch * 0.1,
+    gain: 0.14,
     attackSec: 0.00005,
     decay: 0.98,
     pan: randomBetween(rng, -0.08, 0.08),
     seed: ctx.nextSeed(),
   })
 
-  // Two cap cracks: the bright first contact and the darker seat behind it.
+  // Main contact: mostly high-mid crack. There is only a very short low impulse
+  // here; a long low body is what made the previous version read as a drum.
   addNoise(bus, {
-    startSec: 0.00015,
-    durationSec: Math.min(0.004, dur * 0.03),
-    cutoffHz: capFreq,
+    startSec: mainStart,
+    durationSec: fitDuration(mainStart, mainDur, dur),
+    cutoffHz: mainFreq,
+    filter: 'bandpass',
+    q: 1,
+    gain: 2.1 + punch * 0.4,
+    attackSec: 0.00006,
+    decay: 0.97,
+    pan: randomBetween(rng, -0.04, 0.04),
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: mainStart,
+    durationSec: fitDuration(mainStart, Math.min(0.0006, dur * 0.01), dur),
+    cutoffHz: 6000,
+    filter: 'highpass',
+    q: 0.7,
+    gain: 0.28 + punch * 0.12,
+    attackSec: 0.00005,
+    decay: 0.98,
+    pan: randomBetween(rng, -0.08, 0.08),
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: mainStart + 0.00015,
+    durationSec: fitDuration(mainStart + 0.00015, Math.min(0.005, dur * 0.04), dur),
+    cutoffHz: midFreq,
+    filter: 'bandpass',
+    q: 1.1,
+    gain: 1.2 + punch * 0.25,
+    attackSec: 0.00008,
+    decay: 0.92,
+    pan: randomBetween(rng, -0.12, 0.12),
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: mainStart + 0.00035,
+    durationSec: fitDuration(mainStart + 0.00035, Math.min(0.022, dur * 0.14), dur),
+    cutoffHz: clamp(pitch * 0.4, 700, 1800),
+    filter: 'bandpass',
+    q: clamp(1.5 + q * 0.08, 1.5, 3),
+    gain: 0.55 + grit * 0.1,
+    attackSec: 0.0006,
+    decay: 0.6,
+    pan: -0.02,
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: mainStart + 0.0004,
+    durationSec: fitDuration(mainStart + 0.0004, Math.min(0.012, dur * 0.08), dur),
+    cutoffHz: clamp(pitch * 0.65, 900, 2600),
     filter: 'bandpass',
     q: 1.2,
-    gain: 0.55 + punch * 0.2,
-    attackSec: 0.00008,
-    decay: 0.9,
+    gain: 0.35,
+    attackSec: 0.0005,
+    decay: 0.8,
+    pan: randomBetween(rng, -0.15, 0.15),
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: mainStart,
+    durationSec: fitDuration(mainStart, Math.min(0.002, dur * 0.015), dur),
+    cutoffHz: 180,
+    filter: 'lowpass',
+    q: 0.8,
+    gain: 0.035 + punch * 0.02,
+    attackSec: 0.0001,
+    decay: 0.96,
+    seed: ctx.nextSeed(),
+  })
+
+  // A short damped mid resonance gives the click its pitch and plastic identity
+  // without holding a tone for the length of the clip.
+  addNoise(bus, {
+    startSec: mainStart + 0.0003,
+    durationSec: fitDuration(mainStart + 0.0003, resonanceDur, dur),
+    cutoffHz: resonanceFreq,
+    filter: 'bandpass',
+    q: clamp(2.5 + q * 0.15, 2.5, 5),
+    gain: 0.9 + grit * 0.1,
+    attackSec: bodyAttack,
+    decay: 0.65,
+    pan: 0.03,
+    seed: ctx.nextSeed(),
+  })
+  addSine(bus, {
+    startSec: mainStart + 0.0004,
+    durationSec: fitDuration(mainStart + 0.0004, resonanceDur * 0.7, dur),
+    freqHz: resonanceFreq,
+    endFreqHz: resonanceFreq * 0.98,
+    gain: 0.15,
+    attackSec: 0.0002,
+    decay: 0.82,
+    phase: 0.7,
+    pan: 0.02,
+  })
+
+  // High-mid tail: noise, not a low body. This is what makes the click feel
+  // like a mechanism rather than a snare hit.
+  addNoise(bus, {
+    startSec: tailStart,
+    durationSec: fitDuration(tailStart, tailDur, dur),
+    cutoffHz: tailFreq,
+    filter: 'bandpass',
+    q: 1.3,
+    gain: 0.05 + grit * 0.04,
+    attackSec: 0.002,
+    decay: 0.55,
     pan: randomBetween(rng, -0.1, 0.1),
     seed: ctx.nextSeed(),
   })
   addNoise(bus, {
-    startSec: 0.00035,
-    durationSec: Math.min(0.003, dur * 0.025),
-    cutoffHz: clamp(pitch * 0.26, 300, 1100),
+    startSec: tailStart,
+    durationSec: fitDuration(tailStart, tailDur * 1.35, dur),
+    cutoffHz: clamp(tailFreq * 1.5, 3200, 9000),
     filter: 'bandpass',
-    q: 1.4,
-    gain: 0.38 + punch * 0.15,
-    attackSec: 0.0001,
-    decay: 0.9,
-    pan: 0.03,
+    q: 1.1,
+    gain: 0.025 + grit * 0.02,
+    attackSec: 0.003,
+    decay: 0.55,
+    pan: randomBetween(rng, -0.2, 0.2),
     seed: ctx.nextSeed(),
   })
 
-  // The low plastic body is what makes the gesture read as a button rather
-  // than a generic noise tick. It is damped and low-mid, not a high ring.
-  addNoise(bus, {
-    startSec: 0,
-    durationSec: Math.min(bodyDur * 0.7, dur),
-    cutoffHz: bodyFreq,
-    filter: 'bandpass',
-    q: clamp(1.8 + q * 0.08, 1.8, 3.5),
-    gain: 0.5 + punch * 0.1,
-    attackSec: bodyAttack,
-    decay: 0.5,
-    pan: 0.02,
-    seed: ctx.nextSeed(),
-  })
-  addSine(bus, {
-    startSec: 0,
-    durationSec: Math.min(bodyDur, dur),
-    freqHz: bodyFreq,
-    endFreqHz: bodyFreq * 0.84,
-    gain: 0.3 + punch * 0.08,
-    attackSec: bodyAttack,
-    decay: 0.45 + decayCurve * 0.2,
-    phase: 0.2,
-    pan: 0.01,
-  })
-  addSine(bus, {
-    startSec: 0.0004,
-    durationSec: Math.min(bodyDur * 0.55, dur),
-    freqHz: bodyOvertone,
-    gain: 0.09,
-    attackSec: 0.001,
-    decay: 0.65,
-    phase: 0.7,
-    pan: -0.04,
-  })
-
-  // The switch bottoms out a few milliseconds later. This second, darker clack
-  // gives the sound a mechanical two-stage identity.
-  if (clackStart < dur) {
+  // A tiny late contact tick mirrors the small secondary bump in a real switch
+  // and gives the ear one more mechanical detail after the main click.
+  const lateTick = Math.min(mainStart + randomBetween(rng, 0.05, 0.07), dur - 0.006)
+  if (lateTick > tailStart) {
     addNoise(bus, {
-      startSec: clackStart,
-      durationSec: fitDuration(clackStart, clackDur * 0.65, dur),
-      cutoffHz: clackFreq,
+      startSec: lateTick,
+      durationSec: fitDuration(lateTick, 0.0022, dur),
+      cutoffHz: clamp(pitch * 2.2, 4500, 10_000),
       filter: 'bandpass',
-      q: 1.4,
-      gain: 0.42 + punch * 0.15,
-      attackSec: clackAttack,
-      decay: 0.78,
-      pan: -0.03,
-      seed: ctx.nextSeed(),
-    })
-    addSine(bus, {
-      startSec: clackStart,
-      durationSec: fitDuration(clackStart, clackDur, dur),
-      freqHz: clackFreq,
-      endFreqHz: clackFreq * 0.9,
-      gain: 0.18,
-      attackSec: clackAttack,
-      decay: 0.72,
-      phase: 0.4,
-      pan: -0.02,
-    })
-  }
-
-  // A quiet, noise-only housing tail extends the sound without adding pitch.
-  if (tailStart < dur) {
-    addNoise(bus, {
-      startSec: tailStart,
-      durationSec: fitDuration(tailStart, tailDur, dur),
-      cutoffHz: tailFreq,
-      filter: 'bandpass',
-      q: clamp(1.6 + q * 0.06, 1.6, 2.8),
-      gain: 0.2 + grit * 0.12,
-      attackSec: 0.006,
-      decay: 0.55,
-      pan: randomBetween(rng, -0.08, 0.08),
-      seed: ctx.nextSeed(),
-    })
-    addNoise(bus, {
-      startSec: tailStart,
-      durationSec: fitDuration(tailStart, tailDur * 0.7, dur),
-      cutoffHz: clamp(tailFreq * 1.6, 1400, 5000),
-      filter: 'bandpass',
-      q: 2.2,
-      gain: 0.07 + grit * 0.04,
-      attackSec: 0.008,
-      decay: 0.6,
+      q: 1.1,
+      gain: 0.07 + grit * 0.045,
+      attackSec: 0.0001,
+      decay: 0.9,
       pan: randomBetween(rng, -0.2, 0.2),
       seed: ctx.nextSeed(),
     })
@@ -228,14 +255,14 @@ function mechanicalClick(ctx: ModelContext): void {
   if (grit > 0.08 && dur > 0.02) {
     const tickCount = randomInt(rng, 1, 3)
     for (let i = 0; i < tickCount; i += 1) {
-      const start = randomBetween(rng, 0.006, Math.min(0.05, dur * 0.32))
+      const start = randomBetween(rng, 0.004, Math.min(0.045, dur * 0.28))
       addNoise(bus, {
         startSec: start,
-        durationSec: fitDuration(start, randomBetween(rng, 0.0012, 0.0035), dur),
-        cutoffHz: randomBetween(rng, 2500, 7000),
+        durationSec: fitDuration(start, randomBetween(rng, 0.001, 0.003), dur),
+        cutoffHz: randomBetween(rng, 3000, 8000),
         filter: 'bandpass',
         q: randomBetween(rng, 2, 8),
-        gain: (0.02 + grit * 0.045) * (1 - i / (tickCount + 1)),
+        gain: (0.02 + grit * 0.04) * (1 - i / (tickCount + 1)),
         attackSec: 0.00012,
         decay: 0.94,
         pan: randomBetween(rng, -0.4, 0.4),

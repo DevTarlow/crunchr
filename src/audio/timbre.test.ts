@@ -184,6 +184,13 @@ describe('retuned preset timbres', () => {
     expect(late.length).toBeGreaterThan(2)
     expect(median(late.map((frame) => frame.maxShare))).toBeLessThan(0.4)
     expect(median(late.map((frame) => frame.flatness))).toBeGreaterThan(0.02)
+
+    // The reference click lives in the high-mid range. Keep the preset out of
+    // the low 200-500 Hz region that made the earlier version read as a drum.
+    expect(bandEnergyShare(sound, 0, 200)).toBeLessThan(0.05)
+    expect(bandEnergyShare(sound, 200, 500)).toBeLessThan(0.15)
+    expect(bandEnergyShare(sound, 500, 2000)).toBeGreaterThan(0.1)
+    expect(bandEnergyShare(sound, 2000, 6000)).toBeGreaterThan(0.4)
   })
 
   it('gives Card / Plastic Snap a flex-snap-settle gesture instead of a chirp', () => {
