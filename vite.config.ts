@@ -81,6 +81,17 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 5173,
       strictPort: true,
+      watch: {
+        // QA captures and extracted AppImages live here. Some contain symlink
+        // loops (an AppImage's usr -> .), which chokidar follows until it
+        // throws ELOOP and takes the dev server down.
+        ignored: [
+          '**/qa-artifacts/**',
+          '**/dist/**',
+          '**/dist-single/**',
+          '**/dist-itch/**',
+        ],
+      },
     },
     preview: {
       host: '0.0.0.0',

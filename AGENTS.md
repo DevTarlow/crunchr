@@ -237,6 +237,10 @@ asked. A GitHub push is not an itch.io deployment.
   ```
 - The dev server is pinned to port 5173. Do not start a competing server unless
   the existing one is unusable.
+- The Vite watcher ignores `qa-artifacts/`, `dist/`, `dist-single/` and
+  `dist-itch/`. Keep extracted AppImages and other symlink-heavy trees under
+  `qa-artifacts/`; a portable build's `usr -> .` link otherwise makes chokidar
+  recurse until it throws `ELOOP` and crashes `npm run dev`.
 
 ## 8. Definition of done
 
