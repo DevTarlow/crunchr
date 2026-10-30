@@ -64,150 +64,326 @@ function makeContext(model: ModelId, params: SynthParams, seed: number, length: 
 }
 
 function mechanicalClick(ctx: ModelContext): void {
-  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack } = ctx
-  const transientDur = clamp(0.0012 + (1 - punch) * 0.0012, 0.0006, 0.0024)
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
+  const transientDur = clamp(0.0011 + (1 - punch) * 0.0015, 0.0005, 0.0026)
+  const bodyFreq = clamp(pitch * 0.06, 90, 220)
+  const knockFreq = clamp(pitch * 0.24, 300, 1100)
+  const shellFreq = clamp(pitch * 0.82, 900, 3600)
+  const shellOvertone = clamp(pitch * 1.32, 1400, 5200)
+  const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
+  const bodyDur = clamp(0.022 - decayCurve * 0.01, 0.009, 0.024)
+  const shellDur = clamp(0.005 + qNorm * 0.008, 0.005, 0.013)
+  const bodyAttack = clamp(attack * 0.4, 0.0002, 0.003)
+  const knockAttack = clamp(attack * 0.5, 0.0002, 0.002)
 
-  // Hard switch contact: a tiny bright noise tick and a sub-2 ms click.
+  // Broad contact tick: a switch makes a short broadband snap, not a tone.
   addNoise(bus, {
     startSec: 0,
     durationSec: transientDur,
-    cutoffHz: clamp(pitch * 1.3, 800, 10_000),
+    cutoffHz: clamp(pitch * 1.25, 2200, 7000),
+    filter: 'bandpass',
+    q: 0.9,
+    gain: 1.3 + punch * 0.4,
+    attackSec: 0.00006,
+    decay: 0.96,
+    pan: randomBetween(rng, -0.05, 0.05),
+    seed: ctx.nextSeed(),
+  })
+  // A little air above the contact keeps the click crisp on small speakers.
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.0006, dur * 0.01),
+    cutoffHz: 6000,
     filter: 'highpass',
     q: 0.7,
-    gain: 0.9 + punch * 0.5,
-    attackSec: 0.00008,
-    decay: 0.96,
-    pan: randomBetween(ctx.rng, -0.08, 0.08),
+    gain: 0.2 + punch * 0.12,
+    attackSec: 0.00005,
+    decay: 0.98,
+    pan: randomBetween(rng, -0.08, 0.08),
     seed: ctx.nextSeed(),
   })
-  addSine(bus, {
-    startSec: 0,
-    durationSec: Math.min(0.0032, dur),
-    freqHz: pitch * 1.15,
-    endFreqHz: pitch * 0.8,
-    gain: 0.34 + punch * 0.3,
-    attackSec: 0.00012,
-    decay: 0.74,
-    phase: ctx.rng(),
-  })
-
-  // Switch-housing resonance. The Q control directly changes how much the
-  // casing rings after the contact.
-  addSine(bus, {
-    startSec: 0.0003,
-    durationSec: Math.max(0.002, dur * 0.94),
-    freqHz: pitch,
-    endFreqHz: pitch * 0.994,
-    gain: 0.36,
-    attackSec: Math.max(0.0003, attack * 0.7),
-    decay: 0.25 + decayCurve * 0.6,
-    phase: 0.08,
+  // Mid and low-mid contact cracks give the plastic cap its "thock".
+  addNoise(bus, {
+    startSec: 0.00015,
+    durationSec: Math.min(0.003, dur * 0.05),
+    cutoffHz: clamp(pitch * 0.5, 500, 2400),
+    filter: 'bandpass',
+    q: 1.2,
+    gain: 0.55 + punch * 0.2,
+    attackSec: 0.00008,
+    decay: 0.9,
+    pan: randomBetween(rng, -0.1, 0.1),
+    seed: ctx.nextSeed(),
   })
   addNoise(bus, {
-    startSec: 0.00035,
-    durationSec: Math.max(0.002, dur * 0.7),
-    cutoffHz: clamp(pitch * 1.02, 100, 10_000),
+    startSec: 0.0002,
+    durationSec: Math.min(0.0025, dur * 0.05),
+    cutoffHz: clamp(pitch * 0.26, 300, 1100),
     filter: 'bandpass',
-    q: clamp(q * 1.2, 0.7, 30),
-    gain: 0.25 + grit * 0.6,
-    attackSec: 0.00035,
-    decay: 0.35 + decayCurve * 0.5,
-    pan: -0.04,
+    q: 1.4,
+    gain: 0.38 + punch * 0.15,
+    attackSec: 0.0001,
+    decay: 0.9,
+    pan: 0.03,
     seed: ctx.nextSeed(),
   })
 
-  // A second, quieter housing mode keeps the click from feeling synthetic.
+  // Small, short low body. The old model kept a high sine alive for the whole
+  // clip; this is deliberately a damped thump, not a ring.
   addSine(bus, {
-    startSec: 0.0008,
-    durationSec: Math.max(0.001, dur * 0.42),
-    freqHz: pitch * 1.61,
-    gain: 0.15 + grit * 0.13,
-    attackSec: 0.0004,
-    decay: 0.7,
-    phase: 0.55,
+    startSec: 0,
+    durationSec: Math.min(bodyDur, dur),
+    freqHz: bodyFreq,
+    endFreqHz: bodyFreq * 0.82,
+    gain: 0.06 + punch * 0.04,
+    attackSec: bodyAttack,
+    decay: 0.68 + decayCurve * 0.18,
+    phase: 0.2,
+  })
+  addSine(bus, {
+    startSec: 0.0002,
+    durationSec: Math.min(0.012, dur * 0.18),
+    freqHz: knockFreq,
+    endFreqHz: knockFreq * 0.96,
+    gain: 0.18 + punch * 0.08,
+    attackSec: knockAttack,
+    decay: 0.85,
+    phase: 0.4,
   })
 
-  if (grit > 0.35 && dur > 0.01) {
+  // Plastic housing modes. Resonance changes their length, but the cap damps
+  // them before they can turn into a metal-like ring.
+  addNoise(bus, {
+    startSec: 0.00025,
+    durationSec: Math.min(shellDur, dur),
+    cutoffHz: shellFreq,
+    filter: 'bandpass',
+    q: clamp(2 + q * 0.3, 2, 9),
+    gain: 0.8 + grit * 0.2,
+    attackSec: 0.0002,
+    decay: 0.9,
+    pan: 0.04,
+    seed: ctx.nextSeed(),
+  })
+  addSine(bus, {
+    startSec: 0.0003,
+    durationSec: Math.min(shellDur * 0.9, dur),
+    freqHz: shellFreq,
+    gain: 0.14,
+    attackSec: 0.0002,
+    decay: 0.92,
+    phase: 0.7,
+    pan: 0.03,
+  })
+  addSine(bus, {
+    startSec: 0.0004,
+    durationSec: Math.min(shellDur * 0.55, dur),
+    freqHz: shellOvertone,
+    gain: 0.07,
+    attackSec: 0.0002,
+    decay: 0.95,
+    phase: 0.2,
+    pan: -0.03,
+  })
+
+  // A quieter second contact as the switch bottoms out.
+  const second = Math.min(0.008 + (1 - punch) * 0.004, dur * 0.18)
+  if (second < dur) {
     addNoise(bus, {
-      startSec: Math.min(0.0042, dur * 0.18),
-      durationSec: fitDuration(0.0042, 0.008, dur),
-      cutoffHz: randomBetween(ctx.rng, 1800, 6200),
-      filter: 'bandpass',
-      q: randomBetween(ctx.rng, 4, 12),
-      gain: grit * 0.22,
-      attackSec: 0.0002,
-      decay: 0.8,
-      pan: randomBetween(ctx.rng, -0.35, 0.35),
+      startSec: second,
+      durationSec: fitDuration(second, 0.0016, dur),
+      cutoffHz: clamp(pitch * 0.9, 1200, 7000),
+      filter: 'highpass',
+      q: 0.8,
+      gain: 0.16 + punch * 0.18,
+      attackSec: 0.00008,
+      decay: 0.94,
+      pan: randomBetween(rng, -0.15, 0.15),
       seed: ctx.nextSeed(),
     })
+    addSine(bus, {
+      startSec: second,
+      durationSec: fitDuration(second, 0.005, dur),
+      freqHz: clamp(pitch * 0.55, 300, 1800),
+      gain: 0.05,
+      attackSec: 0.0002,
+      decay: 0.92,
+      phase: 0.5,
+    })
+  }
+
+  if (grit > 0.08 && dur > 0.02) {
+    const tickCount = randomInt(rng, 1, 3)
+    for (let i = 0; i < tickCount; i += 1) {
+      const start = randomBetween(rng, 0.004, Math.min(0.03, dur * 0.35))
+      addNoise(bus, {
+        startSec: start,
+        durationSec: fitDuration(start, randomBetween(rng, 0.0008, 0.0025), dur),
+        cutoffHz: randomBetween(rng, 3000, 8000),
+        filter: 'bandpass',
+        q: randomBetween(rng, 2, 8),
+        gain: (0.02 + grit * 0.055) * (1 - i / (tickCount + 1)),
+        attackSec: 0.0001,
+        decay: 0.95,
+        pan: randomBetween(rng, -0.4, 0.4),
+        seed: ctx.nextSeed(),
+      })
+    }
   }
 }
 
 function cardSnap(ctx: ModelContext): void {
-  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack } = ctx
-  const chirpDuration = clamp(dur * 0.42, 0.005, Math.max(0.005, dur * 0.75))
-  const snapDuration = clamp(dur * 0.23, 0.002, 0.035)
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
+  const snapDur = clamp(0.001 + (1 - punch) * 0.0012, 0.0008, 0.0024)
+  const crackFreq = clamp(pitch * 1.15, 700, 4200)
+  const overtoneFreq = clamp(pitch * 1.65, 1000, 6000)
+  const midFreq = clamp(pitch * 0.65, 700, 2600)
+  const flexFreq = clamp(pitch * 0.7, 300, 2200)
+  const lowFreq = clamp(pitch * 0.22, 180, 700)
+  const modeAttack = clamp(attack * 0.3, 0.0001, 0.002)
 
-  // The plastic body starts stretched and snaps down in pitch.
-  addSine(bus, {
-    startSec: 0,
-    durationSec: chirpDuration,
-    freqHz: pitch * 2.15,
-    endFreqHz: pitch * 0.56,
-    gain: 0.55 + punch * 0.25,
-    attackSec: attack * 0.6,
-    decay: 0.2 + decayCurve * 0.55,
-    phase: 0.17,
-  })
+  // Main plastic crack: bright but band-limited, with no pitch glide.
   addNoise(bus, {
     startSec: 0,
-    durationSec: snapDuration,
-    cutoffHz: clamp(pitch * 0.78, 180, 11_000),
-    filter: 'highpass',
-    q: 0.75,
-    gain: 0.9 + punch * 0.65,
-    attackSec: 0.00009,
-    decay: 0.92,
-    pan: randomBetween(ctx.rng, -0.12, 0.12),
-    seed: ctx.nextSeed(),
-  })
-
-  // Filtered cavity adds a hollow flex under the snap.
-  addNoise(bus, {
-    startSec: 0.0007,
-    durationSec: Math.max(0.004, dur * 0.6),
-    cutoffHz: clamp(pitch, 120, 10_000),
+    durationSec: snapDur,
+    cutoffHz: clamp(pitch * 1.05, 1500, 3600),
     filter: 'bandpass',
-    q: clamp(q * 1.1, 0.6, 20),
-    gain: 0.18 + grit * 0.34,
-    attackSec: 0.0006,
-    decay: 0.3 + decayCurve * 0.5,
+    q: 1.2,
+    gain: 1.35 + punch * 0.35,
+    attackSec: 0.00006,
+    decay: 0.97,
+    pan: randomBetween(rng, -0.05, 0.05),
     seed: ctx.nextSeed(),
   })
-  addSine(bus, {
-    startSec: 0.001,
-    durationSec: Math.max(0.003, dur * 0.35),
-    freqHz: pitch * 0.7,
-    endFreqHz: pitch * 0.62,
-    gain: 0.14,
-    attackSec: 0.0005,
-    decay: 0.55,
-    pan: 0.08,
-    phase: 0.61,
+  // A tiny high tick gives the card edge its snap.
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.0006, dur * 0.01),
+    cutoffHz: clamp(pitch * 3.2, 5500, 12_000),
+    filter: 'highpass',
+    q: 0.7,
+    gain: 0.2 + punch * 0.1,
+    attackSec: 0.00005,
+    decay: 0.98,
+    pan: randomBetween(rng, -0.08, 0.08),
+    seed: ctx.nextSeed(),
+  })
+  // The hollow mid crack is the plastic body of the snap.
+  addNoise(bus, {
+    startSec: 0.00025,
+    durationSec: Math.min(0.002, dur * 0.035),
+    cutoffHz: midFreq,
+    filter: 'bandpass',
+    q: 1,
+    gain: 0.65 + punch * 0.2,
+    attackSec: 0.00008,
+    decay: 0.92,
+    pan: randomBetween(rng, -0.15, 0.15),
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: 0.0003,
+    durationSec: Math.min(0.0012, dur * 0.02),
+    cutoffHz: clamp(pitch * 1.7, 2600, 6000),
+    filter: 'bandpass',
+    q: 1,
+    gain: 0.5 + punch * 0.2,
+    attackSec: 0.00007,
+    decay: 0.94,
+    pan: randomBetween(rng, -0.12, 0.12),
+    seed: ctx.nextSeed(),
   })
 
-  if (dur > 0.06) {
-    const lateStart = dur * randomBetween(ctx.rng, 0.18, 0.34)
+  // Short body modes. They decay in milliseconds, so they never read as a tone.
+  addSine(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.012, dur * 0.16),
+    freqHz: lowFreq,
+    endFreqHz: lowFreq * 0.92,
+    gain: 0.26 + punch * 0.1,
+    attackSec: modeAttack,
+    decay: 0.82,
+    phase: 0.2,
+  })
+  addSine(bus, {
+    startSec: 0.0002,
+    durationSec: Math.min(0.009, dur * 0.13),
+    freqHz: crackFreq,
+    gain: 0.2,
+    attackSec: 0.00015,
+    decay: 0.9,
+    phase: 0.28,
+    pan: 0.04,
+  })
+  addSine(bus, {
+    startSec: 0.0003,
+    durationSec: Math.min(0.006, dur * 0.09),
+    freqHz: overtoneFreq,
+    gain: 0.09,
+    attackSec: 0.00015,
+    decay: 0.94,
+    phase: 0.8,
+    pan: -0.04,
+  })
+
+  // The card's flex and cavity: a short filtered breath, not a resonant sweep.
+  addNoise(bus, {
+    startSec: 0.0005,
+    durationSec: Math.min(0.026, dur * 0.36),
+    cutoffHz: flexFreq,
+    filter: 'bandpass',
+    q: clamp(1.1 + q * 0.2, 1, 3.5),
+    gain: 0.26 + grit * 0.12,
+    attackSec: 0.0006,
+    decay: 0.62 + decayCurve * 0.2,
+    pan: 0.06,
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: 0.0008,
+    durationSec: Math.min(0.022, dur * 0.3),
+    cutoffHz: clamp(pitch * 0.32, 150, 850),
+    filter: 'lowpass',
+    q: 0.7,
+    gain: 0.1 + grit * 0.08,
+    attackSec: 0.001,
+    decay: 0.6,
+    pan: -0.05,
+    seed: ctx.nextSeed(),
+  })
+
+  if (grit > 0.1) {
+    const tickCount = randomInt(rng, 2, 5)
+    for (let i = 0; i < tickCount; i += 1) {
+      const start = randomBetween(rng, dur * 0.07, dur * 0.38)
+      addNoise(bus, {
+        startSec: start,
+        durationSec: fitDuration(start, randomBetween(rng, 0.0015, 0.005), dur),
+        cutoffHz: randomBetween(rng, 2000, 6000),
+        filter: 'highpass',
+        q: 0.9,
+        gain: (0.025 + grit * 0.055) * (1 - i / (tickCount + 2)),
+        attackSec: 0.00012,
+        decay: 0.92,
+        pan: randomBetween(rng, -0.6, 0.6),
+        seed: ctx.nextSeed(),
+      })
+    }
+  }
+
+  // A very quiet late flap suggests the card settling after the snap.
+  if (dur > 0.05) {
+    const start = dur * randomBetween(rng, 0.45, 0.62)
     addNoise(bus, {
-      startSec: lateStart,
-      durationSec: fitDuration(lateStart, randomBetween(ctx.rng, 0.004, 0.014), dur),
-      cutoffHz: randomBetween(ctx.rng, 2800, 8000),
-      filter: 'highpass',
-      q: 0.9,
-      gain: grit * 0.12,
-      attackSec: 0.0002,
-      decay: 0.9,
-      pan: randomBetween(ctx.rng, -0.3, 0.3),
+      startSec: start,
+      durationSec: fitDuration(start, randomBetween(rng, 0.006, 0.012), dur),
+      cutoffHz: clamp(pitch * 0.8, 500, 2600),
+      filter: 'lowpass',
+      q: 1.1,
+      gain: 0.035 + grit * 0.02,
+      attackSec: 0.001,
+      decay: 0.7,
+      pan: randomBetween(rng, -0.2, 0.2),
       seed: ctx.nextSeed(),
     })
   }
@@ -443,85 +619,131 @@ function woodThud(ctx: ModelContext): void {
 }
 
 function stone(ctx: ModelContext): void {
-  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack } = ctx
-  const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
+  const bodyFreq = clamp(60 + pitch * 0.03, 60, 140)
+  const knockFreq = clamp(pitch * 0.24, 220, 600)
+  const bodyDur = clamp(0.045 - decayCurve * 0.02, 0.018, 0.05)
+  const bodyAttack = clamp(attack * 0.6, 0.0004, 0.004)
+  const knockAttack = clamp(attack * 0.5, 0.0003, 0.003)
+  const scuffDecay = clamp(0.18 + decayCurve * 0.18, 0.18, 0.36)
 
+  // The sole hits the concrete: a broadband slap plus a slightly darker crack.
   addNoise(bus, {
     startSec: 0,
-    durationSec: clamp(0.003 + punch * 0.008, 0.002, 0.014),
-    cutoffHz: clamp(pitch * 0.74, 220, 12_000),
+    durationSec: clamp(0.004 + punch * 0.008, 0.003, 0.014),
+    cutoffHz: clamp(pitch * 0.9, 900, 6000),
     filter: 'highpass',
-    q: 0.85,
-    gain: 0.95 + punch * 0.55,
-    attackSec: 0.00006,
-    decay: 0.97,
-    pan: randomBetween(ctx.rng, -0.05, 0.05),
+    q: 0.8,
+    gain: 0.85 + punch * 0.3,
+    attackSec: 0.00008,
+    decay: 0.96,
+    pan: randomBetween(rng, -0.06, 0.06),
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: 0.0004,
+    durationSec: Math.min(0.02, dur * 0.1),
+    cutoffHz: clamp(pitch * 0.65, 500, 2800),
+    filter: 'bandpass',
+    q: 1.1,
+    gain: 0.6 + punch * 0.2,
+    attackSec: 0.0002,
+    decay: 0.9,
+    pan: randomBetween(rng, -0.1, 0.1),
     seed: ctx.nextSeed(),
   })
 
-  // Bright concrete modes plus a quieter, delayed copy creates a very short
-  // room-ish smear without needing a convolution sample.
-  const ratios = [1, 1.62, 2.31, 3.17, 4.42]
-  const gains = [0.52, 0.34, 0.23, 0.15, 0.08]
-  const ringDuration = Math.min(dur * 0.92, 0.65)
-  for (let i = 0; i < ratios.length; i += 1) {
-    const partialPitch = clamp(pitch * ratios[i] * randomBetween(ctx.rng, 0.997, 1.003), 30, 15_000)
-    const partialGain = gains[i] * (0.65 + qNorm * 0.35)
-    addSine(bus, {
-      startSec: 0.0003,
-      durationSec: Math.max(0.004, ringDuration * (1 - i * 0.13)),
-      freqHz: partialPitch,
-      endFreqHz: partialPitch * 0.998,
-      gain: partialGain,
-      attackSec: Math.max(0.0003, attack * 0.8),
-      decay: clamp(0.22 + decayCurve * 0.55, 0, 1),
-      phase: ctx.rng(),
-      pan: randomBetween(ctx.rng, -0.22, 0.22),
-    })
-  }
-  for (let echo = 0; echo < 2; echo += 1) {
-    const echoStart = 0.009 + echo * 0.018
-    if (echoStart >= dur) continue
-    for (let i = 0; i < 3; i += 1) {
-      addSine(bus, {
-        startSec: echoStart,
-        durationSec: fitDuration(echoStart, Math.max(0.003, ringDuration * 0.24), dur),
-        freqHz: clamp(pitch * ratios[i] * (1 + (echo + 1) * 0.004), 30, 15_000),
-        gain: (0.08 - echo * 0.025) * (0.6 + qNorm * 0.4),
-        attackSec: 0.0007,
-        decay: 0.72,
-        phase: ctx.rng(),
-        pan: randomBetween(ctx.rng, -0.35, 0.35),
-      })
-    }
-  }
+  // Weight comes from a short low thump, not a pitched harmonic stack.
+  addSine(bus, {
+    startSec: 0,
+    durationSec: Math.min(bodyDur, dur),
+    freqHz: bodyFreq,
+    endFreqHz: bodyFreq * 0.72,
+    gain: 0.2 + punch * 0.1,
+    attackSec: bodyAttack,
+    decay: 0.78,
+    phase: 0.2,
+  })
+  addSine(bus, {
+    startSec: 0.0003,
+    durationSec: Math.min(0.016, dur * 0.12),
+    freqHz: knockFreq,
+    endFreqHz: knockFreq * 0.94,
+    gain: 0.17 + punch * 0.08,
+    attackSec: knockAttack,
+    decay: 0.88,
+    phase: 0.4,
+    pan: 0.03,
+  })
 
+  // A sliding band of pink noise reads as grit being ground under the sole.
   addNoise(bus, {
     startSec: 0.001,
-    durationSec: Math.max(0.004, Math.min(ringDuration, dur * 0.55)),
-    cutoffHz: clamp(pitch * 1.15, 120, 12_000),
+    durationSec: Math.min(0.17, dur * 0.7),
+    cutoffHz: clamp(pitch * 1.5, 900, 5000),
+    endCutoffHz: clamp(pitch * 0.55, 350, 2200),
     filter: 'bandpass',
-    q: clamp(q * 1.25, 0.6, 28),
-    gain: 0.17 + grit * 0.3,
-    attackSec: 0.0004,
-    decay: 0.5 + decayCurve * 0.3,
-    pan: 0.06,
+    q: 2.6,
+    endQ: 1.5,
+    gain: 0.55 + grit * 0.12,
+    attackSec: 0.004,
+    decay: scuffDecay,
+    pan: -0.08,
     seed: ctx.nextSeed(),
+    pink: true,
   })
 
-  const debris = randomInt(ctx.rng, 2, 8)
-  for (let i = 0; i < debris; i += 1) {
-    const start = dur * randomBetween(ctx.rng, 0.03, 0.9)
+  const grainCount = Math.round(26 + grit * 26)
+  for (let i = 0; i < grainCount; i += 1) {
+    const start = randomBetween(rng, 0.004, Math.max(0.005, dur * 0.84))
+    const duration = randomBetween(rng, 0.002, 0.011) * (1 - (i / (grainCount + 4)) * 0.45)
     addNoise(bus, {
       startSec: start,
-      durationSec: fitDuration(start, randomBetween(ctx.rng, 0.001, 0.006), dur),
-      cutoffHz: clamp(pitch * randomBetween(ctx.rng, 0.8, 3.8), 200, 12_000),
+      durationSec: fitDuration(start, duration, dur),
+      cutoffHz: randomBetween(rng, 700, 5800),
+      filter: rng() > 0.12 ? 'bandpass' : 'highpass',
+      q: clamp(0.8 + q * 0.13, 0.8, 3.2),
+      gain:
+        (0.055 + grit * 0.16) *
+        randomBetween(rng, 0.5, 1) *
+        (1 - (i / (grainCount + 2)) * 0.5),
+      attackSec: randomBetween(rng, 0.00012, 0.0008),
+      decay: randomBetween(rng, 0.5, 0.95),
+      pan: randomBetween(rng, -0.65, 0.65),
+      seed: ctx.nextSeed(),
+    })
+  }
+
+  // A single short reflection suggests the hard surface without a bell-like tail.
+  const reflectStart = 0.012
+  if (reflectStart < dur) {
+    addNoise(bus, {
+      startSec: reflectStart,
+      durationSec: fitDuration(reflectStart, 0.008, dur),
+      cutoffHz: clamp(pitch * 1.1, 700, 4500),
+      filter: 'lowpass',
+      q: 0.8,
+      gain: 0.13 + grit * 0.05,
+      attackSec: 0.0005,
+      decay: 0.8,
+      pan: randomBetween(rng, 0.2, 0.6),
+      seed: ctx.nextSeed(),
+    })
+  }
+
+  const debris = randomInt(rng, 3, 8)
+  for (let i = 0; i < debris; i += 1) {
+    const start = randomBetween(rng, dur * 0.25, dur * 0.95)
+    addNoise(bus, {
+      startSec: start,
+      durationSec: fitDuration(start, randomBetween(rng, 0.001, 0.004), dur),
+      cutoffHz: randomBetween(rng, 1800, 7000),
       filter: 'bandpass',
-      q: randomBetween(ctx.rng, 2, 12),
-      gain: (0.04 + grit * 0.1) * (1 - i / (debris + 2)),
-      attackSec: 0.00015,
-      decay: 0.88,
-      pan: randomBetween(ctx.rng, -0.7, 0.7),
+      q: randomBetween(rng, 2, 8),
+      gain: (0.025 + grit * 0.05) * (1 - i / (debris + 2)),
+      attackSec: 0.00012,
+      decay: 0.9,
+      pan: randomBetween(rng, -0.7, 0.7),
       seed: ctx.nextSeed(),
     })
   }
@@ -772,77 +994,155 @@ function coin(ctx: ModelContext): void {
 }
 
 function flesh(ctx: ModelContext): void {
-  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack } = ctx
-  const squelchDuration = Math.max(0.02, dur * 0.88)
-  const startPitch = clamp(pitch * randomBetween(ctx.rng, 1.25, 1.55), 40, 5000)
-  const endPitch = clamp(pitch * randomBetween(ctx.rng, 0.45, 0.65), 28, 4000)
-  const fmHz = randomBetween(ctx.rng, 16, 34)
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
+  const center = clamp(pitch, 80, 400)
+  const impactFreq = clamp(center * 0.5, 45, 130)
+  const qMain = clamp(3.5 + q * 0.3, 3, 7.5)
+  const mainAttack = clamp(attack * 2.4, 0.006, 0.02)
+  const mainDecay = clamp(0.16 + decayCurve * 0.16, 0.16, 0.32)
+  const mainDur = Math.min(dur * (0.55 + decayCurve * 0.15), 0.24)
+  const secondDecay = clamp(0.28 + decayCurve * 0.16, 0.28, 0.44)
 
-  // Pitch-bent FM core: the wet "voice" of the squish.
+  // A small low impact anchors the squelch. It is short and quiet; all the wet
+  // character comes from the moving filters below.
   addSine(bus, {
     startSec: 0,
-    durationSec: squelchDuration,
-    freqHz: startPitch,
-    endFreqHz: endPitch,
-    gain: 0.72,
-    attackSec: Math.max(0.0008, attack * 1.4),
-    decay: 0.3 + decayCurve * 0.55,
+    durationSec: Math.min(0.035, dur * 0.14),
+    freqHz: impactFreq,
+    endFreqHz: clamp(center * 0.35, 32, 100),
+    gain: 0.14 + punch * 0.06,
+    attackSec: clamp(attack * 1.2, 0.0008, 0.008),
+    decay: 0.85,
     phase: 0.2,
-    fmHz,
-    fmDepthHz: clamp(startPitch * randomBetween(ctx.rng, 0.28, 0.65), 10, 700),
-    fmDecaySec: randomBetween(ctx.rng, 0.07, 0.19),
-  })
-  addSine(bus, {
-    startSec: 0.003,
-    durationSec: Math.max(0.01, squelchDuration * 0.55),
-    freqHz: clamp(endPitch * 0.52, 26, 1100),
-    gain: 0.2,
-    attackSec: 0.004,
-    decay: 0.55,
-    phase: 0.7,
-  })
-
-  addNoise(bus, {
-    startSec: 0,
-    durationSec: Math.max(0.01, dur * 0.82),
-    cutoffHz: clamp(startPitch * randomBetween(ctx.rng, 1.3, 2.6), 120, 9000),
-    filter: 'bandpass',
-    q: clamp(1.2 + q * 0.55, 0.8, 18),
-    gain: 0.26 + grit * 0.42,
-    attackSec: 0.004,
-    decay: 0.44 + decayCurve * 0.34,
-    pan: 0.12,
-    seed: ctx.nextSeed(),
   })
   addNoise(bus, {
     startSec: 0,
-    durationSec: Math.min(0.055, dur * 0.3),
-    cutoffHz: clamp(pitch * 3.4, 250, 10_000),
+    durationSec: Math.min(0.008, dur * 0.03),
+    cutoffHz: clamp(center * 7, 900, 6000),
     filter: 'highpass',
-    q: 0.72,
-    gain: 0.22 + punch * 0.4,
+    q: 0.7,
+    gain: 0.14 + punch * 0.25,
     attackSec: 0.0003,
     decay: 0.9,
-    pan: -0.1,
+    pan: -0.08,
+    seed: ctx.nextSeed(),
+  })
+  addNoise(bus, {
+    startSec: 0.001,
+    durationSec: Math.min(0.024, dur * 0.11),
+    cutoffHz: clamp(center * 3.2, 450, 2400),
+    filter: 'bandpass',
+    q: 1.4,
+    gain: 0.18 + punch * 0.15,
+    attackSec: clamp(attack * 1.5, 0.001, 0.01),
+    decay: 0.6,
+    pan: 0.1,
     seed: ctx.nextSeed(),
   })
 
-  // A second smaller bubble/squelch keeps the gesture moving.
-  const secondStart = dur * randomBetween(ctx.rng, 0.22, 0.42)
-  if (secondStart < dur) {
-    addSine(bus, {
-      startSec: secondStart,
-      durationSec: fitDuration(secondStart, Math.max(0.01, dur * 0.24), dur),
-      freqHz: clamp(pitch * randomBetween(ctx.rng, 1.3, 1.8), 40, 4000),
-      endFreqHz: clamp(pitch * randomBetween(ctx.rng, 0.72, 0.9), 30, 3000),
-      gain: 0.16 + grit * 0.16,
-      attackSec: 0.003,
-      decay: 0.65,
-      pan: randomBetween(ctx.rng, -0.35, 0.35),
-      fmHz: randomBetween(ctx.rng, 22, 45),
-      fmDepthHz: 20,
-      fmDecaySec: 0.08,
-      phase: 0.41,
+  // The main downward formant is the "squelch": a resonant band sliding from a
+  // bright wet sound into the low body of the flesh.
+  addNoise(bus, {
+    startSec: 0.001,
+    durationSec: mainDur,
+    cutoffHz: center * 7,
+    endCutoffHz: center * 0.6,
+    filter: 'bandpass',
+    q: qMain,
+    endQ: clamp(qMain * 1.2, 4, 8),
+    gain: 0.52,
+    attackSec: mainAttack,
+    decay: mainDecay,
+    pan: 0.1,
+    seed: ctx.nextSeed(),
+  })
+  // A second, smaller formant rises as the first one falls, keeping the gesture
+  // moving like a real wet squelch.
+  addNoise(bus, {
+    startSec: dur * 0.18,
+    durationSec: Math.min(0.55 * dur, 0.19),
+    cutoffHz: center * 0.8,
+    endCutoffHz: center * 4.2,
+    filter: 'bandpass',
+    q: clamp(4 + q * 0.3, 3.5, 9),
+    endQ: clamp(3 + q * 0.25, 2, 8),
+    gain: 0.35,
+    attackSec: clamp(attack * 2, 0.008, 0.02),
+    decay: secondDecay,
+    pan: -0.12,
+    seed: ctx.nextSeed(),
+  })
+  // Pink noise fills the low-mid body so the squelch has weight without a drone.
+  addNoise(bus, {
+    startSec: dur * 0.02,
+    durationSec: Math.min(0.85 * dur, 0.29),
+    cutoffHz: center * 3,
+    endCutoffHz: center * 1.2,
+    filter: 'bandpass',
+    q: 2,
+    endQ: 1.6,
+    gain: 0.2,
+    attackSec: 0.02,
+    decay: clamp(0.24 + decayCurve * 0.12, 0.24, 0.36),
+    pan: 0.08,
+    seed: ctx.nextSeed(),
+    pink: true,
+  })
+
+  // Bubbles and little suction pops break up the sweep.
+  const bubbleCount = randomInt(rng, 24 + Math.round(grit * 8), 32 + Math.round(grit * 10))
+  const bubbleGain = 0.75 + grit * 0.35
+  for (let i = 0; i < bubbleCount; i += 1) {
+    const start = randomBetween(rng, dur * 0.03, dur * 0.92)
+    const frequency = randomBetween(rng, 200, 1900)
+    const fade = 1 - (i / (bubbleCount + 3)) * 0.4
+    if (rng() > 0.5) {
+      addNoise(bus, {
+        startSec: start,
+        durationSec: fitDuration(start, randomBetween(rng, 0.003, 0.02), dur),
+        cutoffHz: frequency,
+        filter: 'bandpass',
+        q: randomBetween(rng, 3, 9),
+        gain: randomBetween(rng, 0.025, 0.1) * fade * bubbleGain,
+        attackSec: randomBetween(rng, 0.0004, 0.002),
+        decay: randomBetween(rng, 0.65, 0.95),
+        pan: randomBetween(rng, -0.65, 0.65),
+        seed: ctx.nextSeed(),
+      })
+    } else {
+      addNoise(bus, {
+        startSec: start,
+        durationSec: fitDuration(start, randomBetween(rng, 0.005, 0.026), dur),
+        cutoffHz: frequency,
+        endCutoffHz: frequency * randomBetween(rng, 0.6, 1.8),
+        filter: 'bandpass',
+        q: randomBetween(rng, 3, 8),
+        endQ: randomBetween(rng, 2, 7),
+        gain: randomBetween(rng, 0.026, 0.095) * bubbleGain,
+        attackSec: randomBetween(rng, 0.0006, 0.0025),
+        decay: randomBetween(rng, 0.65, 0.92),
+        pan: randomBetween(rng, -0.65, 0.65),
+        seed: ctx.nextSeed(),
+      })
+    }
+  }
+
+  // A final upward suction releases the squelch instead of letting it fade flat.
+  const suctionStart = dur * 0.72
+  if (suctionStart < dur) {
+    addNoise(bus, {
+      startSec: suctionStart,
+      durationSec: fitDuration(suctionStart, Math.min(0.24 * dur, 0.1), dur),
+      cutoffHz: center * 1.2,
+      endCutoffHz: center * 4,
+      filter: 'bandpass',
+      q: clamp(4 + q * 0.3, 3, 9),
+      endQ: 3,
+      gain: 0.16,
+      attackSec: 0.01,
+      decay: 0.5,
+      pan: 0.15,
+      seed: ctx.nextSeed(),
     })
   }
 }

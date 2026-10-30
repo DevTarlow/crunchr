@@ -121,7 +121,7 @@ export const PRESETS: readonly Preset[] = [
     slug: 'concrete_step',
     category: 'footsteps',
     model: 'stone',
-    description: 'A hard step on stone with a short, bright echo.',
+    description: 'A hard step on stone with a gritty scuff and a short slap.',
     tags: ['STONE', 'HARD'],
     defaults: {
       durationMs: 230,

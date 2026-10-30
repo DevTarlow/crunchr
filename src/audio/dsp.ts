@@ -37,8 +37,17 @@ export interface NoiseOptions {
   startSec: number
   durationSec: number
   cutoffHz: number
+  /**
+   * Optional end of a log-frequency cutoff sweep. When supplied with a
+   * different value, the filter glides from `cutoffHz` to this frequency over
+   * the event. Moving resonances are what turn a static hiss into a wet squelch
+   * or a sliding scuff.
+   */
+  endCutoffHz?: number
   filter?: BiquadMode
   q?: number
+  /** Optional end of a linear Q sweep. Omit to hold Q constant. */
+  endQ?: number
   gain?: number
   attackSec?: number
   decay?: number
@@ -110,6 +119,15 @@ export class Biquad {
   private z2 = 0
 
   constructor(mode: BiquadMode, frequency: number, q: number, sampleRate: number) {
+    this.setParams(mode, frequency, q, sampleRate)
+  }
+
+  /**
+   * Recompute the coefficients without clearing the delay line. Keeping the
+   * filter state is what lets a swept noise event glide instead of clicking on
+   * every coefficient update.
+   */
+  setParams(mode: BiquadMode, frequency: number, q: number, sampleRate: number): void {
     const nyquist = sampleRate * 0.5
     const freq = clamp(Number.isFinite(frequency) ? frequency : 1000, 10, nyquist * 0.92)
     const quality = clamp(Number.isFinite(q) ? q : 1, 0.08, 40)
@@ -260,18 +278,44 @@ export function addNoise(bus: AudioBus, options: NoiseOptions): void {
   const attackFraction = Math.max(1 / samples, (options.attackSec ?? 0.0005) / safeDuration)
   const decayCurve = clamp(options.decay ?? 0.65, 0, 1)
   const [leftPan, rightPan] = panGains(options.pan ?? 0)
-  const filter = new Biquad(
-    options.filter ?? 'bandpass',
-    options.cutoffHz,
-    options.q ?? 1,
-    sampleRate,
+  const mode = options.filter ?? 'bandpass'
+  const requestedCutoff = Number.isFinite(options.cutoffHz) ? options.cutoffHz : 1000
+  const startCutoff = clamp(requestedCutoff, 10, sampleRate * 0.46)
+  const requestedQ = options.q ?? 1
+  const startQ = clamp(Number.isFinite(requestedQ) ? requestedQ : 1, 0.08, 40)
+  const requestedEndCutoff = options.endCutoffHz
+  const endCutoff = clamp(
+    requestedEndCutoff !== undefined && Number.isFinite(requestedEndCutoff)
+      ? requestedEndCutoff
+      : startCutoff,
+    10,
+    sampleRate * 0.46,
   )
+  const requestedEndQ = options.endQ
+  const endQ = clamp(
+    requestedEndQ !== undefined && Number.isFinite(requestedEndQ) ? requestedEndQ : startQ,
+    0.08,
+    40,
+  )
+  const swept = endCutoff !== startCutoff || endQ !== startQ
+  const filter = new Biquad(mode, startCutoff, startQ, sampleRate)
   const noise = options.pink
     ? makePinkNoise(options.seed)
     : makeWhiteNoise(options.seed)
   const gain = Number.isFinite(options.gain ?? 1) ? (options.gain ?? 1) : 1
 
   for (let n = 0; n < samples; n += 1) {
+    // Coefficient updates every 32 samples (~0.7 ms) are smooth under noise and
+    // cheap enough to keep the renderer synchronous.
+    if (swept && n > 0 && n % 32 === 0) {
+      const sweepProgress = n / requestedSamples
+      filter.setParams(
+        mode,
+        startCutoff * Math.pow(endCutoff / startCutoff, sweepProgress),
+        startQ * Math.pow(endQ / startQ, sweepProgress),
+        sampleRate,
+      )
+    }
     const progress = n / requestedSamples
     const envelope = eventEnvelope(progress, attackFraction, decayCurve)
     const raw = filter.process(noise())

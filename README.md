@@ -109,10 +109,10 @@ the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 
 | Category | Presets | Synthesis approach |
 | --- | --- | --- |
-| Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Sub-2 ms contact impulses, high-Q switch resonance, plastic pitch chirps, inharmonic timber modes |
-| Footsteps | Gravel Crunch, Wood Thud/Creak, Stone/Concrete | Granular band-passed noise clusters, low pitch-bent thumps with brief FM, bright modal rings with a short room smear |
+| Clicks | Mechanical Click, Card/Plastic Snap, Wooden Button | Sub-2 ms contact impulses, short damped plastic/switch modes, low body knocks, inharmonic timber modes |
+| Footsteps | Gravel Crunch, Wood Thud/Creak, Stone/Concrete | Granular band-passed noise clusters, low pitch-bent thumps with brief FM, swept-noise grit scuffs with short slap reflections |
 | Items | Dice Roll, Cloth/Backpack Rustle, Coin Clink | 3–5 gravity-shaped bounce impacts, pink-noise fabric through modulated low-pass filters, dual inharmonic metal partials |
-| Crunches | Flesh Squish, Bone Crunch | Pitch-bent FM bodies plus wet band-passed noise, and layered pink noise with abrupt gate jumps and high-pass snaps |
+| Crunches | Flesh Squish, Bone Crunch | Swept wet noise with bubble grains and a low impact, and layered pink noise with abrupt gate jumps and high-pass snaps |
 
 The complete model implementations live in [`src/audio/synthesis.ts`](src/audio/synthesis.ts).
 All recipes honor the same seven controls and are clamped for extreme settings.
@@ -288,9 +288,10 @@ npm run release:check  # validate the store kit, artwork, licence and artifact
 ```
 
 Unit tests cover WAV header/sample encoding, MP3 frame encoding and determinism,
-deterministic synthesis for all eleven models, range clamping at parameter
-extremes, humanize drift bounds, mutation bounds, session parsing/storage and ZIP
-contents.
+deterministic synthesis for all eleven models, timbre regressions for the
+click/snap/stone/flesh presets, swept-noise stability, live control coverage,
+range clamping at parameter extremes, humanize drift bounds, mutation bounds,
+session parsing/storage and ZIP contents.
 
 The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 `dist-single/index.html` artifact directly from disk and checks the first-gesture
