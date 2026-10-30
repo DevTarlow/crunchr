@@ -622,7 +622,7 @@ button:disabled {
 
 .category-rail {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid #0d3240;
   border-radius: 4px;
@@ -3144,6 +3144,26 @@ button:disabled {
   }
 }
 
+@media (max-width: 900px) {
+  .category-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .category-button {
+    border-bottom: 1px solid #0c303a;
+  }
+
+  .category-button:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .category-button:nth-child(5) {
+    grid-column: 1 / -1;
+    border-right: 0;
+    border-bottom: 0;
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 15px 11px 17px;
@@ -3201,22 +3221,6 @@ button:disabled {
   .bank-actions .button {
     flex: 1;
     min-height: 44px;
-  }
-
-  .category-rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .category-button {
-    border-bottom: 1px solid #0c303a;
-  }
-
-  .category-button:nth-child(2) {
-    border-right: 0;
-  }
-
-  .category-button:nth-last-child(-n + 2) {
-    border-bottom: 0;
   }
 
   .preset-rail {

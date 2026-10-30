@@ -239,8 +239,21 @@ async function main() {
       "default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
       'The single-file build must keep its no-egress CSP',
     )
-    assert.equal(await page.locator('.category-button').count(), 4)
+    assert.equal(await page.locator('.category-button').count(), 5)
     assert.equal(await page.locator('.preset-chip').count(), 3)
+    assert.match(
+      await page.locator('.patch-count').innerText(),
+      /15 sounds \/ 5 groups/i,
+      'The bank must advertise all fifteen sounds and five groups',
+    )
+    assert.match(
+      (await page
+        .locator('.category-button')
+        .filter({ hasText: 'Magic' })
+        .getAttribute('aria-label')) ?? '',
+      /Magic, 4 sounds/,
+      'The Magic group must expose its four presets to assistive tech',
+    )
     assert.equal(await page.locator('.hardware-range').count(), 7)
     assert.equal(await page.locator('.trigger-button').count(), 1)
     assert.equal(await page.locator('.app-root').getAttribute('data-audio-state'), 'standby')
@@ -805,6 +818,15 @@ async function main() {
     await waitForPlayback(page, true)
     await waitForPlayback(page, false)
     pass('Space from a slider still plays the current sound')
+
+    await page.locator('.category-button').filter({ hasText: 'Magic' }).click()
+    await page.waitForFunction(
+      () => document.querySelector('.preset-title-row h3')?.textContent === 'Arcane Zap',
+    )
+    assert.equal(await page.locator('.preset-chip').count(), 4)
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    pass('the Magic group loads and auditions its four-preset bank')
 
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true)
     assert.deepEqual(desktop.consoleErrors, [], 'Desktop console errors')

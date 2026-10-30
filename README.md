@@ -2,16 +2,17 @@
 
 **Tiny Sound Maker for Games** — a standalone browser instrument for indie game
 developers. Dial in tiny clicks, stone-crunching footsteps, dice
-bounces, cloth rustle, coins, wet squishes and bone fractures, then export
-finished WAVs or MP3s. Every sound is synthesized mathematically in
-the browser. There are zero audio samples, zero network calls and no backend.
+bounces, cloth rustle, coins, wet squishes, bone fractures, arcane zaps and
+power-up chimes, then export finished WAVs or MP3s. Every sound is synthesized
+mathematically in the browser. There are zero audio samples, zero network calls
+and no backend.
 
 ![Crunchr interface](docs/crunchr-ui.png)
 
 ## Highlights
 
-- **11 hand-tuned procedural sounds** across clicks, footsteps, items and
-  crunches.
+- **15 hand-tuned procedural sounds** across clicks, footsteps, items, crunches
+  and magic.
 - **Seven controls** for length, pitch, punch, body, roughness, fade and batch
   variation.
 - **Real-time Canvas oscilloscope** driven by the Web Audio `AnalyserNode`, with
@@ -115,6 +116,7 @@ the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 | Footsteps | Gravel Crunch, Wood Thud/Creak, Stone/Concrete | Granular band-passed noise clusters, low pitch-bent thumps with brief FM, swept-noise grit scuffs with short slap reflections |
 | Items | Dice Roll, Cloth/Backpack Rustle, Coin Clink | 3–5 gravity-shaped bounce impacts, pink-noise fabric through modulated low-pass filters, dual inharmonic metal partials |
 | Crunches | Flesh Squish, Bone Crunch | Swept wet noise with bubble grains and a low impact, and layered pink noise with abrupt gate jumps and high-pass snaps |
+| Magic | Arcane Zap, Magic Shimmer, Power-Up, Spell Whoosh | Downward harmonic sine arcs with crackle, rising inharmonic sparkle pings over an air bed, a four-note harmonic arpeggio, and opposing pink/white noise band sweeps |
 
 The complete model implementations live in [`src/audio/synthesis.ts`](src/audio/synthesis.ts).
 All recipes honor the same seven controls and are clamped for extreme settings.
@@ -188,10 +190,10 @@ src/
   audio/
     types.ts        shared parameter, preset and render types
     params.ts       ranges, clamps, slider mapping
-    presets.ts      the 11-sound bank and categories
+    presets.ts      the 15-sound bank and categories
     random.ts       seeded PRNG, seed derivation
     dsp.ts          white/pink noise, RBJ biquads, envelopes, oscillators
-    synthesis.ts    eleven material models and finalization
+    synthesis.ts    fifteen material models and finalization
     variations.ts   humanize, mutate, filenames
     wav.ts          standalone 16-bit PCM WAV encoder
     mp3.ts          lazy WebAssembly MP3 encoder wrapper
@@ -290,10 +292,10 @@ npm run release:check  # validate the store kit, artwork, licence and artifact
 ```
 
 Unit tests cover WAV header/sample encoding, MP3 frame encoding and determinism,
-deterministic synthesis for all eleven models, timbre regressions for the
-click/snap/stone/flesh presets, swept-noise stability, live control coverage,
-range clamping at parameter extremes, humanize drift bounds, mutation bounds,
-session parsing/storage and ZIP contents.
+deterministic synthesis for all fifteen models, timbre regressions for the
+click/snap/stone/flesh/magic presets, swept-noise stability, live control
+coverage, range clamping at parameter extremes, humanize drift bounds, mutation
+bounds, session parsing/storage and ZIP contents.
 
 The committed Playwright smoke (`scripts/browser-smoke.mjs`) opens the actual
 `dist-single/index.html` artifact directly from disk and checks the first-gesture

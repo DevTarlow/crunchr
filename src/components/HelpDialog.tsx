@@ -9,7 +9,7 @@ interface HelpDialogProps {
 const STEPS = [
   {
     title: 'Pick a sound.',
-    body: 'There are four groups at the top: clicks, footsteps, items and crunches. Click a sound to load it and hear it right away. The picture shows the shape of the sound.',
+    body: 'There are five groups at the top: clicks, footsteps, items, crunches and magic. Click a sound to load it and hear it right away. The picture shows the shape of the sound.',
   },
   {
     title: 'Click it again for a new version.',

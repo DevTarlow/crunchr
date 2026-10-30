@@ -1206,6 +1206,468 @@ function flesh(ctx: ModelContext): void {
   }
 }
 
+function arcaneZap(ctx: ModelContext): void {
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
+  const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
+  const base = clamp(pitch, 120, 3200)
+  const startFreq = clamp(base * 1.35, 180, 3800)
+  const endFreq = clamp(base * 0.32, 55, 1200)
+  const glideDur = Math.min(dur * 0.82, clamp(0.1 + (1 - decayCurve) * 0.12, 0.06, 0.24))
+  const mainDecay = clamp(0.5 + decayCurve * 0.3, 0.45, 0.82)
+  const mainAttack = clamp(attack * 0.9, 0.0002, 0.006)
+  const partials = [
+    { ratio: 1, gain: 0.88 },
+    { ratio: 2.01, gain: 0.3 + qNorm * 0.12 },
+    { ratio: 3.03, gain: 0.16 + qNorm * 0.1 },
+    { ratio: 5.07, gain: 0.08 + qNorm * 0.07 },
+  ]
+
+  // A bright contact tick opens the arc; the harmonic stack below supplies the
+  // synth-like body that a physical-material model would not have.
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.0035, dur * 0.02),
+    cutoffHz: clamp(base * 3.4, 4000, 12_000),
+    filter: 'highpass',
+    q: 0.8,
+    gain: 0.5 + punch * 0.5,
+    attackSec: 0.00006,
+    decay: 0.97,
+    pan: randomBetween(rng, -0.08, 0.08),
+    seed: ctx.nextSeed(),
+  })
+
+  partials.forEach((partial, index) => {
+    const start = 0.0002 + index * 0.00015
+    const duration = fitDuration(start, glideDur * (1 - index * 0.06), dur)
+    addSine(bus, {
+      startSec: start,
+      durationSec: duration,
+      freqHz: startFreq * partial.ratio,
+      endFreqHz: endFreq * partial.ratio,
+      gain: partial.gain * (0.8 + punch * 0.25),
+      attackSec: mainAttack * (1 + index * 0.4),
+      decay: mainDecay,
+      phase: rng(),
+      pan: index === 0 ? 0 : randomBetween(rng, -0.18, 0.18),
+    })
+  })
+
+  // A slightly detuned twin widens the arc without turning it into a chorus.
+  addSine(bus, {
+    startSec: 0.001,
+    durationSec: fitDuration(0.001, glideDur * 0.9, dur),
+    freqHz: startFreq * 1.007,
+    endFreqHz: endFreq * 1.007,
+    gain: 0.32 * (0.8 + punch * 0.25),
+    attackSec: clamp(mainAttack * 1.3, 0.0002, 0.007),
+    decay: clamp(mainDecay + 0.04, 0, 1),
+    phase: rng(),
+    pan: randomBetween(rng, -0.12, 0.12),
+  })
+
+  // A downward-filtered noise sweep adds the crackle the ear expects from a
+  // spell arcing through the air.
+  addNoise(bus, {
+    startSec: 0.0005,
+    durationSec: fitDuration(0.0005, Math.min(glideDur * 0.9, dur * 0.55), dur),
+    cutoffHz: clamp(startFreq * 0.9, 800, 9000),
+    endCutoffHz: clamp(endFreq * 2.2, 250, 6000),
+    filter: 'bandpass',
+    q: clamp(1.2 + q * 0.08, 1.2, 2.8),
+    gain: 0.12 + grit * 0.18,
+    attackSec: 0.0008,
+    decay: 0.6,
+    pan: 0.12,
+    seed: ctx.nextSeed(),
+    pink: true,
+  })
+
+  addSine(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.09, dur * 0.3),
+    freqHz: clamp(base * 0.07, 45, 180),
+    endFreqHz: clamp(base * 0.06, 38, 160),
+    gain: 0.14 + punch * 0.08,
+    attackSec: 0.001,
+    decay: 0.75,
+    phase: 0.3,
+  })
+
+  const crackleCount = randomInt(rng, 4 + Math.round(grit * 4), 7 + Math.round(grit * 6))
+  for (let i = 0; i < crackleCount; i += 1) {
+    const start = randomBetween(rng, 0.01, Math.min(dur * 0.62, 0.16))
+    addNoise(bus, {
+      startSec: start,
+      durationSec: fitDuration(start, randomBetween(rng, 0.0015, 0.006), dur),
+      cutoffHz: randomBetween(rng, 1500, 8000),
+      filter: 'bandpass',
+      q: randomBetween(rng, 1.5, 6),
+      gain: (0.03 + grit * 0.05) * (1 - i / (crackleCount + 2)),
+      attackSec: randomBetween(rng, 0.0001, 0.0005),
+      decay: 0.9,
+      pan: randomBetween(rng, -0.65, 0.65),
+      seed: ctx.nextSeed(),
+    })
+  }
+
+  if (dur > 0.12) {
+    const tailStart = Math.min(dur * 0.62, glideDur * 1.25)
+    addNoise(bus, {
+      startSec: tailStart,
+      durationSec: fitDuration(tailStart, Math.min(0.05, dur * 0.24), dur),
+      cutoffHz: clamp(base * 0.55, 500, 3000),
+      filter: 'bandpass',
+      q: 1.4,
+      gain: 0.03 + grit * 0.03,
+      attackSec: 0.006,
+      decay: 0.5,
+      pan: -0.1,
+      seed: ctx.nextSeed(),
+    })
+  }
+}
+
+function magicShimmer(ctx: ModelContext): void {
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
+  const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
+  const base = clamp(pitch, 80, 5000)
+  const pingCount = clamp(Math.round(12 + grit * 10 + rng() * 4), 12, 28)
+  const tailDecay = clamp(0.28 + decayCurve * 0.36, 0.25, 0.65)
+  const pingDecay = clamp(0.55 + decayCurve * 0.32, 0.5, 0.9)
+  const pingRing = 0.6 + qNorm * 0.7
+
+  // A continuous air bed keeps the sparkle cloud from reading as isolated ticks.
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(dur * 0.95, 0.65),
+    cutoffHz: clamp(base * 0.75, 200, 7000),
+    endCutoffHz: clamp(base * 2.3, 500, 9000),
+    filter: 'bandpass',
+    q: clamp(1.5 + q * 0.08, 1.5, 3.2),
+    gain: 0.055 + grit * 0.06,
+    attackSec: clamp(dur * 0.18, 0.02, 0.12),
+    decay: tailDecay,
+    pan: 0.06,
+    seed: ctx.nextSeed(),
+    pink: true,
+  })
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.04, dur * 0.12),
+    cutoffHz: clamp(base * 1.6, 800, 10_000),
+    filter: 'bandpass',
+    q: 1.2,
+    gain: 0.08 + punch * 0.22,
+    attackSec: 0.002,
+    decay: 0.5,
+    pan: -0.12,
+    seed: ctx.nextSeed(),
+  })
+
+  const starts: { start: number; progress: number }[] = []
+  for (let i = 0; i < pingCount; i += 1) {
+    const progress = i / Math.max(1, pingCount - 1)
+    const jitter = randomBetween(rng, -0.03, 0.03)
+    const start = clamp((0.03 + progress * 0.86 + jitter) * dur, 0, Math.max(0, dur - 0.002))
+    starts.push({ start, progress })
+  }
+  starts.sort((a, b) => a.start - b.start)
+
+  for (const { start, progress } of starts) {
+    // The pings climb as the gesture progresses, so the cloud reads as a rising
+    // shimmer rather than a static wind chime.
+    const rise = 0.75 + progress * 2.1
+    const frequency = clamp(base * rise * randomBetween(rng, 0.94, 1.07), 40, 16_000)
+    const pingDuration = randomBetween(rng, 0.03, 0.09) * pingRing * (0.8 + qNorm * 0.4)
+    const pingAttack = clamp(attack * (0.5 + qNorm * 0.8), 0.0008, 0.008)
+    const gain = randomBetween(rng, 0.08, 0.2) * (1 - progress * 0.15)
+    addSine(bus, {
+      startSec: start,
+      durationSec: fitDuration(start, pingDuration, dur),
+      freqHz: frequency,
+      endFreqHz: frequency * randomBetween(rng, 0.995, 1.006),
+      gain,
+      attackSec: pingAttack,
+      decay: pingDecay,
+      phase: rng(),
+      pan: randomBetween(rng, -0.65, 0.65),
+    })
+    if (qNorm > 0.1 || rng() > 0.55) {
+      addSine(bus, {
+        startSec: start + 0.0005,
+        durationSec: fitDuration(start + 0.0005, pingDuration * 0.7, dur),
+        freqHz: clamp(frequency * 2.01, 80, 18_000),
+        endFreqHz: clamp(frequency * 2.01, 80, 18_000),
+        gain: gain * (0.3 + qNorm * 0.25),
+        attackSec: clamp(pingAttack * 1.3, 0.0008, 0.01),
+        decay: clamp(pingDecay + 0.08, 0, 1),
+        phase: rng(),
+        pan: randomBetween(rng, -0.5, 0.5),
+      })
+    }
+  }
+
+  addSine(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.3, dur * 0.55),
+    freqHz: clamp(base * 0.25, 70, 700),
+    endFreqHz: clamp(base * 0.24, 68, 680),
+    gain: 0.06,
+    attackSec: 0.01,
+    decay: 0.55,
+    phase: 0.2,
+    pan: 0.02,
+  })
+}
+
+function powerUp(ctx: ModelContext): void {
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, attack, rng } = ctx
+  const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
+  const root = clamp(pitch, 70, 2200)
+  const ratios = [1, 1.25, 1.5, 2] as const
+  const starts = [0, 0.16, 0.33, 0.52] as const
+  const noteDecay = clamp(0.28 + decayCurve * 0.42, 0.25, 0.72)
+  const harmonicGain = 0.24 + qNorm * 0.22
+  const shineGain = 0.06 + qNorm * 0.08
+  const lower = clamp(root * 0.32, 48, 180)
+  const attackSec = clamp(attack * 1.2, 0.0006, 0.012)
+  const openingGain = 0.18 + punch * 0.14
+
+  addSine(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.09, dur * 0.25),
+    freqHz: lower,
+    endFreqHz: lower * 0.82,
+    gain: openingGain,
+    attackSec: clamp(attack * 0.8, 0.0008, 0.006),
+    decay: 0.8,
+    phase: 0.2,
+  })
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.006, dur * 0.02),
+    cutoffHz: clamp(root * 6, 900, 9000),
+    filter: 'highpass',
+    q: 0.8,
+    gain: 0.12 + punch * 0.2,
+    attackSec: 0.0001,
+    decay: 0.9,
+    pan: -0.04,
+    seed: ctx.nextSeed(),
+  })
+
+  ratios.forEach((ratio, index) => {
+    const start = dur * starts[index]
+    if (start >= dur) return
+    const frequency = clamp(root * ratio, 40, 12_000)
+    const idealDuration = Math.min(0.45, Math.max(0.06, dur * (0.9 - index * 0.1)))
+    const noteDuration = fitDuration(start, idealDuration, dur)
+    const gain = (index === ratios.length - 1 ? 0.72 : 0.58) * (0.85 + punch * 0.2)
+    const pan = index % 2 === 0 ? -0.07 : 0.07
+
+    addSine(bus, {
+      startSec: start,
+      durationSec: noteDuration,
+      freqHz: frequency,
+      endFreqHz: frequency * 1.008,
+      gain,
+      attackSec: attackSec * (1 + index * 0.15),
+      decay: noteDecay,
+      phase: rng(),
+      pan,
+    })
+    addSine(bus, {
+      startSec: start + 0.0004,
+      durationSec: fitDuration(start + 0.0004, noteDuration * 0.8, dur),
+      freqHz: clamp(frequency * 2, 80, 16_000),
+      endFreqHz: clamp(frequency * 2 * 1.004, 80, 16_000),
+      gain: gain * harmonicGain,
+      attackSec: clamp(attackSec * 1.4, 0.0008, 0.014),
+      decay: clamp(noteDecay + 0.06, 0, 1),
+      phase: rng(),
+      pan: pan * 0.7,
+    })
+    if (qNorm > 0.1) {
+      addSine(bus, {
+        startSec: start + 0.0008,
+        durationSec: fitDuration(start + 0.0008, noteDuration * 0.55, dur),
+        freqHz: clamp(frequency * 3.01, 120, 18_000),
+        endFreqHz: clamp(frequency * 3.01, 120, 18_000),
+        gain: gain * harmonicGain * 0.38,
+        attackSec: clamp(attackSec * 1.7, 0.001, 0.016),
+        decay: clamp(noteDecay + 0.12, 0, 1),
+        phase: rng(),
+        pan: -pan,
+      })
+    }
+    addSine(bus, {
+      startSec: start + 0.0012,
+      durationSec: fitDuration(start + 0.0012, noteDuration * 0.5, dur),
+      freqHz: clamp(frequency * 4.02, 160, 18_000),
+      endFreqHz: clamp(frequency * 4.02, 160, 18_000),
+      gain: gain * shineGain,
+      attackSec: clamp(attackSec * 2, 0.001, 0.018),
+      decay: clamp(noteDecay + 0.18, 0, 1),
+      phase: rng(),
+      pan: pan * 0.5,
+    })
+
+    addNoise(bus, {
+      startSec: start,
+      durationSec: fitDuration(start, Math.min(0.008, noteDuration * 0.2), dur),
+      cutoffHz: clamp(frequency * 5, 1200, 12_000),
+      filter: 'bandpass',
+      q: 1.2,
+      gain: 0.07 + grit * 0.14,
+      attackSec: 0.0002,
+      decay: 0.9,
+      pan,
+      seed: ctx.nextSeed(),
+    })
+  })
+
+  const tailStart = dur * 0.62
+  if (tailStart < dur) {
+    const sparkleCount = randomInt(rng, 3 + Math.round(grit * 3), 6 + Math.round(grit * 4))
+    for (let i = 0; i < sparkleCount; i += 1) {
+      const start = randomBetween(rng, tailStart, Math.max(tailStart, dur * 0.92))
+      const frequency = clamp(root * randomBetween(rng, 3, 7), 500, 15_000)
+      addSine(bus, {
+        startSec: start,
+        durationSec: fitDuration(start, randomBetween(rng, 0.02, 0.07), dur),
+        freqHz: frequency,
+        endFreqHz: frequency,
+        gain: (0.05 + grit * 0.1) * (1 - i / (sparkleCount + 2)),
+        attackSec: 0.002,
+        decay: 0.8,
+        phase: rng(),
+        pan: randomBetween(rng, -0.6, 0.6),
+      })
+    }
+    addNoise(bus, {
+      startSec: tailStart,
+      durationSec: fitDuration(tailStart, Math.min(0.2, dur * 0.35), dur),
+      cutoffHz: clamp(root * 3.5, 700, 9000),
+      endCutoffHz: clamp(root * 6, 1200, 14_000),
+      filter: 'bandpass',
+      q: 1.1,
+      gain: 0.06 + grit * 0.12,
+      attackSec: 0.01,
+      decay: 0.45,
+      pan: 0.1,
+      seed: ctx.nextSeed(),
+    })
+  }
+}
+
+function spellWhoosh(ctx: ModelContext): void {
+  const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q, rng } = ctx
+  const center = clamp(pitch, 120, 4200)
+  const bandQ = clamp(1.2 + q * 0.35, 1.2, 7)
+  const swell = clamp(0.02 + (1 - punch) * 0.12, 0.015, Math.max(0.02, dur * 0.4))
+  const decayA = clamp(0.2 + decayCurve * 0.28, 0.2, 0.5)
+  const decayB = clamp(0.24 + decayCurve * 0.22, 0.24, 0.48)
+  const lowFreq = clamp(center * 0.26, 45, 360)
+
+  addSine(bus, {
+    startSec: 0,
+    durationSec: Math.min(0.34, dur * 0.7),
+    freqHz: lowFreq,
+    endFreqHz: clamp(center * 0.5, 80, 800),
+    gain: 0.06 + punch * 0.06,
+    attackSec: swell * 1.2,
+    decay: 0.55,
+    phase: 0.2,
+    pan: 0.04,
+  })
+
+  addNoise(bus, {
+    startSec: 0,
+    durationSec: Math.min(dur * 0.92, dur - 0.0005),
+    cutoffHz: clamp(center * 0.55, 120, 3500),
+    endCutoffHz: clamp(center * 2.3, 500, 9000),
+    filter: 'bandpass',
+    q: bandQ,
+    endQ: clamp(bandQ * 0.85, 1, 7),
+    gain: 0.55 + grit * 0.2,
+    attackSec: swell,
+    decay: decayA,
+    pan: -0.16,
+    seed: ctx.nextSeed(),
+    pink: true,
+  })
+
+  // A white-noise air layer rides above the main band so the sweep still reads
+  // as moving air on small speakers with little low-end response.
+  addNoise(bus, {
+    startSec: 0.001,
+    durationSec: fitDuration(0.001, Math.min(dur * 0.82, dur - 0.001), dur),
+    cutoffHz: clamp(center * 1.7, 900, 5000),
+    endCutoffHz: clamp(center * 5.2, 3000, 12_000),
+    filter: 'bandpass',
+    q: 1.1,
+    endQ: 1.5,
+    gain: 0.12 + grit * 0.08,
+    attackSec: swell * 0.8,
+    decay: decayA,
+    pan: 0.12,
+    seed: ctx.nextSeed(),
+  })
+
+  const secondStart = dur * 0.12
+  if (secondStart < dur) {
+    addNoise(bus, {
+      startSec: secondStart,
+      durationSec: fitDuration(secondStart, dur * 0.72, dur),
+      cutoffHz: clamp(center * 2.7, 600, 10_000),
+      endCutoffHz: clamp(center * 0.8, 180, 4500),
+      filter: 'bandpass',
+      q: clamp(bandQ * 0.8, 1, 6),
+      endQ: bandQ,
+      gain: 0.3 + grit * 0.3,
+      attackSec: swell * 0.8,
+      decay: decayB,
+      pan: 0.2,
+      seed: ctx.nextSeed(),
+      pink: true,
+    })
+  }
+
+  const gustCount = randomInt(rng, 2 + Math.round(grit * 2), 4 + Math.round(grit * 4))
+  for (let i = 0; i < gustCount; i += 1) {
+    const start = randomBetween(rng, dur * 0.1, dur * 0.88)
+    addNoise(bus, {
+      startSec: start,
+      durationSec: fitDuration(start, randomBetween(rng, 0.015, 0.06), dur),
+      cutoffHz: randomBetween(rng, center * 1.4, center * 4.2),
+      filter: 'bandpass',
+      q: randomBetween(rng, 1.5, 5),
+      gain: (0.03 + grit * 0.06) * (1 - i / (gustCount + 2)),
+      attackSec: randomBetween(rng, 0.002, 0.01),
+      decay: randomBetween(rng, 0.4, 0.75),
+      pan: randomBetween(rng, -0.7, 0.7),
+      seed: ctx.nextSeed(),
+      pink: true,
+    })
+  }
+
+  if (punch > 0.45) {
+    addNoise(bus, {
+      startSec: 0,
+      durationSec: Math.min(0.012, dur * 0.05),
+      cutoffHz: clamp(center * 1.2, 500, 9000),
+      filter: 'highpass',
+      q: 0.8,
+      gain: (punch - 0.45) * 1.2,
+      attackSec: 0.0003,
+      decay: 0.9,
+      pan: 0.05,
+      seed: ctx.nextSeed(),
+    })
+  }
+}
+
 function bone(ctx: ModelContext): void {
   const { bus, durationSec: dur, pitch, punch, grit, decayCurve, q } = ctx
   const length = bus.left.length
@@ -1313,6 +1775,10 @@ const MODELS: Record<ModelId, (ctx: ModelContext) => void> = {
   coin,
   flesh,
   bone,
+  arcaneZap,
+  shimmer: magicShimmer,
+  powerUp,
+  whoosh: spellWhoosh,
 }
 
 /**

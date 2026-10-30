@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PRESETS } from './presets'
+import { CATEGORIES, PRESETS, getPresetsByCategory } from './presets'
 import { PARAM_LIMITS, sanitizeParams } from './params'
 import { peakOf, rmsOf, synthesize } from './synthesis'
 import { SAMPLE_RATE, type ModelId, type SynthParams } from './types'
@@ -16,6 +16,10 @@ const MODELS: ModelId[] = [
   'coin',
   'flesh',
   'bone',
+  'arcaneZap',
+  'shimmer',
+  'powerUp',
+  'whoosh',
 ]
 
 function defaultParams(): SynthParams {
@@ -130,9 +134,15 @@ describe('procedural synthesis', () => {
       expect(preset.defaults.resonance).toBeGreaterThanOrEqual(PARAM_LIMITS.resonance.min)
       expect(preset.defaults.resonance).toBeLessThanOrEqual(PARAM_LIMITS.resonance.max)
     }
-    expect(PRESETS).toHaveLength(11)
+    expect(PRESETS).toHaveLength(15)
+    expect(CATEGORIES).toHaveLength(5)
     expect(new Set(PRESETS.map((preset) => preset.id)).size).toBe(PRESETS.length)
     expect(new Set(PRESETS.map((preset) => preset.slug)).size).toBe(PRESETS.length)
+    const presetCategories = new Set(PRESETS.map((preset) => preset.category))
+    expect(presetCategories).toEqual(new Set(CATEGORIES.map((category) => category.id)))
+    for (const category of CATEGORIES) {
+      expect(getPresetsByCategory(category.id).length).toBeGreaterThanOrEqual(2)
+    }
   })
 
   it('respects the 3–5 bounce brief for the dice model across seeds', () => {

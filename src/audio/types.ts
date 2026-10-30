@@ -4,7 +4,7 @@ export const MP3_BITRATE = 192
 
 export type ExportFormat = 'wav' | 'mp3'
 
-export type CategoryId = 'ui' | 'footsteps' | 'foley' | 'impacts'
+export type CategoryId = 'ui' | 'footsteps' | 'foley' | 'impacts' | 'magic'
 
 export type ModelId =
   | 'mechanicalClick'
@@ -18,6 +18,10 @@ export type ModelId =
   | 'coin'
   | 'flesh'
   | 'bone'
+  | 'arcaneZap'
+  | 'shimmer'
+  | 'powerUp'
+  | 'whoosh'
 
 /** The six live sound-shaping controls. Humanize is a batch-only control. */
 export interface SynthParams {

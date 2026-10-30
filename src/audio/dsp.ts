@@ -3,7 +3,7 @@ import { createRng } from './random'
 import { clamp } from './params'
 
 /**
- * Low-level procedural DSP primitives shared by all eleven material models.
+ * Low-level procedural DSP primitives shared by all fifteen material models.
  * Everything here is sample-accurate and independent of Web Audio so a take can
  * be rendered identically for audition and export.
  */

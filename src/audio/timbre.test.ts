@@ -16,6 +16,15 @@ const REFINED_PRESET_IDS = [
   'flesh-squish',
 ] as const
 
+const MAGIC_PRESET_IDS = [
+  'arcane-zap',
+  'magic-shimmer',
+  'power-up',
+  'spell-whoosh',
+] as const
+
+const TUNED_PRESET_IDS = [...REFINED_PRESET_IDS, ...MAGIC_PRESET_IDS] as const
+
 function fft(real: Float64Array, imag: Float64Array): void {
   const size = real.length
   for (let i = 1, j = 0; i < size; i += 1) {
@@ -163,6 +172,45 @@ function framesBetween(
   return frames
 }
 
+/**
+ * The strongest FFT bin in a time window. This is a direct way to prove a
+ * deliberate pitch gesture (a downward zap or an upward arpeggio) without
+ * pinning the exact waveform.
+ */
+function dominantFrequency(
+  sound: RenderedSound,
+  fromFraction: number,
+  toFraction: number,
+  minHz = 80,
+  maxHz = 12_000,
+): number {
+  const size = 4096
+  const start = Math.floor(sound.channels[0].length * fromFraction)
+  const end = Math.floor(sound.channels[0].length * toFraction)
+  const real = new Float64Array(size)
+  const imag = new Float64Array(size)
+  for (let i = 0; i < size; i += 1) {
+    const index = start + i
+    const value =
+      index < end && index < sound.channels[0].length ? sound.channels[0][index] : 0
+    real[i] = value * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (size - 1)))
+  }
+  fft(real, imag)
+
+  let bestBin = 1
+  let bestPower = 0
+  for (let bin = 1; bin < size / 2; bin += 1) {
+    const frequency = (bin * sound.sampleRate) / size
+    if (frequency < minHz || frequency > maxHz) continue
+    const power = real[bin] * real[bin] + imag[bin] * imag[bin]
+    if (power > bestPower) {
+      bestPower = power
+      bestBin = bin
+    }
+  }
+  return (bestBin * sound.sampleRate) / size
+}
+
 function checksum(sound: RenderedSound): number {
   let sum = 0
   for (const channel of sound.channels) {
@@ -225,9 +273,58 @@ describe('retuned preset timbres', () => {
   })
 })
 
-describe('retuned preset robustness', () => {
-  it('renders the four refined presets cleanly across many seeds', () => {
-    for (const id of REFINED_PRESET_IDS) {
+describe('magic timbres', () => {
+  it('arcs Arcane Zap downward and dies quickly', () => {
+    const preset = getPresetById('arcane-zap')
+    const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+    const early = dominantFrequency(sound, 0.01, 0.18)
+    const late = dominantFrequency(sound, 0.45, 0.8)
+
+    expect(early).toBeGreaterThan(late * 1.5)
+    expect(bandEnergyShare(sound, 2000, 9000)).toBeGreaterThan(0.3)
+    expect(tailEnergyShare(sound, 0.85)).toBeLessThan(0.02)
+  })
+
+  it('makes Magic Shimmer a rising, glassy cloud', () => {
+    const preset = getPresetById('magic-shimmer')
+    const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+    const early = dominantFrequency(sound, 0.02, 0.25)
+    const late = dominantFrequency(sound, 0.5, 0.9)
+
+    expect(late).toBeGreaterThan(early * 1.5)
+    expect(bandEnergyShare(sound, 2000, 9000)).toBeGreaterThan(0.5)
+    expect(tailEnergyShare(sound, 0.85)).toBeGreaterThan(0.01)
+  })
+
+  it('makes Power-Up climb from the root to the octave', () => {
+    const preset = getPresetById('power-up')
+    const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+    const early = dominantFrequency(sound, 0.01, 0.14)
+    const late = dominantFrequency(sound, 0.58, 0.92)
+
+    expect(early).toBeGreaterThan(350)
+    expect(early).toBeLessThan(550)
+    expect(late).toBeGreaterThan(early * 1.5)
+    expect(windowEnergyShare(sound, 0.55, 1)).toBeGreaterThan(0.05)
+  })
+
+  it('makes Spell Whoosh a noise-led upward sweep with no ring', () => {
+    const preset = getPresetById('spell-whoosh')
+    const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+    const early = dominantFrequency(sound, 0.05, 0.25)
+    const late = dominantFrequency(sound, 0.55, 0.9)
+    const frames = framesBetween(sound, 0.2, 0.8, 300, 8000)
+
+    expect(late).toBeGreaterThan(early * 1.4)
+    expect(median(frames.map((frame) => frame.flatness))).toBeGreaterThan(0.05)
+    expect(bandEnergyShare(sound, 2000, 9000)).toBeGreaterThan(0.15)
+    expect(tailEnergyShare(sound, 0.9)).toBeLessThan(0.02)
+  })
+})
+
+describe('tuned preset robustness', () => {
+  it('renders the tuned presets cleanly across many seeds', () => {
+    for (const id of TUNED_PRESET_IDS) {
       const preset = getPresetById(id)
       for (let seed = 0; seed < 8; seed += 1) {
         const sound = synthesize(preset.model, preset.defaults, seed * 7919 + 1)
@@ -255,7 +352,7 @@ describe('retuned preset robustness', () => {
     }
   })
 
-  it('keeps every control live on the four refined presets', () => {
+  it('keeps every control live on the tuned presets', () => {
     const controls: readonly [keyof SynthParams, number, number][] = [
       ['pitchHz', 40, 6000],
       ['punch', 0, 100],
@@ -264,7 +361,7 @@ describe('retuned preset robustness', () => {
       ['decay', 0, 100],
     ]
 
-    for (const id of REFINED_PRESET_IDS) {
+    for (const id of TUNED_PRESET_IDS) {
       const preset = getPresetById(id)
       for (const [key, low, high] of controls) {
         const lowSound = synthesize(preset.model, { ...preset.defaults, [key]: low }, 99)
