@@ -90,6 +90,8 @@ against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 - every slider has a value box that accepts a typed number, clamps it to the
   range on blur, stays in step with the slider, and does not play on Space;
 - tapping the active sound rolls a new version without losing the sliders;
+- an active chip with both the New version and Changed badges keeps them inside
+  its border at tablet and desktop widths;
 - a reload restores the last session without creating the AudioContext;
 - Space on Help opens the manual instead of playing, a non-active chip is
   selected with Space, and the active chip/slider still replay the sound;

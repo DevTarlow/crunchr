@@ -115,12 +115,14 @@ export function PresetBank({
                   <span>{preset.tags.join(' / ')}</span>
                 </span>
                 {selected ? (
-                  <span key={take} className="preset-chip-reroll" aria-hidden="true">
-                    <RerollIcon />
-                    <span>New version</span>
+                  <span className="preset-chip-badges" aria-hidden="true">
+                    <span key={take} className="preset-chip-reroll">
+                      <RerollIcon />
+                      <span>New version</span>
+                    </span>
+                    {modified ? <span className="modified-badge">Changed</span> : null}
                   </span>
                 ) : null}
-                {selected && modified ? <span className="modified-badge">Changed</span> : null}
               </button>
             )
           })}

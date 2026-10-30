@@ -859,6 +859,26 @@ async function main() {
     await waitForPlayback(memoryPage, false)
     await memoryPage.locator('#param-durationMs').focus()
     for (let i = 0; i < 20; i += 1) await memoryPage.keyboard.press('ArrowRight')
+    await memoryPage.locator('.preset-chip.is-active .modified-badge').waitFor({ state: 'visible' })
+    const activeChipFits = await memoryPage.locator('.preset-chip.is-active').evaluate((chip) => {
+      const bounds = chip.getBoundingClientRect()
+      const children = [...chip.children].map((child) => child.getBoundingClientRect())
+      return (
+        chip.scrollWidth <= chip.clientWidth + 1 &&
+        children.every(
+          (child) =>
+            child.left >= bounds.left - 1 &&
+            child.right <= bounds.right + 1 &&
+            child.bottom <= bounds.bottom + 1,
+        )
+      )
+    })
+    assert.equal(
+      activeChipFits,
+      true,
+      'The active chip must keep New version and Changed inside its border',
+    )
+    pass('an active chip keeps both badges inside its box')
     const persistedDuration = await memoryPage
       .locator('#param-durationMs')
       .getAttribute('aria-valuetext')
