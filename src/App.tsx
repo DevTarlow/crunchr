@@ -641,7 +641,7 @@ export default function App() {
               <CrunchMark />
             </span>
             <span>CRUNCHR</span>
-            <span className="footer-version">v1.0.0</span>
+            <span className="footer-version">v1.1.0</span>
           </div>
           <p className="footer-manifesto">
             <SpeakerIcon aria-hidden="true" />

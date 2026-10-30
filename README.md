@@ -1,70 +1,54 @@
 # Crunchr
 
-**Tiny Sound Maker for Games** — a standalone browser instrument for indie game
-developers. Dial in tiny clicks, stone-crunching footsteps, jumps, landings,
-heavy hits, dice bounces, cloth rustle, coins, wet squishes, bone fractures,
-arcane zaps and power-up chimes, then export finished WAVs or MP3s. Every sound
-is synthesized mathematically in the browser. There are zero audio samples, zero
-network calls and no backend.
+Crunchr is a tiny sound maker I built for game projects. Pick a click, a
+footstep, a jump, a coin, a spell zap, whatever your game is missing. Shape it
+in the browser, then download a WAV or MP3.
+
+Everything is generated in the browser. No samples, no uploads, no account.
 
 ![Crunchr interface](docs/crunchr-ui.png)
 
-## Highlights
+## What you get
 
-- **18 hand-tuned procedural sounds** across clicks, footsteps, items, movement
-  and magic.
-- **Seven controls** for length, pitch, punch, body, roughness, fade and batch
-  variation.
-- **Real-time Canvas oscilloscope** driven by the Web Audio `AnalyserNode`, with
-  an idle one-shot preview, live waveform, playhead and hover inspection.
-- **Single-sound WAV/MP3 downloads** and **10-version ZIP batches** in the
-  chosen format, both generated entirely on the client.
-- **Clear save groups**: one sound is the sound on your sliders; ten versions
-  are humanized takes in a ZIP, with a preview strip that belongs only to them.
-- **Batch preview**: hear all ten versions in a row, with an adjustable space
-  between each sound and a clear note that the spacing is only an example.
-  Click any numbered button to audition one version and save it on its own.
-- **A tuned, tactile interface**: deep-teal hardware panels, a royal-gold
-  primary accent with emerald, pink and ocean state colours, readable type at
-  every size, proper empty/error/disabled states.
-- **Audition as you go**: picking a sound, re-rolling it, nudging, surprising or
-  resetting plays the result immediately.
-- **Per-sound memory**: each sound remembers its sliders, version and random
-  seed in this browser, and reloading restores your last session. When a preset's
-  factory defaults change, a draft that still exactly matches the old defaults
-  updates automatically; hand-edited drafts are left alone.
-- **Re-rollable versions**: tap the sound you already selected to make a new
-  version with fresh random details without losing your slider settings.
-- **An in-app manual**: the info button in the top right explains the whole
-  instrument, keyboard keys included.
-- **Support link**: the header's **Support this tool** button opens the itch.io
-  donation page in a new tab, so it stays reachable in fullscreen.
-- **Desktop and mobile friendly**, with a global Spacebar performance shortcut.
-- **Deterministic synthesis**: the waveform you see, the sound you hear and every
-  exported file come from the same seeded renderer.
+- **18 sounds in 5 groups**: clicks, footsteps, items, movement and magic.
+- **6 live controls** for length, pitch, punch, body, roughness and fade, plus
+  **Variation** for the 10-version batch.
+- **One sound or 10**: save a single WAV/MP3, or a ZIP with 10 takes.
+- **A live wave** that moves while the sound plays. Point at it to see the time
+  and loudness.
+- **Per-sound memory**: each sound keeps its sliders, version and seed in this
+  browser.
+- **Audition as you go**: picking a sound, re-rolling, nudging, surprising or
+  resetting plays the result.
+- **One renderer**: the wave, the audition and the exported file all come from
+  the same seeded render.
+- **A built-in manual, a phone layout and Spacebar playback.**
+- **A support link** in the header opens the itch.io donation page in a new tab.
+- **Works offline**, with no network calls, accounts or uploads.
 
 ![The Shape and Listen workbench](docs/screenshots/02-shape-and-listen.png)
 
-## Quick start
+## Try it
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the URL Vite prints (by default <http://localhost:5173>). Click any sound to
-hear it immediately; **Space** replays the current sound. Audio is unlocked on
-your first gesture; the header LED changes from **Tap to start** to **Ready**.
+Open the URL Vite prints (usually <http://localhost:5173>). Click a sound to hear
+it. **Space** plays it again. Browsers need one tap before they will play audio,
+so the first click wakes it up and the header LED switches from **Tap to start**
+to **Ready**.
 
-Tap the sound you already selected and Crunchr makes a new version with a fresh
-random seed. Your sliders stay where you set them, and the version number under
-the Play button tells you which one you are hearing. **Reset** in the Shape
-section returns the sliders to the preset defaults. In the Save section, choose
-**WAV** or **MP3**, then download the sound on your sliders from the **One sound**
-card. The **10 versions** card holds the ZIP and its preview: **Play all 10**
-auditions the whole batch set, click a numbered button to hear one version, then
-**Save vNN** to keep that one file. The **Help** button in the top right opens a
-short manual for the rest.
+Tap the sound you already picked and you get a new take. Your sliders stay put.
+**Reset** in Shape puts them back to the preset defaults. In Save, choose **WAV**
+or **MP3**, then download the sound on your sliders from the **One sound** card.
+The **10 versions** card holds the ZIP and its preview: **Play all 10** plays the
+whole set, a numbered button plays one take, and **Save vNN** keeps that file.
+The **Help** button in the top right has the rest.
+
+Not sure where to start? Pick the closest sound and change the sliders until it
+fits.
 
 ![Crunchr help manual](docs/crunchr-help.png)
 
@@ -86,15 +70,15 @@ short manual for the rest.
 Space stays a performance key where it matters: from the page, a slider, the
 scope or the active sound chip, it plays the current sound. After picking a
 sound the chip keeps focus, so Space replays it without another click. When any
-other button is focused, Space activates that button natively — Help opens,
+other button is focused, Space activates that button natively: Help opens,
 downloads start, Reset resets, and a non-active sound chip is selected. **Enter**
 always activates the focused control. Space does not fire while a text field,
 select or contenteditable element has focus.
 
 Every slider also has a small value box. Type the value in the control's own
-unit — milliseconds, hertz, `%`, or bare Q for Body — and it updates the sound
-as you type. Values outside the control's range are clamped on **Enter** or when
-the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
+unit, like milliseconds, hertz, `%`, or bare Q for Body, and it updates the
+sound as you type. Values outside the control's range are clamped on **Enter** or
+when the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 
 ## Controls
 
@@ -118,8 +102,9 @@ the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 | Movement | Jump, Landing, Hit, Flesh Squish, Bone Crunch | Rising air with a low takeoff push, a heavy low landing with dust, a dry transient hit, plus the existing wet squelch and bone crunch |
 | Magic | Arcane Zap, Magic Shimmer, Power-Up, Spell Whoosh | Downward harmonic sine arcs with crackle, rising inharmonic sparkle pings over an air bed, a four-note harmonic arpeggio, and opposing pink/white noise band sweeps |
 
-The complete model implementations live in [`src/audio/synthesis.ts`](src/audio/synthesis.ts).
-All recipes honor the same seven controls and are clamped for extreme settings.
+The models live in [`src/audio/synthesis.ts`](src/audio/synthesis.ts). Every
+sound uses the same six live controls, clamped at the extremes. Variation only
+affects the ten-version batch.
 
 ## Batch variation
 
@@ -270,7 +255,7 @@ the single-file build in headless Chrome, not mock-ups:
 ```bash
 npm run release:media   # rebuild the single file, then capture all nine images
 npm run release:check   # validate fields, versions, image sizes, licence and CSP
-npm run itch:dist       # package and byte-verify dist-itch/Crunchr-1.0.0.zip
+npm run itch:dist       # package and byte-verify dist-itch/Crunchr-1.1.0.zip
 ```
 
 `release:check` fails if the store metadata, the in-app footer, `package.json`
@@ -306,8 +291,9 @@ activation on action buttons, the separate one-sound and ten-version cards, WAV
 and MP3 single downloads, WAV and MP3 10× ZIP downloads, browser MP3 decoding,
 single-version audition and byte-identical Save vNN, the help modal and its
 Escape close, the batch preview, reduced motion, Save format/size, the itch-style
-frame's internal scroll, touch-target sizes, and overflow-free layouts at 1440,
-390 and 320 px. It also checks the 390 px help layout. It requires system Chrome;
+frame's internal scroll, touch-target sizes, the active chip's badge layout, and
+overflow-free layouts at 1440, 390 and 320 px. It also checks the 390 px help
+layout. It requires system Chrome;
 set `CHROME_PATH` if Chrome is not in a standard location. A missing browser
 fails the gate rather than silently skipping it.
 
