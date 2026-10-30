@@ -201,7 +201,7 @@ export const PRESETS: readonly Preset[] = [
       pitchHz: 520,
       punch: 62,
       resonance: 4.5,
-      grit: 40,
+      grit: 18,
       decay: 48,
     },
   },

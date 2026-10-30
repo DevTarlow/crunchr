@@ -1768,36 +1768,37 @@ function jump(ctx: ModelContext): void {
   const qNorm = clamp((q - 0.5) / 23.5, 0, 1)
   const base = clamp(pitch, 160, 2400)
   const pushFreq = clamp(base * 0.22, 45, 160)
-  const airStart = clamp(base * 0.9, 250, 3200)
-  const airEnd = clamp(base * 3.6, 1000, 9000)
-  const liftStart = clamp(base * 0.9, 140, 2200)
-  const liftEnd = clamp(base * 1.7, 240, 3600)
+  const airStart = clamp(base * 0.8, 240, 2800)
+  const airEnd = clamp(base * 2.2, 700, 5000)
+  const liftStart = clamp(base * 1.15, 180, 2600)
+  const liftEnd = clamp(base * 2.1, 320, 4400)
   const pushDur = Math.min(0.1, dur * 0.4)
-  const airDur = Math.min(0.22, dur * 0.85)
-  const liftDur = Math.min(0.16, dur * 0.7)
-  const airAttack = clamp(attack * 1.4, 0.004, Math.max(0.005, dur * 0.3))
-  const airDecay = clamp(0.3 + decayCurve * 0.24, 0.28, 0.6)
-  const liftDecay = clamp(0.45 + decayCurve * 0.28, 0.4, 0.75)
+  const airDur = Math.min(0.24, dur * 0.85)
+  const liftDur = Math.min(0.18, dur * 0.7)
+  const airAttack = clamp(attack * 4, 0.01, 0.06)
+  const airDecay = clamp(0.3 + decayCurve * 0.2, 0.28, 0.55)
+  const liftDecay = clamp(0.42 + decayCurve * 0.25, 0.38, 0.7)
 
-  // The low push anchors the jump; the rising air above it carries the gesture.
+  // A short low push gives the takeoff weight. The pink-noise sweep above it is
+  // deliberately soft and slow to open, so the jump reads as air, not static.
   addSine(bus, {
     startSec: 0,
     durationSec: pushDur,
     freqHz: pushFreq,
     endFreqHz: pushFreq * 0.78,
-    gain: 0.14 + punch * 0.12,
+    gain: 0.16 + punch * 0.12,
     attackSec: clamp(attack * 0.9, 0.0006, 0.006),
     decay: 0.8,
     phase: 0.2,
   })
   addNoise(bus, {
     startSec: 0,
-    durationSec: Math.min(0.04, dur * 0.15),
-    cutoffHz: clamp(base * 3, 700, 9000),
+    durationSec: Math.min(0.025, dur * 0.1),
+    cutoffHz: clamp(base * 2.5, 600, 8000),
     filter: 'bandpass',
     q: 1.1,
-    gain: 0.1 + punch * 0.15,
-    attackSec: 0.0015,
+    gain: 0.05 + punch * 0.1,
+    attackSec: 0.002,
     decay: 0.5,
     pan: randomBetween(rng, -0.12, 0.12),
     seed: ctx.nextSeed(),
@@ -1809,9 +1810,9 @@ function jump(ctx: ModelContext): void {
     cutoffHz: airStart,
     endCutoffHz: airEnd,
     filter: 'bandpass',
-    q: clamp(1.4 + q * 0.08, 1.4, 3),
-    endQ: clamp(1.2 + q * 0.05, 1.2, 2.4),
-    gain: 0.5 + grit * 0.18,
+    q: clamp(1.8 + q * 0.08, 1.8, 3.4),
+    endQ: 1.2,
+    gain: 0.38 + grit * 0.14,
     attackSec: airAttack,
     decay: airDecay,
     pan: -0.1,
@@ -1819,17 +1820,18 @@ function jump(ctx: ModelContext): void {
     pink: true,
   })
   addNoise(bus, {
-    startSec: 0.002,
-    durationSec: fitDuration(0.002, airDur * 0.85, dur),
-    cutoffHz: clamp(airStart * 1.8, 600, 6000),
-    endCutoffHz: clamp(airEnd * 1.3, 1600, 11_000),
+    startSec: 0.003,
+    durationSec: fitDuration(0.003, airDur * 0.75, dur),
+    cutoffHz: clamp(airStart * 1.2, 400, 4000),
+    endCutoffHz: clamp(airEnd * 1.05, 900, 7000),
     filter: 'bandpass',
     q: 0.9,
-    gain: 0.22 + grit * 0.12,
+    gain: 0.05 + grit * 0.04,
     attackSec: airAttack * 0.8,
-    decay: clamp(airDecay + 0.05, 0, 1),
+    decay: clamp(airDecay + 0.04, 0, 1),
     pan: 0.14,
     seed: ctx.nextSeed(),
+    pink: true,
   })
 
   // A quiet lifted tone makes the takeoff read as a jump rather than a plain
@@ -1839,30 +1841,12 @@ function jump(ctx: ModelContext): void {
     durationSec: fitDuration(0.004, liftDur, dur),
     freqHz: liftStart,
     endFreqHz: liftEnd,
-    gain: 0.1 + qNorm * 0.08,
-    attackSec: clamp(attack * 1.6, 0.002, 0.01),
+    gain: 0.17 + qNorm * 0.08,
+    attackSec: clamp(airAttack * 0.7, 0.008, 0.04),
     decay: liftDecay,
     phase: 0.6,
     pan: 0.05,
   })
-
-  const tickCount = randomInt(rng, 2, 4 + Math.round(grit * 3))
-  for (let i = 0; i < tickCount; i += 1) {
-    const start = randomBetween(rng, dur * 0.08, dur * 0.72)
-    addNoise(bus, {
-      startSec: start,
-      durationSec: fitDuration(start, randomBetween(rng, 0.01, 0.035), dur),
-      cutoffHz: randomBetween(rng, airStart * 1.4, airEnd * 1.1),
-      filter: 'bandpass',
-      q: randomBetween(rng, 1.2, 4),
-      gain: (0.03 + grit * 0.05) * (1 - i / (tickCount + 2)),
-      attackSec: randomBetween(rng, 0.002, 0.008),
-      decay: randomBetween(rng, 0.4, 0.7),
-      pan: randomBetween(rng, -0.6, 0.6),
-      seed: ctx.nextSeed(),
-      pink: i % 2 === 0,
-    })
-  }
 }
 
 function land(ctx: ModelContext): void {

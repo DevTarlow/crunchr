@@ -337,6 +337,7 @@ describe('movement timbres', () => {
 
     expect(late).toBeGreaterThan(early * 1.5)
     expect(bandEnergyShare(sound, 200, 9000)).toBeGreaterThan(0.6)
+    expect(bandEnergyShare(sound, 6000, 12_000)).toBeLessThan(0.05)
     expect(tailEnergyShare(sound, 0.85)).toBeLessThan(0.02)
   })
 
