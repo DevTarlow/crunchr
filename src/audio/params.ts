@@ -1,7 +1,7 @@
 import type { ParamKey, ParamRange, Preset, SynthParams } from './types'
 
 export const PARAM_LIMITS = {
-  durationMs: { min: 10, max: 800 },
+  durationMs: { min: 80, max: 800 },
   pitchHz: { min: 40, max: 6000 },
   punch: { min: 0, max: 100 },
   resonance: { min: 0.5, max: 24 },
@@ -105,7 +105,13 @@ function sanitizeNumber(value: number, min: number, max: number, step: number, f
 /** Round and clamp a full parameter object. Used at every public input boundary. */
 export function sanitizeParams(params: SynthParams): SynthParams {
   return {
-    durationMs: sanitizeNumber(params.durationMs, 10, 800, 1, 100),
+    durationMs: sanitizeNumber(
+      params.durationMs,
+      PARAM_LIMITS.durationMs.min,
+      PARAM_LIMITS.durationMs.max,
+      1,
+      100,
+    ),
     pitchHz: sanitizeNumber(params.pitchHz, 40, 6000, 1, 440),
     punch: sanitizeNumber(params.punch, 0, 100, 1, 50),
     resonance: sanitizeNumber(params.resonance, 0.5, 24, 0.1, 4),

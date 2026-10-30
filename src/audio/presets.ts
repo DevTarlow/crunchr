@@ -39,7 +39,7 @@ export const PRESETS: readonly Preset[] = [
     description: 'A short, sharp click with a plastic snap.',
     tags: ['CLICK', 'PLASTIC'],
     defaults: {
-      durationMs: 46,
+      durationMs: 80,
       pitchHz: 2300,
       punch: 92,
       resonance: 15,

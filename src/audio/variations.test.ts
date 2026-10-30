@@ -7,7 +7,7 @@ import {
   variationFilename,
 } from './variations'
 import { createRng } from './random'
-import { sanitizeParams } from './params'
+import { PARAM_LIMITS, sanitizeParams } from './params'
 import type { SynthParams } from './types'
 
 const BASE: SynthParams = {
@@ -52,8 +52,8 @@ describe('humanized batch variations', () => {
     const pointsLimit = 28 * (humanize / 100)
 
     for (const variation of variations) {
-      expect(variation.params.durationMs).toBeGreaterThanOrEqual(10)
-      expect(variation.params.durationMs).toBeLessThanOrEqual(800)
+      expect(variation.params.durationMs).toBeGreaterThanOrEqual(PARAM_LIMITS.durationMs.min)
+      expect(variation.params.durationMs).toBeLessThanOrEqual(PARAM_LIMITS.durationMs.max)
       expect(variation.params.pitchHz).toBeGreaterThanOrEqual(40)
       expect(variation.params.pitchHz).toBeLessThanOrEqual(6000)
       expect(variation.params.punch).toBeGreaterThanOrEqual(0)
@@ -96,8 +96,8 @@ describe('session mutations', () => {
   it('moves each current value by no more than 10% and clamps to range', () => {
     for (let seed = 1; seed <= 100; seed += 1) {
       const mutated = mutateParameters(BASE, 20, createRng(seed))
-      expect(mutated.params.durationMs).toBeGreaterThanOrEqual(10)
-      expect(mutated.params.durationMs).toBeLessThanOrEqual(800)
+      expect(mutated.params.durationMs).toBeGreaterThanOrEqual(PARAM_LIMITS.durationMs.min)
+      expect(mutated.params.durationMs).toBeLessThanOrEqual(PARAM_LIMITS.durationMs.max)
       expect(Math.abs(mutated.params.pitchHz / BASE.pitchHz - 1)).toBeLessThanOrEqual(0.1001)
       expect(Math.abs(mutated.humanize / 20 - 1)).toBeLessThanOrEqual(0.1001)
     }

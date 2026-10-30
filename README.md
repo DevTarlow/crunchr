@@ -97,7 +97,7 @@ the box loses focus; **↑ ↓** steps the value and **Esc** reverts the edit.
 
 | Control | Range | What it does |
 | --- | --- | --- |
-| Length | 10–800 ms, log slider | Total rendered one-shot length |
+| Length | 80–800 ms, log slider | Total rendered one-shot length |
 | Pitch | 40–6000 Hz, log slider | Fundamental or filter centre; models map it to their material |
 | Punch | 0–100% | Attack time (≈12 ms → ≈0.4 ms) and impact/transient gain |
 | Body | Q 0.5–24.0 | Filter Q and modal ring/damping |
@@ -174,8 +174,8 @@ sliders; the ten-version card only saves the batch and its individual takes.
   short clicks or frame-accurate game sync.
 - The WAV `RIFF`, `fmt ` and `data` sizes are derived from the rendered frame
   count, not fixed. 16-bit frames keep the data chunk frame-aligned, so a clip
-  as short as 10 ms needs no pad byte; a 21 ms stereo clip is exactly 3,748
-  bytes. The smoke test checks those sizes byte for byte.
+  as short as the 80 ms minimum needs no pad byte; an 80 ms stereo clip is
+  exactly 14,156 bytes. The smoke test checks those sizes byte for byte.
 - All processing is local. Object URLs are revoked after download.
 - Exports work even if the browser blocks live audio playback.
 

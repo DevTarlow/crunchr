@@ -79,9 +79,23 @@ describe('procedural synthesis', () => {
 
   it('stays finite and bounded across extreme parameter corners', () => {
     const corners: SynthParams[] = [
-      { durationMs: 10, pitchHz: 40, punch: 0, resonance: 0.5, grit: 0, decay: 0 },
+      {
+        durationMs: PARAM_LIMITS.durationMs.min,
+        pitchHz: 40,
+        punch: 0,
+        resonance: 0.5,
+        grit: 0,
+        decay: 0,
+      },
       { durationMs: 800, pitchHz: 6000, punch: 100, resonance: 24, grit: 100, decay: 100 },
-      { durationMs: 10, pitchHz: 6000, punch: 100, resonance: 24, grit: 100, decay: 100 },
+      {
+        durationMs: PARAM_LIMITS.durationMs.min,
+        pitchHz: 6000,
+        punch: 100,
+        resonance: 24,
+        grit: 100,
+        decay: 100,
+      },
       { durationMs: 800, pitchHz: 40, punch: 0, resonance: 0.5, grit: 0, decay: 0 },
       { durationMs: 333, pitchHz: 441, punch: 50, resonance: 12.3, grit: 50, decay: 50 },
     ]
@@ -89,13 +103,20 @@ describe('procedural synthesis', () => {
     for (const model of MODELS) {
       for (const params of corners) {
         const sound = synthesize(model, params, 987654)
-        const expectedLength = Math.round((params.durationMs / 1000) * SAMPLE_RATE)
+        const expectedLength = Math.round((sanitizeParams(params).durationMs / 1000) * SAMPLE_RATE)
         expect(sound.channels[0]).toHaveLength(expectedLength)
         expect(sound.channels[1]).toHaveLength(expectedLength)
         expect(rmsOf(sound.channels)).toBeGreaterThan(0)
         expect(outputIsFiniteAndBounded(sound.channels)).toBe(true)
       }
     }
+  })
+
+  it('clamps lengths below the 80 ms floor', () => {
+    const sound = synthesize('mechanicalClick', { ...defaultParams(), durationMs: 10 }, 1)
+    expect(sound.channels[0]).toHaveLength(3_528)
+    expect(sound.channels[1]).toHaveLength(3_528)
+    expect(sound.durationMs).toBeCloseTo(80, 5)
   })
 
   it('keeps preset defaults inside every declared slider range', () => {

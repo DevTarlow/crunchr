@@ -49,7 +49,7 @@ describe('encodeWav', () => {
     expect(view.getInt16(50, true)).toBeLessThan(-16000)
   })
 
-  it('writes the exact 3,748-byte header for a 21 ms 44.1 kHz stereo clip', () => {
+  it('writes a canonical 3,748-byte header for a 21 ms buffer', () => {
     const frames = 926
     const buffer = encodeWav(
       [new Float32Array(frames).fill(0.25), new Float32Array(frames).fill(-0.25)],
@@ -60,8 +60,10 @@ describe('encodeWav', () => {
       byte.toString(16).padStart(2, '0'),
     ).join('')
 
-    // The reported "short clip" case: 3,748 bytes total, 3,740-byte RIFF chunk,
-    // 3,704 bytes of data and no trailing pad byte.
+    // The encoder stays correct for a 21 ms buffer even though the UI now
+    // floors Length at 80 ms. This locks the container math independently of
+    // the control range: 3,748 bytes, 3,740-byte RIFF chunk, 3,704 bytes of
+    // data and no trailing pad byte.
     expect(buffer.byteLength).toBe(3_748)
     expect(view.getUint32(4, true)).toBe(3_740)
     expect(view.getUint32(40, true)).toBe(3_704)

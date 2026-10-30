@@ -335,11 +335,11 @@ async function main() {
       'Length in milliseconds',
     )
 
-    await page.locator('#param-durationMs-value').fill('21')
+    await page.locator('#param-durationMs-value').fill('80')
     await page.locator('#param-durationMs-value').press('Enter')
     assert.equal(
       await page.locator('#param-durationMs-value').inputValue(),
-      '21',
+      '80',
       'A typed length must stay in the box',
     )
     assert.notEqual(
@@ -349,7 +349,7 @@ async function main() {
     )
     assert.match(
       (await page.locator('.export-single-card .export-button-copy span').textContent()) ?? '',
-      /^21 ms · /,
+      /^80 ms · /,
       'The download metadata must follow the typed length',
     )
 
@@ -359,6 +359,14 @@ async function main() {
       await page.locator('.app-root').getAttribute('data-playing'),
       'false',
       'Space in a value box must not play the sound',
+    )
+
+    await page.locator('#param-durationMs-value').fill('79')
+    await page.locator('#param-durationMs-value').press('Tab')
+    assert.equal(
+      await page.locator('#param-durationMs-value').inputValue(),
+      '80',
+      'A length below the 80 ms floor must clamp on blur',
     )
 
     await page.locator('#param-durationMs-value').fill('5000')
@@ -545,16 +553,16 @@ async function main() {
     assert.ok(toastCloseHeight >= 28, `The toast close target is too small (${toastCloseHeight}px)`)
     pass(`WAV export is valid 44.1 kHz / 16-bit stereo (${wavInfo.dataBytes} data bytes, peak ${wavInfo.peak})`)
 
-    // The reported short-clip case: a 21 ms file must still carry exact,
+    // The 80 ms floor: the shortest allowed file must still carry exact,
     // frame-aligned chunk sizes. Type the length, export and inspect the bytes
     // a strict decoder receives.
     const lengthBeforeShortClip = await page.locator('#param-durationMs-value').inputValue()
-    await page.locator('#param-durationMs-value').fill('21')
+    await page.locator('#param-durationMs-value').fill('80')
     await page.locator('#param-durationMs-value').press('Enter')
     assert.match(
       (await page.locator('.export-single-card .export-button-copy span').textContent()) ?? '',
-      /^21 ms · /,
-      'The download metadata must show the typed 21 ms length',
+      /^80 ms · /,
+      'The download metadata must show the typed 80 ms length',
     )
     const shortDownloadPromise = page.waitForEvent('download', { timeout: 15_000 })
     await page
@@ -562,14 +570,14 @@ async function main() {
       .getByRole('button', { name: /DOWNLOAD WAV/ })
       .click()
     const shortDownload = await shortDownloadPromise
-    const shortPath = path.join(downloadsDir, 'short-21ms.wav')
+    const shortPath = path.join(downloadsDir, 'short-80ms.wav')
     await shortDownload.saveAs(shortPath)
     const shortBytes = readFileSync(shortPath)
     const shortInfo = readWav(shortBytes)
-    assert.equal(shortBytes.length, 3_748, 'A 21 ms stereo clip must be exactly 3,748 bytes')
-    assert.equal(shortInfo.riffChunkSize, 3_740, 'The RIFF chunk size must match the file')
-    assert.equal(shortInfo.dataBytes, 3_704, 'The data chunk size must match the frames')
-    pass('a 21 ms clip exports a canonical 3,748-byte WAV with matching chunk sizes')
+    assert.equal(shortBytes.length, 14_156, 'An 80 ms stereo clip must be exactly 14,156 bytes')
+    assert.equal(shortInfo.riffChunkSize, 14_148, 'The RIFF chunk size must match the file')
+    assert.equal(shortInfo.dataBytes, 14_112, 'The data chunk size must match the frames')
+    pass('an 80 ms clip exports a canonical 14,156-byte WAV with matching chunk sizes')
 
     await page.locator('#param-durationMs-value').fill(lengthBeforeShortClip)
     await page.locator('#param-durationMs-value').press('Enter')
