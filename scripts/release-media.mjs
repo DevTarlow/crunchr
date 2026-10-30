@@ -295,7 +295,7 @@ function plateHtml({ width, height, screenshot }) {
         <div class="title">CRUNCHR<span>.</span></div>
         <div class="tagline">Make the small sounds your game is missing.</div>
         <div class="chips">
-          <span>15 sounds</span>
+          <span>18 sounds</span>
           <span>WAV + MP3</span>
           <span>10 versions</span>
           <span>Runs offline</span>

@@ -4,7 +4,7 @@ export const MP3_BITRATE = 192
 
 export type ExportFormat = 'wav' | 'mp3'
 
-export type CategoryId = 'ui' | 'footsteps' | 'foley' | 'impacts' | 'magic'
+export type CategoryId = 'ui' | 'footsteps' | 'foley' | 'movement' | 'magic'
 
 export type ModelId =
   | 'mechanicalClick'
@@ -18,6 +18,9 @@ export type ModelId =
   | 'coin'
   | 'flesh'
   | 'bone'
+  | 'jump'
+  | 'land'
+  | 'hit'
   | 'arcaneZap'
   | 'shimmer'
   | 'powerUp'

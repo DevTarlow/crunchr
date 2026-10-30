@@ -23,7 +23,13 @@ const MAGIC_PRESET_IDS = [
   'spell-whoosh',
 ] as const
 
-const TUNED_PRESET_IDS = [...REFINED_PRESET_IDS, ...MAGIC_PRESET_IDS] as const
+const MOVEMENT_PRESET_IDS = ['jump-takeoff', 'heavy-landing', 'hit-impact'] as const
+
+const TUNED_PRESET_IDS = [
+  ...REFINED_PRESET_IDS,
+  ...MAGIC_PRESET_IDS,
+  ...MOVEMENT_PRESET_IDS,
+] as const
 
 function fft(real: Float64Array, imag: Float64Array): void {
   const size = real.length
@@ -319,6 +325,37 @@ describe('magic timbres', () => {
     expect(median(frames.map((frame) => frame.flatness))).toBeGreaterThan(0.05)
     expect(bandEnergyShare(sound, 2000, 9000)).toBeGreaterThan(0.15)
     expect(tailEnergyShare(sound, 0.9)).toBeLessThan(0.02)
+  })
+})
+
+describe('movement timbres', () => {
+  it('makes Jump rise and clear out quickly', () => {
+    const preset = getPresetById('jump-takeoff')
+    const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+    const early = dominantFrequency(sound, 0.02, 0.18)
+    const late = dominantFrequency(sound, 0.55, 0.95)
+
+    expect(late).toBeGreaterThan(early * 1.5)
+    expect(bandEnergyShare(sound, 200, 9000)).toBeGreaterThan(0.6)
+    expect(tailEnergyShare(sound, 0.85)).toBeLessThan(0.02)
+  })
+
+  it('makes Landing low and heavy without a long ring', () => {
+    const preset = getPresetById('heavy-landing')
+    const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+    const early = dominantFrequency(sound, 0.01, 0.2)
+
+    expect(early).toBeLessThan(300)
+    expect(bandEnergyShare(sound, 0, 200)).toBeGreaterThan(0.15)
+    expect(tailEnergyShare(sound, 0.75)).toBeLessThan(0.1)
+  })
+
+  it('makes Hit a short, dry body impact', () => {
+    const preset = getPresetById('hit-impact')
+    const sound = synthesize(preset.model, preset.defaults, 0xc0ffee)
+
+    expect(windowEnergyShare(sound, 0, 0.5)).toBeGreaterThan(0.8)
+    expect(tailEnergyShare(sound, 0.7)).toBeLessThan(0.05)
   })
 })
 

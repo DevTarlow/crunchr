@@ -80,8 +80,8 @@ the release.
 against the actual `dist-single/index.html` artifact from `file://`. It asserts:
 
 - the single-file UI renders and no network requests leave the page;
-- the bank shows fifteen sounds in five groups, and the Magic group loads and
-  auditions its four presets;
+- the bank shows eighteen sounds in five groups, and the Movement and Magic
+  groups load and audition their five- and four-preset banks;
 - the first gesture arms audio; selecting a sound auditions it, and the Play
   button, Spacebar and sound-wave click each play the Dice preset and drive the
   live scope;

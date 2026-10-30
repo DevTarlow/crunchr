@@ -243,8 +243,16 @@ async function main() {
     assert.equal(await page.locator('.preset-chip').count(), 3)
     assert.match(
       await page.locator('.patch-count').innerText(),
-      /15 sounds \/ 5 groups/i,
-      'The bank must advertise all fifteen sounds and five groups',
+      /18 sounds \/ 5 groups/i,
+      'The bank must advertise all eighteen sounds and five groups',
+    )
+    assert.match(
+      (await page
+        .locator('.category-button')
+        .filter({ hasText: 'Movement' })
+        .getAttribute('aria-label')) ?? '',
+      /Movement, 5 sounds/,
+      'The Movement group must expose its five presets to assistive tech',
     )
     assert.match(
       (await page
@@ -818,6 +826,15 @@ async function main() {
     await waitForPlayback(page, true)
     await waitForPlayback(page, false)
     pass('Space from a slider still plays the current sound')
+
+    await page.locator('.category-button').filter({ hasText: 'Movement' }).click()
+    await page.waitForFunction(
+      () => document.querySelector('.preset-title-row h3')?.textContent === 'Jump',
+    )
+    assert.equal(await page.locator('.preset-chip').count(), 5)
+    await waitForPlayback(page, true)
+    await waitForPlayback(page, false)
+    pass('the Movement group loads and auditions its five-preset bank')
 
     await page.locator('.category-button').filter({ hasText: 'Magic' }).click()
     await page.waitForFunction(
